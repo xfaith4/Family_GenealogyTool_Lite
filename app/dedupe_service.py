@@ -29,6 +29,8 @@ def generate_duplicate_candidates(db: sqlite3.Connection, threshold: float = 0.7
     candidates_added = 0
     
     # Compare each pair
+    # Note: O(n²) complexity. For large datasets (>1000 persons), consider
+    # optimizing with blocking techniques (e.g., group by surname first)
     for i in range(len(persons)):
         for j in range(i + 1, len(persons)):
             p1 = persons[i]
@@ -125,7 +127,7 @@ def calculate_person_similarity(p1: tuple, p2: tuple) -> float:
     else:
         return name_score
 
-def extract_year(date_str: str) -> str | None:
+def extract_year(date_str: str) -> Optional[str]:
     """Extract year from date string."""
     import re
     # Look for 4-digit year

@@ -94,10 +94,15 @@ def parse_date(raw_date: str) -> Tuple[Optional[str], str]:
     m = re.match(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$", date_str)
     if m:
         part1, part2, year = m.groups()
-        # Assume DD/MM/YYYY if day <= 12 or month > 12
-        if int(part1) <= 12 and int(part2) > 12:
+        # Disambiguate DD/MM vs MM/DD
+        # If part1 > 12, must be DD/MM. If part2 > 12, must be MM/DD.
+        # Otherwise ambiguous, default to DD/MM
+        if int(part1) > 12:
+            day, month = int(part1), int(part2)
+        elif int(part2) > 12:
             month, day = int(part1), int(part2)
         else:
+            # Ambiguous case, assume DD/MM
             day, month = int(part1), int(part2)
         try:
             datetime(int(year), month, day)
