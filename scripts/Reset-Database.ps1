@@ -2,6 +2,7 @@
 <#
 .SYNOPSIS
   Resets the app to a blank state by deleting the SQLite DB and clearing media files.
+  Run Setup.ps1 after this to recreate the DB via migrations.
 #>
 
 Set-StrictMode -Version Latest
@@ -18,10 +19,16 @@ if (Test-Path $dbPath) {
     Write-Host "Deleted DB: $dbPath"
 }
 
+# Also remove SQLite WAL and SHM files
+$dbWal = "${dbPath}-wal"
+$dbShm = "${dbPath}-shm"
+if (Test-Path $dbWal) { Remove-Item -LiteralPath $dbWal -Force }
+if (Test-Path $dbShm) { Remove-Item -LiteralPath $dbShm -Force }
+
 if (Test-Path $mediaDir) {
     Get-ChildItem -LiteralPath $mediaDir -File -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
     Write-Host "Cleared media: $mediaDir"
 }
 
-Write-Host "Reset complete."
+Write-Host "Reset complete. Run .\scripts\Setup.ps1 to recreate the database."
 ### END FILE: scripts\Reset-Database.ps1
