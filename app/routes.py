@@ -17,6 +17,10 @@ ui_bp = Blueprint("ui", __name__)
 def index():
     return render_template("index.html")
 
+@ui_bp.get("/media/unassigned")
+def unassigned_media_page():
+    return render_template("unassigned.html")
+
 def _row_to_person(row):
     return {
         "id": row["id"],

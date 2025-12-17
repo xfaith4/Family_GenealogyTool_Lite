@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Unassigned Media • Family Genealogy Tool</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🌳</div>
+      <div class="title">
+        <div class="name">Unassigned Media</div>
+        <div class="sub">Browse and attach media to people or families</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="/" class="btn btnSecondary">← Back to Main</a>
+      <label class="btn" for="uploadFile">Upload Media</label>
+      <input id="uploadFile" type="file" accept="image/*,.pdf,video/*" hidden multiple />
+    </div>
+  </header>
+
+  <main style="padding:20px;">
+    <div class="panel">
+      <div class="panelHeader">
+        <h2>Unassigned Media Assets</h2>
+        <div id="stats" class="muted"></div>
+      </div>
+      
+      <div id="mediaGrid" style="padding-top:16px;"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Media not yet linked to any person or family</span>
+  </footer>
+
+  <script src="/static/unassigned.js"></script>
+</body>
+</html>

@@ -104,21 +104,66 @@ function renderNotes(p){
 function renderMedia(p){
   const host = $("mediaList");
   host.innerHTML = "";
-  const items = p.media || [];
-  if(items.length === 0){
-    host.innerHTML = `<div class="muted">No media attached.</div>`;
-    return;
+  
+  // Fetch media v2 if available
+  if(p.id){
+    fetchAndRenderMediaV2(p.id, host);
   }
-  for(const m of items){
-    const div = document.createElement("div");
-    div.className = "note";
-    const link = `/api/media/${encodeURIComponent(m.file_name)}`;
-    div.innerHTML = `
-      <div><a href="${link}" target="_blank" rel="noreferrer">${escapeHtml(m.original_name || m.file_name)}</a></div>
-      <div class="muted" style="font-size:11px;margin-top:6px;">${escapeHtml(m.mime_type||"")}${m.size_bytes ? " • "+m.size_bytes+" bytes" : ""}</div>
-    `;
-    host.appendChild(div);
+}
+
+async function fetchAndRenderMediaV2(personId, host){
+  try {
+    const items = await api(`/api/people/${personId}/media/v2`);
+    
+    if(items.length === 0){
+      host.innerHTML = `<div class="muted">No media attached.</div>`;
+      return;
+    }
+    
+    for(const m of items){
+      const div = document.createElement("div");
+      div.className = "mediaItem";
+      
+      const link = `/api/media/${encodeURIComponent(m.path)}`;
+      const thumbUrl = m.thumbnail_path 
+        ? `/api/media/thumbnail/${encodeURIComponent(m.thumbnail_path)}`
+        : link;
+      
+      const isImage = m.mime_type && m.mime_type.startsWith('image/');
+      
+      div.innerHTML = `
+        <div class="mediaPreview">
+          ${isImage && m.thumbnail_path 
+            ? `<img src="${thumbUrl}" alt="${escapeHtml(m.original_filename)}" class="thumbnail" />` 
+            : `<div class="noThumb">📄</div>`}
+        </div>
+        <div class="mediaInfo">
+          <div><a href="${link}" target="_blank" rel="noreferrer">${escapeHtml(m.original_filename || m.path)}</a></div>
+          <div class="muted" style="font-size:11px;margin-top:6px;">${escapeHtml(m.mime_type||"")}${m.size_bytes ? " • "+formatBytes(m.size_bytes) : ""}</div>
+          <button class="btnSmall btnDanger" data-link-id="${m.link_id}">Detach</button>
+        </div>
+      `;
+      
+      // Add detach handler
+      const detachBtn = div.querySelector('[data-link-id]');
+      detachBtn.onclick = async () => {
+        if(!confirm('Detach this media?')) return;
+        await api(`/api/media/link/${m.link_id}`, { method: 'DELETE' });
+        await loadDetails(personId);
+      };
+      
+      host.appendChild(div);
+    }
+  } catch(err) {
+    host.innerHTML = `<div class="muted">Error loading media.</div>`;
+    console.error('Failed to load media:', err);
   }
+}
+
+function formatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
 async function renderTree(id){
@@ -168,7 +213,8 @@ async function loadDetails(id){
     const f = input.files[0];
     const fd = new FormData();
     fd.append("file", f);
-    await api(`/api/people/${id}/media`, { method:"POST", body: fd });
+    fd.append("person_id", id);
+    await api(`/api/media/upload`, { method:"POST", body: fd });
     await loadDetails(id);
   };
 

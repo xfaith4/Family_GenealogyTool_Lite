@@ -92,3 +92,51 @@ body{
   padding:12px 18px;
   border-top:1px solid var(--line);
 }
+.mediaItem{
+  display:flex;
+  gap:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px;
+  margin-top:10px;
+  background:rgba(0,0,0,0.12);
+  align-items:flex-start;
+}
+.mediaPreview{
+  flex-shrink:0;
+  width:100px;
+  height:100px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,0.2);
+  border-radius:8px;
+  overflow:hidden;
+}
+.thumbnail{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.noThumb{
+  font-size:32px;
+  opacity:0.5;
+}
+.mediaInfo{
+  flex:1;
+  min-width:0;
+}
+.btnSmall{
+  margin-top:6px;
+  padding:6px 10px;
+  font-size:12px;
+  border:0;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+.btnSmall.btnDanger{
+  background:var(--danger);
+  color:white;
+}
+
