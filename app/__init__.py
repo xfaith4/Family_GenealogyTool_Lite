@@ -1,6 +1,8 @@
 from flask import Flask
 from pathlib import Path
 
+APP_VERSION = "1.0.0"
+
 def create_app(test_config: dict | None = None) -> Flask:
     """
     App factory.
@@ -24,6 +26,11 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     if test_config:
         app.config.update(test_config)
+
+    # Setup logging (skip in test mode)
+    if not app.config.get("TESTING"):
+        from .logging_config import setup_logging
+        setup_logging(app)
 
     from . import db
     db.init_app(app)

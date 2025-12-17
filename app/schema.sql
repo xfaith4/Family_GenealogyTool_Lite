@@ -57,5 +57,15 @@ CREATE TABLE IF NOT EXISTS media (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Initial metadata
+INSERT OR IGNORE INTO metadata (key, value) VALUES ('schema_version', '1.0');
+INSERT OR IGNORE INTO metadata (key, value) VALUES ('app_version', '1.0.0');
+
 CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(surname, given);
 CREATE INDEX IF NOT EXISTS idx_rel_child ON relationships(child_person_id);

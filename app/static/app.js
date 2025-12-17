@@ -222,9 +222,64 @@ async function newPerson(){
 async function importGedcom(file){
   const fd = new FormData();
   fd.append("file", file);
-  const res = await api("/api/import/gedcom", { method:"POST", body: fd });
-  alert(`Imported: ${res.imported.people} people, ${res.imported.families} families`);
-  await refreshPeople(($("search").value||"").trim());
+  try {
+    const res = await api("/api/import/gedcom", { method:"POST", body: fd });
+    alert(`Imported: ${res.imported.people} people, ${res.imported.families} families`);
+    await refreshPeople(($("search").value||"").trim());
+  } catch (err) {
+    alert(`Import failed: ${err.message}`);
+  }
+}
+
+async function showDiagnostics(){
+  const modal = $("diagnosticsModal");
+  modal.style.display = "flex";
+  const info = $("diagnosticsInfo");
+  info.innerHTML = "Loading...";
+  
+  try {
+    const diag = await api("/api/diagnostics");
+    const formatBytes = (b) => {
+      if(b < 1024) return `${b} bytes`;
+      if(b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
+      return `${(b/(1024*1024)).toFixed(1)} MB`;
+    };
+    
+    info.innerHTML = `
+      <div><strong>App Version:</strong> ${escapeHtml(diag.app_version)}</div>
+      <div><strong>Schema Version:</strong> ${escapeHtml(diag.schema_version)}</div>
+      <div><strong>Database Path:</strong> ${escapeHtml(diag.db_path)}</div>
+      <div><strong>Database Size:</strong> ${formatBytes(diag.db_size_bytes)}</div>
+      <br/>
+      <div><strong>Record Counts:</strong></div>
+      <div style="margin-left: 20px;">
+        <div>• People: ${diag.counts.people}</div>
+        <div>• Families: ${diag.counts.families}</div>
+        <div>• Media: ${diag.counts.media}</div>
+        <div>• Unassigned Media: ${diag.counts.unassigned_media}</div>
+      </div>
+      <br/>
+      <div><strong>Last Import:</strong> ${diag.last_import ? escapeHtml(diag.last_import) : "Never"}</div>
+    `;
+  } catch (err) {
+    info.innerHTML = `<div style="color: red;">Failed to load diagnostics: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function createBackup(){
+  if(!confirm("Create a backup of the database and media files?")) return;
+  
+  try {
+    const res = await api("/api/backup", { method:"POST", headers:{ "Content-Type":"application/json" }, body: "{}" });
+    const formatBytes = (b) => {
+      if(b < 1024) return `${b} bytes`;
+      if(b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
+      return `${(b/(1024*1024)).toFixed(1)} MB`;
+    };
+    alert(`Backup created successfully!\n\nBackup: ${res.backup_name}\nDatabase: ${formatBytes(res.db_size_bytes)}\nMedia files: ${res.media_files}\n\nLocation: ${res.backup_path}`);
+  } catch (err) {
+    alert(`Backup failed: ${err.message}`);
+  }
 }
 
 function wire(){
@@ -238,6 +293,11 @@ function wire(){
     await importGedcom(f);
     ev.target.value = "";
   });
+  $("btnDiagnostics").onclick = showDiagnostics;
+  $("btnBackup").onclick = createBackup;
+  $("btnCloseDiagnostics").onclick = () => {
+    $("diagnosticsModal").style.display = "none";
+  };
 }
 
 (async function init(){

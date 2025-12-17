@@ -16,6 +16,8 @@
       </div>
     </div>
     <div class="actions">
+      <button id="btnDiagnostics" class="btn btnSecondary">📊 Diagnostics</button>
+      <button id="btnBackup" class="btn btnSecondary">💾 Backup</button>
       <button id="btnNewPerson" class="btn">New Person</button>
       <label class="btn btnSecondary" for="gedcomFile">Import GEDCOM</label>
       <input id="gedcomFile" type="file" accept=".ged,.gedcom,.txt" hidden />
@@ -55,6 +57,19 @@
   <footer class="footer">
     <span class="muted">Local app. Data stored in ./data/family_tree.sqlite</span>
   </footer>
+
+  <!-- Diagnostics Modal -->
+  <div id="diagnosticsModal" class="modal" style="display:none;">
+    <div class="modalContent">
+      <h2>System Diagnostics</h2>
+      <div id="diagnosticsInfo" style="font-family: monospace; font-size: 14px; line-height: 1.6;">
+        Loading...
+      </div>
+      <div style="margin-top: 20px; text-align: right;">
+        <button id="btnCloseDiagnostics" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

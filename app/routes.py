@@ -7,6 +7,7 @@ import hashlib
 
 from .db import get_db
 from .gedcom import parse_gedcom, to_summary
+from . import APP_VERSION
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 ui_bp = Blueprint("ui", __name__)
@@ -166,15 +167,22 @@ def import_gedcom():
     if request.content_type and request.content_type.startswith("multipart/form-data"):
         f = request.files.get("file")
         if not f:
+            current_app.logger.warning("GEDCOM import failed: no file provided")
             return jsonify({"error": "file is required"}), 400
         text = f.read().decode("utf-8", errors="replace")
     else:
         payload = request.get_json(force=True, silent=False)
         text = (payload.get("gedcom") or "")
         if not text.strip():
+            current_app.logger.warning("GEDCOM import failed: empty gedcom content")
             return jsonify({"error": "gedcom is required"}), 400
 
-    indis, fams = parse_gedcom(text)
+    try:
+        indis, fams = parse_gedcom(text)
+    except Exception as e:
+        current_app.logger.error(f"GEDCOM parsing failed: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to parse GEDCOM: {str(e)}"}), 400
+
 
     def upsert_person(i):
         row = db.execute("SELECT id FROM persons WHERE xref = ?", (i.xref,)).fetchone()
@@ -263,6 +271,15 @@ def import_gedcom():
                 )
 
     db.commit()
+    
+    # Track last import timestamp
+    db.execute(
+        "INSERT OR REPLACE INTO metadata (key, value, updated_at) VALUES ('last_import', datetime('now'), datetime('now'))"
+    )
+    db.commit()
+    
+    current_app.logger.info(f"GEDCOM import successful: {len(indis)} people, {len(fams)} families")
+    
     return jsonify({"imported": to_summary(indis, fams)})
 
 @api_bp.get("/tree/<int:person_id>")
@@ -301,11 +318,13 @@ def tree(person_id: int):
 def upload_media(person_id: int):
     f = request.files.get("file")
     if not f:
+        current_app.logger.warning(f"Media upload failed for person {person_id}: no file provided")
         return jsonify({"error": "file is required"}), 400
 
     db = get_db()
     exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
     if not exists:
+        current_app.logger.warning(f"Media upload failed: person {person_id} not found")
         return jsonify({"error": "Not found"}), 404
 
     original_name = f.filename or "upload"
@@ -314,31 +333,186 @@ def upload_media(person_id: int):
     media_dir = current_app.config["MEDIA_DIR"]
     os.makedirs(media_dir, exist_ok=True)
 
-    content = f.read()
-    sha = hashlib.sha256(content).hexdigest()
-    ext = os.path.splitext(safe)[1].lower()
-    stored_name = f"{sha}{ext}" if ext else sha
-    path = os.path.join(media_dir, stored_name)
+    try:
+        content = f.read()
+        sha = hashlib.sha256(content).hexdigest()
+        ext = os.path.splitext(safe)[1].lower()
+        stored_name = f"{sha}{ext}" if ext else sha
+        path = os.path.join(media_dir, stored_name)
 
-    if not os.path.exists(path):
-        with open(path, "wb") as out:
-            out.write(content)
+        if not os.path.exists(path):
+            with open(path, "wb") as out:
+                out.write(content)
 
-    mime = f.mimetype or "application/octet-stream"
-    size_bytes = len(content)
+        mime = f.mimetype or "application/octet-stream"
+        size_bytes = len(content)
 
-    db.execute(
-        """
-        INSERT INTO media (person_id, file_name, original_name, mime_type, sha256, size_bytes)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (person_id, stored_name, original_name, mime, sha, size_bytes),
-    )
-    db.commit()
+        db.execute(
+            """
+            INSERT INTO media (person_id, file_name, original_name, mime_type, sha256, size_bytes)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (person_id, stored_name, original_name, mime, sha, size_bytes),
+        )
+        db.commit()
+        
+        current_app.logger.info(f"Media uploaded for person {person_id}: {original_name} ({size_bytes} bytes)")
 
-    return jsonify({"stored": stored_name, "sha256": sha}), 201
+        return jsonify({"stored": stored_name, "sha256": sha}), 201
+    except Exception as e:
+        current_app.logger.error(f"Media upload failed for person {person_id}: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to upload media: {str(e)}"}), 500
 
 @api_bp.get("/media/<path:file_name>")
 def get_media(file_name: str):
     media_dir = current_app.config["MEDIA_DIR"]
     return send_from_directory(media_dir, file_name, as_attachment=False)
+
+@api_bp.get("/diagnostics")
+def diagnostics():
+    db = get_db()
+    db_path = current_app.config["DATABASE"]
+    
+    # Get counts
+    people_count = db.execute("SELECT COUNT(*) as cnt FROM persons").fetchone()["cnt"]
+    families_count = db.execute("SELECT COUNT(*) as cnt FROM families").fetchone()["cnt"]
+    media_count = db.execute("SELECT COUNT(*) as cnt FROM media").fetchone()["cnt"]
+    
+    # Get unassigned media (media without valid person)
+    # Since we have ON DELETE CASCADE, this shouldn't happen, but check anyway
+    unassigned_media = 0
+    
+    # Get schema version and last import
+    schema_version_row = db.execute("SELECT value FROM metadata WHERE key = 'schema_version'").fetchone()
+    schema_version = schema_version_row["value"] if schema_version_row else "unknown"
+    
+    last_import_row = db.execute("SELECT value FROM metadata WHERE key = 'last_import'").fetchone()
+    last_import = last_import_row["value"] if last_import_row else None
+    
+    # Get DB file size
+    db_size_bytes = 0
+    if os.path.exists(db_path):
+        db_size_bytes = os.path.getsize(db_path)
+    
+    return jsonify({
+        "app_version": APP_VERSION,
+        "db_path": db_path,
+        "db_size_bytes": db_size_bytes,
+        "schema_version": schema_version,
+        "counts": {
+            "people": people_count,
+            "families": families_count,
+            "media": media_count,
+            "unassigned_media": unassigned_media,
+        },
+        "last_import": last_import,
+    })
+
+@api_bp.post("/backup")
+def create_backup():
+    """Create a backup of the database and optionally media files."""
+    from datetime import datetime
+    import shutil
+    from pathlib import Path
+    
+    db_path = current_app.config["DATABASE"]
+    media_dir = current_app.config["MEDIA_DIR"]
+    
+    # Create backups directory
+    repo_root = Path(__file__).resolve().parents[1]
+    backup_dir = repo_root / "backups"
+    backup_dir.mkdir(exist_ok=True)
+    
+    # Create timestamped backup
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_name = f"backup_{timestamp}"
+    backup_path = backup_dir / backup_name
+    backup_path.mkdir(exist_ok=True)
+    
+    try:
+        # Backup database
+        db_backup_path = backup_path / "family_tree.sqlite"
+        shutil.copy2(db_path, db_backup_path)
+        
+        # Backup media directory if it exists and has files
+        media_backup_path = backup_path / "media"
+        if os.path.exists(media_dir) and os.listdir(media_dir):
+            shutil.copytree(media_dir, media_backup_path)
+            media_count = len(os.listdir(media_backup_path))
+        else:
+            media_count = 0
+        
+        db_size = os.path.getsize(db_backup_path)
+        
+        current_app.logger.info(f"Backup created: {backup_name} (DB: {db_size} bytes, Media files: {media_count})")
+        
+        return jsonify({
+            "success": True,
+            "backup_name": backup_name,
+            "backup_path": str(backup_path),
+            "db_size_bytes": db_size,
+            "media_files": media_count,
+            "timestamp": timestamp,
+        }), 201
+    except Exception as e:
+        current_app.logger.error(f"Backup failed: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Backup failed: {str(e)}"}), 500
+
+@api_bp.post("/restore")
+def restore_backup():
+    """Restore from a backup."""
+    import shutil
+    from pathlib import Path
+    
+    data = request.get_json(force=True, silent=False)
+    backup_name = (data.get("backup_name") or "").strip()
+    
+    if not backup_name:
+        return jsonify({"error": "backup_name is required"}), 400
+    
+    repo_root = Path(__file__).resolve().parents[1]
+    backup_dir = repo_root / "backups" / backup_name
+    
+    if not backup_dir.exists():
+        current_app.logger.warning(f"Restore failed: backup {backup_name} not found")
+        return jsonify({"error": f"Backup '{backup_name}' not found"}), 404
+    
+    db_backup = backup_dir / "family_tree.sqlite"
+    if not db_backup.exists():
+        current_app.logger.warning(f"Restore failed: no database file in backup {backup_name}")
+        return jsonify({"error": f"No database file in backup '{backup_name}'"}), 404
+    
+    try:
+        db_path = current_app.config["DATABASE"]
+        media_dir = current_app.config["MEDIA_DIR"]
+        
+        # Close current DB connection
+        from flask import g
+        db = g.pop("db", None)
+        if db is not None:
+            db.close()
+        
+        # Restore database
+        shutil.copy2(db_backup, db_path)
+        
+        # Restore media if exists
+        media_backup = backup_dir / "media"
+        media_count = 0
+        if media_backup.exists():
+            # Clear current media
+            if os.path.exists(media_dir):
+                shutil.rmtree(media_dir)
+            shutil.copytree(media_backup, media_dir)
+            media_count = len(os.listdir(media_dir))
+        
+        current_app.logger.info(f"Restore successful from backup: {backup_name}")
+        
+        return jsonify({
+            "success": True,
+            "restored_from": backup_name,
+            "media_files": media_count,
+        }), 200
+    except Exception as e:
+        current_app.logger.error(f"Restore failed from {backup_name}: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Restore failed: {str(e)}"}), 500
+
