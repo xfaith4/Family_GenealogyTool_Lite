@@ -1,12 +1,12 @@
 ### BEGIN FILE: scripts\Setup.ps1
 <#
 .SYNOPSIS
-  Installs minimal dependencies and initializes an empty SQLite DB.
+  Installs minimal dependencies and initializes DB with Alembic migrations.
 
 .DESCRIPTION
   - No venv required (optional later)
-  - Only dependency is Flask
-  - Creates ./data/family_tree.sqlite (schema is auto-created) if missing
+  - Dependencies: Flask, SQLAlchemy, Alembic
+  - Creates ./data/family_tree.sqlite via Alembic migrations
 #>
 
 Set-StrictMode -Version Latest
@@ -28,16 +28,16 @@ foreach ($candidate in @('py', 'python', 'python3')) {
 }
 if (-not $python) { throw "Python not found. Install Python 3.11+ and ensure it is on PATH." }
 
-# Install dependency
+# Install dependencies
 Write-Host "Installing requirements..."
 & $python -m pip install --upgrade pip | Out-Host
 & $python -m pip install -r (Join-Path $RepoRoot 'requirements.txt') | Out-Host
 
-# Initialize DB (importing app triggers schema init)
-Write-Host "Initializing DB..."
+# Run Alembic migrations
+Write-Host "Running database migrations..."
 Push-Location $RepoRoot
 try {
-    & $python -c "from app import create_app; a=create_app(); print(a.config['DATABASE'])" | Out-Host
+    & $python -m alembic upgrade head | Out-Host
 } finally {
     Pop-Location
 }
