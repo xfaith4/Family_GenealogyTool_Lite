@@ -254,10 +254,10 @@ async function showDiagnostics(){
       <br/>
       <div><strong>Record Counts:</strong></div>
       <div style="margin-left: 20px;">
-        <div>• People: ${diag.counts.people}</div>
-        <div>• Families: ${diag.counts.families}</div>
-        <div>• Media: ${diag.counts.media}</div>
-        <div>• Unassigned Media: ${diag.counts.unassigned_media}</div>
+        <div>• People: ${escapeHtml(String(diag.counts.people))}</div>
+        <div>• Families: ${escapeHtml(String(diag.counts.families))}</div>
+        <div>• Media: ${escapeHtml(String(diag.counts.media))}</div>
+        <div>• Unassigned Media: ${escapeHtml(String(diag.counts.unassigned_media))}</div>
       </div>
       <br/>
       <div><strong>Last Import:</strong> ${diag.last_import ? escapeHtml(diag.last_import) : "Never"}</div>
@@ -267,12 +267,16 @@ async function showDiagnostics(){
   }
 }
 
+function closeDiagnostics() {
+  $("diagnosticsModal").style.display = "none";
+}
+
 async function createBackup(){
   if(!confirm("Create a backup of the database and media files?")) return;
   
   try {
     const res = await api("/api/backup", { method:"POST", headers:{ "Content-Type":"application/json" }, body: "{}" });
-    alert(`Backup created successfully!\n\nBackup: ${res.backup_name}\nDatabase: ${formatBytes(res.db_size_bytes)}\nMedia files: ${res.media_files}\n\nLocation: ${res.backup_path}`);
+    alert(`Backup created successfully!\n\nBackup: ${res.backup_name}\nDatabase: ${formatBytes(res.db_size_bytes)}\nMedia files: ${res.media_files}`);
   } catch (err) {
     alert(`Backup failed: ${err.message}`);
   }
@@ -291,9 +295,21 @@ function wire(){
   });
   $("btnDiagnostics").onclick = showDiagnostics;
   $("btnBackup").onclick = createBackup;
-  $("btnCloseDiagnostics").onclick = () => {
-    $("diagnosticsModal").style.display = "none";
+  $("btnCloseDiagnostics").onclick = closeDiagnostics;
+  
+  // Close modal on backdrop click
+  $("diagnosticsModal").onclick = (e) => {
+    if (e.target.id === "diagnosticsModal") {
+      closeDiagnostics();
+    }
   };
+  
+  // Close modal on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && $("diagnosticsModal").style.display === "flex") {
+      closeDiagnostics();
+    }
+  });
 }
 
 (async function init(){

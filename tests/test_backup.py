@@ -39,12 +39,14 @@ class TestBackup(unittest.TestCase):
         
         self.assertTrue(data["success"])
         self.assertIn("backup_name", data)
-        self.assertIn("backup_path", data)
+        self.assertNotIn("backup_path", data)  # Should not expose full path
         self.assertGreater(data["db_size_bytes"], 0)
         
-        # Verify backup files exist
-        backup_path = data["backup_path"]
-        self.backup_paths.append(backup_path)
+        # Construct backup path from backup_name to verify files exist
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[1]
+        backup_path = repo_root / "backups" / data["backup_name"]
+        self.backup_paths.append(str(backup_path))
         self.assertTrue(os.path.exists(backup_path))
         self.assertTrue(os.path.exists(os.path.join(backup_path, "family_tree.sqlite")))
 
@@ -59,7 +61,12 @@ class TestBackup(unittest.TestCase):
         self.assertEqual(r.status_code, 201)
         backup_data = r.get_json()
         backup_name = backup_data["backup_name"]
-        self.backup_paths.append(backup_data["backup_path"])
+        
+        # Construct backup path for cleanup
+        from pathlib import Path
+        repo_root = Path(__file__).resolve().parents[1]
+        backup_path = repo_root / "backups" / backup_name
+        self.backup_paths.append(str(backup_path))
         
         # Modify the database
         r = self.client.post("/api/people", json={"given":"New","surname":"Person","sex":"F"})

@@ -411,7 +411,14 @@ def diagnostics():
 
 @api_bp.post("/backup")
 def create_backup():
-    """Create a backup of the database and optionally media files."""
+    """
+    Create a backup of the database and optionally media files.
+    
+    SECURITY NOTE: This endpoint does not require authentication. In production,
+    consider adding rate limiting or authentication to prevent unauthorized users
+    from triggering backups repeatedly, which could cause disk space exhaustion
+    or performance issues.
+    """
     from datetime import datetime
     from pathlib import Path
     
@@ -449,7 +456,6 @@ def create_backup():
         return jsonify({
             "success": True,
             "backup_name": backup_name,
-            "backup_path": str(backup_path),
             "db_size_bytes": db_size,
             "media_files": media_count,
             "timestamp": timestamp,
@@ -460,7 +466,12 @@ def create_backup():
 
 @api_bp.post("/restore")
 def restore_backup():
-    """Restore from a backup."""
+    """
+    Restore from a backup.
+    
+    WARNING: The application should be restarted after a restore operation
+    to ensure all database connections are refreshed and no stale data is cached.
+    """
     from pathlib import Path
     import re
     
@@ -521,6 +532,7 @@ def restore_backup():
             "success": True,
             "restored_from": backup_name,
             "media_files": media_count,
+            "warning": "Please restart the application to ensure all database connections are refreshed.",
         }), 200
     except (IOError, OSError, shutil.Error) as e:
         current_app.logger.error(f"Restore failed from {backup_name}: {str(e)}", exc_info=True)
