@@ -231,6 +231,12 @@ async function importGedcom(file){
   }
 }
 
+function formatBytes(b) {
+  if(b < 1024) return `${b} bytes`;
+  if(b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
+  return `${(b/(1024*1024)).toFixed(1)} MB`;
+}
+
 async function showDiagnostics(){
   const modal = $("diagnosticsModal");
   modal.style.display = "flex";
@@ -239,11 +245,6 @@ async function showDiagnostics(){
   
   try {
     const diag = await api("/api/diagnostics");
-    const formatBytes = (b) => {
-      if(b < 1024) return `${b} bytes`;
-      if(b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
-      return `${(b/(1024*1024)).toFixed(1)} MB`;
-    };
     
     info.innerHTML = `
       <div><strong>App Version:</strong> ${escapeHtml(diag.app_version)}</div>
@@ -271,11 +272,6 @@ async function createBackup(){
   
   try {
     const res = await api("/api/backup", { method:"POST", headers:{ "Content-Type":"application/json" }, body: "{}" });
-    const formatBytes = (b) => {
-      if(b < 1024) return `${b} bytes`;
-      if(b < 1024*1024) return `${(b/1024).toFixed(1)} KB`;
-      return `${(b/(1024*1024)).toFixed(1)} MB`;
-    };
     alert(`Backup created successfully!\n\nBackup: ${res.backup_name}\nDatabase: ${formatBytes(res.db_size_bytes)}\nMedia files: ${res.media_files}\n\nLocation: ${res.backup_path}`);
   } catch (err) {
     alert(`Backup failed: ${err.message}`);

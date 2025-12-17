@@ -462,6 +462,7 @@ def create_backup():
 def restore_backup():
     """Restore from a backup."""
     from pathlib import Path
+    import re
     
     data = request.get_json(force=True, silent=False)
     backup_name = (data.get("backup_name") or "").strip()
@@ -469,8 +470,18 @@ def restore_backup():
     if not backup_name:
         return jsonify({"error": "backup_name is required"}), 400
     
+    # Validate backup_name format to prevent path traversal
+    if not re.match(r'^backup_\d{8}_\d{6}$', backup_name):
+        current_app.logger.warning(f"Restore failed: invalid backup name format: {backup_name}")
+        return jsonify({"error": "Invalid backup name format"}), 400
+    
     repo_root = Path(__file__).resolve().parents[1]
     backup_dir = repo_root / "backups" / backup_name
+    
+    # Ensure the resolved path is still within the backups directory
+    if not str(backup_dir.resolve()).startswith(str((repo_root / "backups").resolve())):
+        current_app.logger.warning(f"Restore failed: path traversal attempt: {backup_name}")
+        return jsonify({"error": "Invalid backup name"}), 400
     
     if not backup_dir.exists():
         current_app.logger.warning(f"Restore failed: backup {backup_name} not found")

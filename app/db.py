@@ -35,3 +35,12 @@ def init_app(app) -> None:
     # Ensure schema exists at startup
     with app.app_context():
         init_db()
+        
+        # Update app version in metadata on every startup
+        from . import APP_VERSION
+        db = get_db()
+        db.execute(
+            "INSERT OR REPLACE INTO metadata (key, value, updated_at) VALUES ('app_version', ?, datetime('now'))",
+            (APP_VERSION,)
+        )
+        db.commit()

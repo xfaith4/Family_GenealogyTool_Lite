@@ -25,6 +25,12 @@ $RepoRoot  = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($ScriptDir,
 
 Write-Host "RepoRoot: $RepoRoot"
 
+# Validate backup name format to prevent path traversal
+if ($BackupName -notmatch '^backup_\d{8}_\d{6}$') {
+    Write-Error "Invalid backup name format. Expected format: backup_YYYYMMDD_HHMMSS"
+    exit 1
+}
+
 $BackupDir = Join-Path $RepoRoot "backups\$BackupName"
 
 if (-not (Test-Path $BackupDir)) {

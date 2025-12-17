@@ -2,7 +2,6 @@
 Structured logging configuration.
 """
 import logging
-import os
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 

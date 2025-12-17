@@ -65,7 +65,6 @@ CREATE TABLE IF NOT EXISTS metadata (
 
 -- Initial metadata
 INSERT OR IGNORE INTO metadata (key, value) VALUES ('schema_version', '1.0');
-INSERT OR IGNORE INTO metadata (key, value) VALUES ('app_version', '1.0.0');
 
 CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(surname, given);
 CREATE INDEX IF NOT EXISTS idx_rel_child ON relationships(child_person_id);
