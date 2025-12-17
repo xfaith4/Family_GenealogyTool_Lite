@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Family Genealogy Tool Lite</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🌳</div>
+      <div class="title">
+        <div class="name">Family Genealogy Tool <span class="muted">Lite</span></div>
+        <div class="sub">Flask + SQLite • single DB • zero native modules</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="btnNewPerson" class="btn">New Person</button>
+      <label class="btn btnSecondary" for="gedcomFile">Import GEDCOM</label>
+      <input id="gedcomFile" type="file" accept=".ged,.gedcom,.txt" hidden />
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>People</h2>
+        <input id="search" class="input" placeholder="Search (given/surname)..." />
+      </div>
+      <div id="peopleList" class="list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Details</h2>
+        <div class="row">
+          <button id="btnSave" class="btn" disabled>Save</button>
+          <button id="btnDelete" class="btn btnDanger" disabled>Delete</button>
+        </div>
+      </div>
+
+      <div id="details" class="details muted">Select a person…</div>
+    </section>
+
+    <section class="panel span2">
+      <div class="panelHeader">
+        <h2>Mini Tree</h2>
+        <div class="muted">Parents + children (fast + simple)</div>
+      </div>
+      <div id="tree" class="tree muted">Select a person…</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Local app. Data stored in ./data/family_tree.sqlite</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+Modern free toolset to build on (no “dead” deps)
+
+Tree / graph UI (pick 1, both free):
+
+Cytoscape.js (MIT, no external deps, optimized for interactive graphs) 
+js.cytoscape.org
++1
+
+Add-on layout: cytoscape.js-elk (MIT) for clean, scalable hierarchical layouts 
+GitHub
+
+Apache ECharts (Apache 2.0, strong zoom/pan UX; good if we stay strictly “tree” vs full graph) 
+Apache ECharts
++2
+Apache ECharts
++2
+
+Analytics / cleanup:
+
+python-dateutil for parsing messy dates then storing canonical yyyy-MM-dd 
+dateutil
+
+RapidFuzz (MIT) for fast, high-quality fuzzy matching (place/name dedupe suggestions) 
+GitHub
++1
+
+Media / thumbnails:
+
+Pillow for straightforward thumbnails (simple + widely supported) 
+Pillow (PIL Fork)
+
+Optional “big image” upgrade: libvips/pyvips (fast + low memory; LGPL for libvips) 
+GitHub
++2
+libvips
++2
+
+Data layer + migrations (professional-grade on SQLite):
+
+SQLAlchemy 2.x (actively released) 
+SQLAlchemy
+
+Alembic migrations 
+Alembic
++1
+
+Dev tooling (optional but “pro”):
+
+uv for fast installs/venv management (dev convenience) 
+GitHub
++1
+
+ruff for lint + format (dev convenience) 
+GitHub
++1
+
+Phased project plan (built around your 3 pillars)
+Phase 1 — “Schema + pipeline hardening” (foundation for everything)
+
+Goal: lock down a scalable schema + migrations without breaking the current working app.
+
+Add SQLAlchemy models + Alembic migrations (empty DB always reproducible) 
+SQLAlchemy
++1
+
+Expand schema to support:
+
+People, families, relationships (including adopt/step flags later)
+
+Events (birth/death/marriage/etc) + original text + canonical date
+
+Places table + place variants table (for standardization)
+
+Media assets + media links (person/family + future “unassigned” bucket)
+
+“Data quality flags” (missing date/place, ambiguous parse, duplicate candidates)
+
+Update GEDCOM import to populate the expanded schema while preserving raw/original fields
+
+Exit criteria: fresh clone → setup → creates DB via migration → import works → tests green.
+
+Phase 2 — “Tree navigation v2” (make it the star of the product)
+
+Goal: smooth, elegant, scalable visual navigation.
+
+Implement a Graph API endpoint that returns:
+
+nodes: person/family nodes, key facts, quality flags
+
+edges: parent/child, spouse/partner
+
+optional: “focus mode” (subtree) + lazy expansion
+
+Front-end upgrade to Cytoscape.js + elk layout for a clean genealogy DAG layout (handles “not-a-perfect-tree” cases better than pure tree libs) 
+js.cytoscape.org
++1
+
+UX features:
+
+expand/collapse generations
+
+search-and-focus
+
+side panel details (facts + media + quality issues)
+
+minimap, keyboard nav, “center on me”
+
+performance budget targets (e.g., 5k nodes interactive)
+
+Exit criteria: tree view remains smooth under large imports; navigation feels “product-level”.
+
+Phase 3 — “Analytics + cleanup engine” (turn messy GEDCOM into clean truth)
+
+Goal: give the user a “data quality cockpit” and a safe cleanup workflow.
+
+Dates:
+
+parse with dateutil, store canonical yyyy-MM-dd, keep original string + confidence/ambiguity marker 
+dateutil
+
+Places:
+
+canonical places table + variants
+
+RapidFuzz suggestion engine (“these two places are probably the same”) with a review queue 
+GitHub
++1
+
+Dedupe:
+
+potential duplicate people/families (name+date+place similarity)
+
+merge workflow with audit trail (who/when/what merged)
+
+Analytics UI:
+
+counts of missing/ambiguous dates
+
+top unstandardized places
+
+duplicate candidates
+
+“unknown parents” / broken relationships
+
+Exit criteria: cleanup produces measurable quality improvements without corrupting history (audit trail + undo).
+
+Phase 4 — “Media handling v2” (lightweight, practical, referenceable)
+
+Goal: easy upload, automatic thumbnails, and traceable DB linking.
+
+Media ingestion:
+
+store original file + generated thumbnail (Pillow baseline) 
+Pillow (PIL Fork)
+
+optional pyvips path for huge photos later 
+GitHub
++1
+
+hash + dedupe detection (avoid storing the same file twice)
+
+Media linking:
+
+attach to person or family
+
+“unassigned media” queue with tags (so analytics can surface it)
+
+Media analytics:
+
+orphaned files
+
+people with no photos
+
+largest files / missing thumbnails
+
+Exit criteria: uploading a large batch stays fast; DB always knows “what is this media tied to?”
+
+Phase 5 — “Productization” (demo-ready, shareable, boring-to-run)
+
+Goal: make it something you can hand to someone and it just works.
+
+One-command startup remains (PowerShell)
+
+Backups + restore + export bundles
+
+Logging + “diagnostics” page
+
+Optional packaging: PyInstaller for a single EXE distribution 
+PyInstaller
++1
+
+CI: unit tests + ruff (dev only) 
+GitHub
++1
+
+Optional E2E smoke tests with Playwright later (dev only) 
+Playwright
++1
+
+Exit criteria: fresh Windows machine can run it with minimal steps and no weird build failures.
+
+Immediate next steps (the next “issue stack” to open)
+
+Add SQLAlchemy + Alembic scaffold; migration produces the empty DB. 
+SQLAlchemy
++1
+
+Expand schema for places/media/quality flags; keep raw/original GEDCOM text fields.
+
+Refactor GEDCOM import into “stages”: ingest → normalize → flag issues.
+
+Introduce Cytoscape tree UI behind a feature flag, fed by a Graph API endpoint. 
+js.cytoscape.org
++1
+
+Add the first Analytics dashboard: missing dates, ambiguous parses, top messy places. 
+dateutil
++1
+
+If you want, I’ll turn this into a clean docs/ROADMAP.md plus a GitHub Issues checklist (titles + acceptance criteria) so you can start executing Phase 1 immediately.
