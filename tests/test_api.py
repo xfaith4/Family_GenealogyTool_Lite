@@ -168,5 +168,51 @@ class TestApi(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn(b'Family Genealogy Tool', r.data)
 
+    def test_graph_endpoint(self):
+        # Import sample GEDCOM
+        r = self.client.post("/api/import/gedcom", json={"gedcom": SAMPLE_GED})
+        self.assertEqual(r.status_code, 200)
+        
+        # Find John Smith
+        r = self.client.get("/api/people?q=John")
+        people = r.get_json()
+        john = next((p for p in people if p["given"] == "John"), None)
+        self.assertIsNotNone(john, "John Smith should exist in imported GEDCOM")
+        
+        # Get graph with depth 2
+        r = self.client.get(f"/api/graph?rootPersonId={john['id']}&depth=2")
+        self.assertEqual(r.status_code, 200)
+        
+        graph = r.get_json()
+        self.assertIn("nodes", graph)
+        self.assertIn("edges", graph)
+        self.assertEqual(graph["rootPersonId"], john["id"])
+        self.assertEqual(graph["depth"], 2)
+        
+        # Check we have person nodes
+        person_nodes = [n for n in graph["nodes"] if n["type"] == "person"]
+        self.assertGreater(len(person_nodes), 0)
+        
+        # Check person node structure
+        john_node = next((n for n in person_nodes if n["data"]["id"] == john["id"]), None)
+        self.assertIsNotNone(john_node)
+        self.assertIn("quality", john_node["data"])
+        self.assertEqual(john_node["data"]["given"], "John")
+        
+        # Check we have family nodes
+        family_nodes = [n for n in graph["nodes"] if n["type"] == "family"]
+        self.assertGreater(len(family_nodes), 0)
+        
+        # Check edges exist
+        self.assertGreater(len(graph["edges"]), 0)
+        
+    def test_graph_missing_person(self):
+        r = self.client.get("/api/graph?rootPersonId=99999&depth=2")
+        self.assertEqual(r.status_code, 404)
+        
+    def test_graph_missing_root_param(self):
+        r = self.client.get("/api/graph?depth=2")
+        self.assertEqual(r.status_code, 400)
+
 if __name__ == "__main__":
     unittest.main()

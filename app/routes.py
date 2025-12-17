@@ -422,3 +422,178 @@ def upload_media(person_id: int):
 def get_media(file_name: str):
     media_dir = current_app.config["MEDIA_DIR"]
     return send_from_directory(media_dir, file_name, as_attachment=False)
+
+@api_bp.get("/graph")
+def graph():
+    """
+    Graph API endpoint for v2 tree navigation.
+    Returns nodes (persons and families) and edges (relationships).
+    
+    Query params:
+    - rootPersonId: Starting person (required)
+    - depth: How many generations to traverse (default: 2, max: 5)
+    """
+    root_id = request.args.get("rootPersonId", type=int)
+    depth = min(int(request.args.get("depth", 2)), 5)
+    
+    if not root_id:
+        return jsonify({"error": "rootPersonId is required"}), 400
+    
+    db = get_db()
+    root_person = db.execute("SELECT * FROM persons WHERE id = ?", (root_id,)).fetchone()
+    if not root_person:
+        return jsonify({"error": "Person not found"}), 404
+    
+    # Collect all person IDs to include
+    person_ids = {root_id}
+    to_explore = [(root_id, 0)]
+    explored = set()
+    
+    while to_explore:
+        person_id, current_depth = to_explore.pop(0)
+        if person_id in explored or current_depth >= depth:
+            continue
+        explored.add(person_id)
+        
+        # Get parents
+        parents = db.execute(
+            """
+            SELECT parent_person_id FROM relationships 
+            WHERE child_person_id = ?
+            """,
+            (person_id,)
+        ).fetchall()
+        for p in parents:
+            pid = p["parent_person_id"]
+            person_ids.add(pid)
+            to_explore.append((pid, current_depth + 1))
+        
+        # Get children
+        children = db.execute(
+            """
+            SELECT child_person_id FROM relationships 
+            WHERE parent_person_id = ?
+            """,
+            (person_id,)
+        ).fetchall()
+        for c in children:
+            cid = c["child_person_id"]
+            person_ids.add(cid)
+            to_explore.append((cid, current_depth + 1))
+    
+    # Fetch all persons in the graph
+    person_nodes = []
+    for pid in person_ids:
+        p = db.execute("SELECT * FROM persons WHERE id = ?", (pid,)).fetchone()
+        if p:
+            # Calculate quality flag (how complete is the data)
+            has_birth = bool((p["birth_date"] or "").strip() or (p["birth_place"] or "").strip())
+            has_death = bool((p["death_date"] or "").strip() or (p["death_place"] or "").strip())
+            has_name = bool((p["given"] or "").strip() or (p["surname"] or "").strip())
+            quality = "high" if (has_name and has_birth) else ("medium" if has_name else "low")
+            
+            person_nodes.append({
+                "id": f"person_{p['id']}",
+                "type": "person",
+                "data": {
+                    "id": p["id"],
+                    "xref": p["xref"],
+                    "given": p["given"],
+                    "surname": p["surname"],
+                    "sex": p["sex"],
+                    "birth_date": p["birth_date"],
+                    "birth_place": p["birth_place"],
+                    "death_date": p["death_date"],
+                    "death_place": p["death_place"],
+                    "quality": quality,
+                }
+            })
+    
+    # Fetch all families involving these persons
+    family_nodes = []
+    family_ids_seen = set()
+    
+    if person_ids:
+        placeholders = ",".join("?" * len(person_ids))
+        families = db.execute(
+            f"""
+            SELECT DISTINCT f.* FROM families f
+            WHERE f.husband_person_id IN ({placeholders})
+               OR f.wife_person_id IN ({placeholders})
+            """,
+            list(person_ids) + list(person_ids)
+        ).fetchall()
+    else:
+        families = []
+    
+    for f in families:
+        fid = f["id"]
+        if fid in family_ids_seen:
+            continue
+        family_ids_seen.add(fid)
+        
+        # Get children of this family
+        children = db.execute(
+            "SELECT child_person_id FROM family_children WHERE family_id = ?",
+            (fid,)
+        ).fetchall()
+        child_ids = [c["child_person_id"] for c in children]
+        
+        family_nodes.append({
+            "id": f"family_{fid}",
+            "type": "family",
+            "data": {
+                "id": fid,
+                "xref": f["xref"],
+                "husband_id": f["husband_person_id"],
+                "wife_id": f["wife_person_id"],
+                "marriage_date": f["marriage_date"],
+                "marriage_place": f["marriage_place"],
+                "children": child_ids,
+            }
+        })
+    
+    # Build edges
+    edges = []
+    
+    # Spouse edges: person -> family
+    for f in families:
+        fid = f["id"]
+        if f["husband_person_id"] and f["husband_person_id"] in person_ids:
+            edges.append({
+                "id": f"spouse_h_{fid}",
+                "source": f"person_{f['husband_person_id']}",
+                "target": f"family_{fid}",
+                "type": "spouse"
+            })
+        if f["wife_person_id"] and f["wife_person_id"] in person_ids:
+            edges.append({
+                "id": f"spouse_w_{fid}",
+                "source": f"person_{f['wife_person_id']}",
+                "target": f"family_{fid}",
+                "type": "spouse"
+            })
+    
+    # Child edges: family -> person
+    for f in families:
+        fid = f["id"]
+        children = db.execute(
+            "SELECT child_person_id FROM family_children WHERE family_id = ?",
+            (fid,)
+        ).fetchall()
+        for idx, c in enumerate(children):
+            cid = c["child_person_id"]
+            if cid in person_ids:
+                edges.append({
+                    "id": f"child_{fid}_{cid}",
+                    "source": f"family_{fid}",
+                    "target": f"person_{cid}",
+                    "type": "child"
+                })
+    
+    return jsonify({
+        "nodes": person_nodes + family_nodes,
+        "edges": edges,
+        "rootPersonId": root_id,
+        "depth": depth,
+    })
