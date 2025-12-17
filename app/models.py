@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Table, Column, Index, Enum as SQLEnum
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Table, Column, Index, Enum as SQLEnum, Float
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
 
@@ -91,7 +91,7 @@ class Event(Base):
     __tablename__ = 'events'
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    event_type: Mapped[str] = mapped_column(SQLEnum(EventType), nullable=False)
+    event_type: Mapped[EventType] = mapped_column(SQLEnum(EventType), nullable=False)
     person_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('persons.id', ondelete='CASCADE'), nullable=True)
     family_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('families.id', ondelete='CASCADE'), nullable=True)
     

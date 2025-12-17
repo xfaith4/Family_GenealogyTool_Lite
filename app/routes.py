@@ -311,21 +311,29 @@ def import_gedcom():
         
         for child_id in kids:
             if fam.husband_person_id:
-                session.execute(
-                    relationships.insert().values(
-                        parent_person_id=fam.husband_person_id,
-                        child_person_id=child_id,
-                        rel_type='parent'
-                    ).prefix_with('OR IGNORE')
-                )
+                try:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=fam.husband_person_id,
+                            child_person_id=child_id,
+                            rel_type='parent'
+                        )
+                    )
+                except Exception:
+                    # Relationship already exists, ignore
+                    pass
             if fam.wife_person_id:
-                session.execute(
-                    relationships.insert().values(
-                        parent_person_id=fam.wife_person_id,
-                        child_person_id=child_id,
-                        rel_type='parent'
-                    ).prefix_with('OR IGNORE')
-                )
+                try:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=fam.wife_person_id,
+                            child_person_id=child_id,
+                            rel_type='parent'
+                        )
+                    )
+                except Exception:
+                    # Relationship already exists, ignore
+                    pass
 
     session.commit()
     return jsonify({"imported": to_summary(indis, fams)})
