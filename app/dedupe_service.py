@@ -3,11 +3,22 @@ Person deduplication service.
 Identifies potential duplicate person records based on name and date similarity.
 """
 from __future__ import annotations
-from typing import List, Dict
+from typing import List, Dict, Optional
 from rapidfuzz import fuzz
 import sqlite3
+import re
 
-def generate_duplicate_candidates(db: sqlite3.Connection, threshold: float = 0.75) -> int:
+# Similarity score weights for duplicate detection
+WEIGHT_NAME = 0.7
+WEIGHT_DATE = 0.2
+WEIGHT_PLACE = 0.1
+WEIGHT_GIVEN = 0.4
+WEIGHT_SURNAME = 0.6
+
+# Threshold for duplicate candidate detection (0.0-1.0)
+DEFAULT_DUPLICATE_THRESHOLD = 0.75
+
+def generate_duplicate_candidates(db: sqlite3.Connection, threshold: float = DEFAULT_DUPLICATE_THRESHOLD) -> int:
     """
     Generate duplicate person candidate suggestions.
     
@@ -92,8 +103,20 @@ def calculate_person_similarity(p1: tuple, p2: tuple) -> float:
     given_score = fuzz.ratio(given1, given2) / 100.0 if given1 and given2 else 0.0
     surname_score = fuzz.ratio(surname1, surname2) / 100.0 if surname1 and surname2 else 0.0
     
-    # Average name score (surname weighted more)
-    name_score = (given_score * 0.4 + surname_score * 0.6) if surname1 and surname2 else given_score
+    # Calculate weighted name score based on available fields
+    if surname1 and surname2:
+        # Both have surnames: use weighted average
+        if given1 and given2:
+            name_score = given_score * WEIGHT_GIVEN + surname_score * WEIGHT_SURNAME
+        else:
+            # Only surnames available
+            name_score = surname_score
+    elif given1 and given2:
+        # Only given names available
+        name_score = given_score
+    else:
+        # Mixed case: one has surname, other doesn't - penalize
+        name_score = max(given_score, surname_score) * 0.5
     
     # Birth date similarity
     date_score = 0.0
@@ -117,19 +140,21 @@ def calculate_person_similarity(p1: tuple, p2: tuple) -> float:
         place_score = fuzz.ratio(birth_place1, birth_place2) / 100.0
     
     # Weighted average: name is most important
-    # Name: 70%, Date: 20%, Place: 10%
     if birth_date1 and birth_date2 and birth_place1 and birth_place2:
-        return name_score * 0.7 + date_score * 0.2 + place_score * 0.1
+        return name_score * WEIGHT_NAME + date_score * WEIGHT_DATE + place_score * WEIGHT_PLACE
     elif birth_date1 and birth_date2:
-        return name_score * 0.8 + date_score * 0.2
+        # Normalize weights when place is missing
+        total_weight = WEIGHT_NAME + WEIGHT_DATE
+        return name_score * (WEIGHT_NAME / total_weight) + date_score * (WEIGHT_DATE / total_weight)
     elif birth_place1 and birth_place2:
-        return name_score * 0.9 + place_score * 0.1
+        # Normalize weights when date is missing
+        total_weight = WEIGHT_NAME + WEIGHT_PLACE
+        return name_score * (WEIGHT_NAME / total_weight) + place_score * (WEIGHT_PLACE / total_weight)
     else:
         return name_score
 
 def extract_year(date_str: str) -> Optional[str]:
     """Extract year from date string."""
-    import re
     # Look for 4-digit year
     m = re.search(r'\b(\d{4})\b', date_str)
     return m.group(1) if m else None

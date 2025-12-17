@@ -128,13 +128,25 @@ def update_person(person_id: int):
     if not existing:
         return jsonify({"error": "Not found"}), 404
 
+    # Parse dates if they were updated
+    birth_canonical, birth_conf = parse_date(updates["birth_date"])
+    death_canonical, death_conf = parse_date(updates["death_date"])
+
     db.execute(
         """
         UPDATE persons
-        SET given=?, surname=?, sex=?, birth_date=?, birth_place=?, death_date=?, death_place=?, updated_at=datetime('now')
+        SET given=?, surname=?, sex=?, 
+            birth_date=?, birth_date_canonical=?, birth_date_confidence=?,
+            birth_place=?, 
+            death_date=?, death_date_canonical=?, death_date_confidence=?,
+            death_place=?, updated_at=datetime('now')
         WHERE id=?
         """,
-        (updates["given"], updates["surname"], updates["sex"], updates["birth_date"], updates["birth_place"], updates["death_date"], updates["death_place"], person_id),
+        (updates["given"], updates["surname"], updates["sex"], 
+         updates["birth_date"], birth_canonical, birth_conf,
+         updates["birth_place"], 
+         updates["death_date"], death_canonical, death_conf,
+         updates["death_place"], person_id),
     )
     db.commit()
     row = db.execute("SELECT * FROM persons WHERE id = ?", (person_id,)).fetchone()
@@ -427,7 +439,11 @@ def analytics_summary():
 @api_bp.get("/analytics/dates/missing")
 def analytics_missing_dates():
     db = get_db()
-    limit = int(request.args.get("limit", 100))
+    try:
+        limit = int(request.args.get("limit", 100))
+        limit = min(max(limit, 1), 1000)  # Clamp between 1 and 1000
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid limit parameter"}), 400
     
     rows = db.execute(
         """
@@ -454,7 +470,11 @@ def analytics_missing_dates():
 @api_bp.get("/analytics/dates/ambiguous")
 def analytics_ambiguous_dates():
     db = get_db()
-    limit = int(request.args.get("limit", 100))
+    try:
+        limit = int(request.args.get("limit", 100))
+        limit = min(max(limit, 1), 1000)  # Clamp between 1 and 1000
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid limit parameter"}), 400
     
     rows = db.execute(
         """
@@ -487,7 +507,11 @@ def analytics_ambiguous_dates():
 @api_bp.get("/analytics/places/unstandardized")
 def analytics_unstandardized_places():
     db = get_db()
-    limit = int(request.args.get("limit", 100))
+    try:
+        limit = int(request.args.get("limit", 100))
+        limit = min(max(limit, 1), 1000)  # Clamp between 1 and 1000
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid limit parameter"}), 400
     variants = get_unstandardized_places(db, limit)
     return jsonify(variants)
 
@@ -498,6 +522,12 @@ def analytics_approve_place():
     
     if not variant_id:
         return jsonify({"error": "variant_id is required"}), 400
+    
+    # Validate variant_id is an integer
+    try:
+        variant_id = int(variant_id)
+    except (ValueError, TypeError):
+        return jsonify({"error": "variant_id must be an integer"}), 400
     
     db = get_db()
     success = approve_place_variant(db, variant_id)
@@ -510,7 +540,11 @@ def analytics_approve_place():
 @api_bp.get("/analytics/duplicates")
 def analytics_duplicates():
     db = get_db()
-    limit = int(request.args.get("limit", 100))
+    try:
+        limit = int(request.args.get("limit", 100))
+        limit = min(max(limit, 1), 1000)  # Clamp between 1 and 1000
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid limit parameter"}), 400
     candidates = get_duplicate_candidates(db, limit)
     return jsonify(candidates)
 
@@ -522,6 +556,12 @@ def analytics_review_duplicate():
     
     if not candidate_id or not action:
         return jsonify({"error": "candidate_id and action are required"}), 400
+    
+    # Validate candidate_id is an integer
+    try:
+        candidate_id = int(candidate_id)
+    except (ValueError, TypeError):
+        return jsonify({"error": "candidate_id must be an integer"}), 400
     
     if action not in ['ignore', 'merge']:
         return jsonify({"error": "action must be 'ignore' or 'merge'"}), 400

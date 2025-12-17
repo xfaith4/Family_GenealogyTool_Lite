@@ -3,11 +3,14 @@ Place normalization service.
 Provides fuzzy matching for place names to standardize location data.
 """
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict
 from rapidfuzz import fuzz
 import sqlite3
 
-def generate_place_suggestions(db: sqlite3.Connection, threshold: int = 80) -> int:
+# Default similarity threshold for fuzzy matching (0-100)
+DEFAULT_SIMILARITY_THRESHOLD = 80
+
+def generate_place_suggestions(db: sqlite3.Connection, threshold: int = DEFAULT_SIMILARITY_THRESHOLD) -> int:
     """
     Generate place variant suggestions by fuzzy-matching unstandardized places.
     
@@ -57,7 +60,6 @@ def generate_place_suggestions(db: sqlite3.Connection, threshold: int = 80) -> i
             # Already canonical, skip
             continue
         
-        best_match = None
         best_score = 0
         best_canonical_id = None
         
@@ -65,7 +67,6 @@ def generate_place_suggestions(db: sqlite3.Connection, threshold: int = 80) -> i
             score = fuzz.ratio(place.lower(), canonical_name.lower())
             if score > best_score:
                 best_score = score
-                best_match = canonical_name
                 best_canonical_id = canonical_id
         
         # If similarity is above threshold, suggest it
@@ -87,9 +88,15 @@ def generate_place_suggestions(db: sqlite3.Connection, threshold: int = 80) -> i
                 suggestions_added += 1
         elif best_score < threshold:
             # No good match, create new canonical place
+            # Use INSERT OR IGNORE to handle race conditions
             cursor = db.execute("INSERT OR IGNORE INTO places (canonical_name) VALUES (?)", (place,))
             if cursor.rowcount > 0:
                 canonical_places[place] = cursor.lastrowid
+            else:
+                # Place was inserted by another process, fetch it
+                row = db.execute("SELECT id FROM places WHERE canonical_name = ?", (place,)).fetchone()
+                if row:
+                    canonical_places[place] = row[0]
     
     db.commit()
     return suggestions_added
