@@ -33,6 +33,14 @@ class TestApi(unittest.TestCase):
             "DATABASE": self.db_path,
             "MEDIA_DIR": self.media_dir,
         })
+        
+        # Create database tables using SQLAlchemy
+        from app.db import get_engine
+        from app.models import Base
+        with self.app.app_context():
+            engine = get_engine()
+            Base.metadata.create_all(engine)
+        
         self.client = self.app.test_client()
 
     def tearDown(self):
@@ -42,6 +50,65 @@ class TestApi(unittest.TestCase):
         r = self.client.get("/api/health")
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.get_json()["ok"])
+
+    def test_migration_creates_empty_db(self):
+        """Test that migration creates an empty database with all required tables."""
+        from app.db import get_engine
+        from sqlalchemy import inspect
+        
+        with self.app.app_context():
+            engine = get_engine()
+            inspector = inspect(engine)
+            tables = inspector.get_table_names()
+            
+            # Check all required tables exist
+            required_tables = [
+                'persons', 'families', 'events', 'places', 'place_variants',
+                'media_assets', 'media_links', 'notes', 'data_quality_flags',
+                'family_children', 'relationships'
+            ]
+            for table in required_tables:
+                self.assertIn(table, tables, f"Table {table} should exist")
+            
+            # Verify tables are empty
+            from app.db import get_session
+            from app.models import Person, Family
+            session = get_session()
+            self.assertEqual(session.query(Person).count(), 0)
+            self.assertEqual(session.query(Family).count(), 0)
+
+    def test_gedcom_import_populates_expected_rows(self):
+        """Test that GEDCOM import populates expected rows in the database."""
+        r = self.client.post("/api/import/gedcom", json={"gedcom": SAMPLE_GED})
+        self.assertEqual(r.status_code, 200)
+        summary = r.get_json()["imported"]
+        self.assertEqual(summary["people"], 3)
+        self.assertEqual(summary["families"], 1)
+        
+        # Verify data was actually written to database
+        from app.db import get_session
+        from app.models import Person, Family
+        
+        with self.app.app_context():
+            session = get_session()
+            
+            # Check persons count
+            persons = session.query(Person).all()
+            self.assertEqual(len(persons), 3)
+            
+            # Check families count
+            families = session.query(Family).all()
+            self.assertEqual(len(families), 1)
+            
+            # Verify specific person data
+            john = session.query(Person).filter(Person.given == "John", Person.surname == "Smith").first()
+            self.assertIsNotNone(john)
+            self.assertEqual(john.sex, "M")
+            
+            # Verify family structure
+            family = families[0]
+            self.assertIsNotNone(family.husband_person_id)
+            self.assertIsNotNone(family.wife_person_id)
 
     def test_crud_person(self):
         r = self.client.post("/api/people", json={"given":"Ada","surname":"Lovelace","sex":"F"})
@@ -100,6 +167,52 @@ class TestApi(unittest.TestCase):
         r = self.client.get('/')
         self.assertEqual(r.status_code, 200)
         self.assertIn(b'Family Genealogy Tool', r.data)
+
+    def test_graph_endpoint(self):
+        # Import sample GEDCOM
+        r = self.client.post("/api/import/gedcom", json={"gedcom": SAMPLE_GED})
+        self.assertEqual(r.status_code, 200)
+        
+        # Find John Smith
+        r = self.client.get("/api/people?q=John")
+        people = r.get_json()
+        john = next((p for p in people if p["given"] == "John"), None)
+        self.assertIsNotNone(john, "John Smith should exist in imported GEDCOM")
+        
+        # Get graph with depth 2
+        r = self.client.get(f"/api/graph?rootPersonId={john['id']}&depth=2")
+        self.assertEqual(r.status_code, 200)
+        
+        graph = r.get_json()
+        self.assertIn("nodes", graph)
+        self.assertIn("edges", graph)
+        self.assertEqual(graph["rootPersonId"], john["id"])
+        self.assertEqual(graph["depth"], 2)
+        
+        # Check we have person nodes
+        person_nodes = [n for n in graph["nodes"] if n["type"] == "person"]
+        self.assertGreater(len(person_nodes), 0)
+        
+        # Check person node structure
+        john_node = next((n for n in person_nodes if n["data"]["id"] == john["id"]), None)
+        self.assertIsNotNone(john_node)
+        self.assertIn("quality", john_node["data"])
+        self.assertEqual(john_node["data"]["given"], "John")
+        
+        # Check we have family nodes
+        family_nodes = [n for n in graph["nodes"] if n["type"] == "family"]
+        self.assertGreater(len(family_nodes), 0)
+        
+        # Check edges exist
+        self.assertGreater(len(graph["edges"]), 0)
+        
+    def test_graph_missing_person(self):
+        r = self.client.get("/api/graph?rootPersonId=99999&depth=2")
+        self.assertEqual(r.status_code, 404)
+        
+    def test_graph_missing_root_param(self):
+        r = self.client.get("/api/graph?depth=2")
+        self.assertEqual(r.status_code, 400)
 
 if __name__ == "__main__":
     unittest.main()

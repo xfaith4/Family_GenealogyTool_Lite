@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
 from werkzeug.utils import secure_filename
+from sqlalchemy import select, or_
+from datetime import datetime
 import os
 import hashlib
 from pathlib import Path
 
-from .db import get_db
+from .db import get_session
+from .models import Person, Family, Note, MediaAsset, MediaLink, relationships
 from .gedcom import parse_gedcom, to_summary
 from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
 
@@ -22,37 +25,39 @@ def unassigned_media_page():
     return render_template("unassigned.html")
 
 def _row_to_person(row):
+def _person_to_dict(p: Person) -> dict:
     return {
-        "id": row["id"],
-        "xref": row["xref"],
-        "given": row["given"],
-        "surname": row["surname"],
-        "sex": row["sex"],
-        "birth_date": row["birth_date"],
-        "birth_place": row["birth_place"],
-        "death_date": row["death_date"],
-        "death_place": row["death_place"],
+        "id": p.id,
+        "xref": p.xref,
+        "given": p.given,
+        "surname": p.surname,
+        "sex": p.sex,
+        "birth_date": p.birth_date,
+        "birth_place": p.birth_place,
+        "death_date": p.death_date,
+        "death_place": p.death_place,
     }
 
 @api_bp.get("/health")
 def health():
-    db = get_db()
-    db.execute("SELECT 1;").fetchone()
+    session = get_session()
+    session.execute(select(1))
     return jsonify({"ok": True})
 
 @api_bp.get("/people")
 def list_people():
     q = (request.args.get("q") or "").strip()
-    db = get_db()
+    session = get_session()
+    
     if q:
-        like = f"%{q}%"
-        rows = db.execute(
-            "SELECT * FROM persons WHERE given LIKE ? OR surname LIKE ? ORDER BY surname, given LIMIT 200",
-            (like, like),
-        ).fetchall()
+        stmt = select(Person).where(
+            or_(Person.given.like(f"%{q}%"), Person.surname.like(f"%{q}%"))
+        ).order_by(Person.surname, Person.given).limit(200)
     else:
-        rows = db.execute("SELECT * FROM persons ORDER BY surname, given LIMIT 200").fetchall()
-    return jsonify([_row_to_person(r) for r in rows])
+        stmt = select(Person).order_by(Person.surname, Person.given).limit(200)
+    
+    people = session.execute(stmt).scalars().all()
+    return jsonify([_person_to_dict(p) for p in people])
 
 @api_bp.post("/people")
 def create_person():
@@ -68,52 +73,61 @@ def create_person():
     if not given and not surname:
         return jsonify({"error": "Given or surname is required."}), 400
 
-    db = get_db()
-    cur = db.execute(
-        """
-        INSERT INTO persons (xref, given, surname, sex, birth_date, birth_place, death_date, death_place, updated_at)
-        VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-        """,
-        (given, surname, sex, birth_date, birth_place, death_date, death_place),
+    session = get_session()
+    person = Person(
+        given=given or None,
+        surname=surname or None,
+        sex=sex or None,
+        birth_date=birth_date or None,
+        birth_place=birth_place or None,
+        death_date=death_date or None,
+        death_place=death_place or None,
+        updated_at=datetime.utcnow()
     )
-    db.commit()
-    pid = cur.lastrowid
-    row = db.execute("SELECT * FROM persons WHERE id = ?", (pid,)).fetchone()
-    return jsonify(_row_to_person(row)), 201
+    session.add(person)
+    session.commit()
+    session.refresh(person)
+    
+    return jsonify(_person_to_dict(person)), 201
 
 @api_bp.get("/people/<int:person_id>")
 def get_person(person_id: int):
-    db = get_db()
-    row = db.execute("SELECT * FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not row:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
 
-    notes = db.execute("SELECT id, note_text, created_at FROM notes WHERE person_id = ? ORDER BY id DESC", (person_id,)).fetchall()
-    media = db.execute("SELECT id, file_name, original_name, mime_type, size_bytes, created_at FROM media WHERE person_id = ? ORDER BY id DESC", (person_id,)).fetchall()
-    parents = db.execute(
-        """
-        SELECT p.* FROM relationships r
-        JOIN persons p ON p.id = r.parent_person_id
-        WHERE r.child_person_id = ?
-        ORDER BY p.surname, p.given
-        """,
-        (person_id,),
-    ).fetchall()
-    children = db.execute(
-        """
-        SELECT p.* FROM relationships r
-        JOIN persons p ON p.id = r.child_person_id
-        WHERE r.parent_person_id = ?
-        ORDER BY p.surname, p.given
-        """,
-        (person_id,),
-    ).fetchall()
+    # Get parents
+    parents_stmt = select(Person).join(
+        relationships, relationships.c.parent_person_id == Person.id
+    ).where(relationships.c.child_person_id == person_id).order_by(Person.surname, Person.given)
+    parents = session.execute(parents_stmt).scalars().all()
 
-    out = _row_to_person(row)
-    out["notes"] = [{"id": n["id"], "text": n["note_text"], "created_at": n["created_at"]} for n in notes]
-    out["media"] = [{"id": m["id"], "file_name": m["file_name"], "original_name": m["original_name"], "mime_type": m["mime_type"], "size_bytes": m["size_bytes"], "created_at": m["created_at"]} for m in media]
-    out["parents"] = [_row_to_person(p) for p in parents]
-    out["children"] = [_row_to_person(c) for c in children]
+    # Get children
+    children_stmt = select(Person).join(
+        relationships, relationships.c.child_person_id == Person.id
+    ).where(relationships.c.parent_person_id == person_id).order_by(Person.surname, Person.given)
+    children = session.execute(children_stmt).scalars().all()
+
+    out = _person_to_dict(person)
+    out["notes"] = [{"id": n.id, "text": n.note_text, "created_at": n.created_at.isoformat() if n.created_at else None} for n in person.notes]
+    
+    # Get media through MediaLink
+    media_list = []
+    for link in person.media_links:
+        asset = link.media_asset
+        media_list.append({
+            "id": asset.id,
+            "file_name": asset.file_name,
+            "original_name": asset.original_name,
+            "mime_type": asset.mime_type,
+            "size_bytes": asset.size_bytes,
+            "created_at": asset.created_at.isoformat() if asset.created_at else None
+        })
+    
+    out["media"] = media_list
+    out["parents"] = [_person_to_dict(p) for p in parents]
+    out["children"] = [_person_to_dict(c) for c in children]
     return jsonify(out)
 
 @api_bp.put("/people/<int:person_id>")
@@ -122,52 +136,56 @@ def update_person(person_id: int):
     fields = ["given","surname","sex","birth_date","birth_place","death_date","death_place"]
     updates = {k: (data.get(k) or "").strip() for k in fields}
 
-    db = get_db()
-    existing = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not existing:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
 
-    db.execute(
-        """
-        UPDATE persons
-        SET given=?, surname=?, sex=?, birth_date=?, birth_place=?, death_date=?, death_place=?, updated_at=datetime('now')
-        WHERE id=?
-        """,
-        (updates["given"], updates["surname"], updates["sex"], updates["birth_date"], updates["birth_place"], updates["death_date"], updates["death_place"], person_id),
-    )
-    db.commit()
-    row = db.execute("SELECT * FROM persons WHERE id = ?", (person_id,)).fetchone()
-    return jsonify(_row_to_person(row))
+    person.given = updates["given"] or None
+    person.surname = updates["surname"] or None
+    person.sex = updates["sex"] or None
+    person.birth_date = updates["birth_date"] or None
+    person.birth_place = updates["birth_place"] or None
+    person.death_date = updates["death_date"] or None
+    person.death_place = updates["death_place"] or None
+    person.updated_at = datetime.utcnow()
+    
+    session.commit()
+    session.refresh(person)
+    return jsonify(_person_to_dict(person))
 
 @api_bp.delete("/people/<int:person_id>")
 def delete_person(person_id: int):
-    db = get_db()
-    row = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not row:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
-    db.execute("DELETE FROM persons WHERE id = ?", (person_id,))
-    db.commit()
+    
+    session.delete(person)
+    session.commit()
     return jsonify({"deleted": True})
 
 @api_bp.post("/people/<int:person_id>/notes")
 def add_note(person_id: int):
     data = request.get_json(force=True, silent=False)
-    note = (data.get("text") or "").strip()
-    if not note:
+    note_text = (data.get("text") or "").strip()
+    if not note_text:
         return jsonify({"error": "Note text required"}), 400
 
-    db = get_db()
-    exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not exists:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
 
-    cur = db.execute("INSERT INTO notes (person_id, note_text) VALUES (?, ?)", (person_id, note))
-    db.commit()
-    return jsonify({"id": cur.lastrowid}), 201
+    note = Note(person_id=person_id, note_text=note_text)
+    session.add(note)
+    session.commit()
+    session.refresh(note)
+    return jsonify({"id": note.id}), 201
 
 @api_bp.post("/import/gedcom")
 def import_gedcom():
-    db = get_db()
+    session = get_session()
 
     if request.content_type and request.content_type.startswith("multipart/form-data"):
         f = request.files.get("file")
@@ -183,62 +201,97 @@ def import_gedcom():
     indis, fams = parse_gedcom(text)
 
     def upsert_person(i):
-        row = db.execute("SELECT id FROM persons WHERE xref = ?", (i.xref,)).fetchone()
-        if row:
-            db.execute(
-                """
-                UPDATE persons SET given=?, surname=?, sex=?, birth_date=?, birth_place=?, death_date=?, death_place=?, updated_at=datetime('now')
-                WHERE id=?
-                """,
-                (i.given, i.surname, i.sex, i.birth_date, i.birth_place, i.death_date, i.death_place, row["id"]),
+        stmt = select(Person).where(Person.xref == i.xref)
+        person = session.execute(stmt).scalar_one_or_none()
+        
+        if person:
+            person.given = i.given or None
+            person.surname = i.surname or None
+            person.sex = i.sex or None
+            person.birth_date = i.birth_date or None
+            person.birth_place = i.birth_place or None
+            person.death_date = i.death_date or None
+            person.death_place = i.death_place or None
+            person.updated_at = datetime.utcnow()
+        else:
+            person = Person(
+                xref=i.xref,
+                given=i.given or None,
+                surname=i.surname or None,
+                sex=i.sex or None,
+                birth_date=i.birth_date or None,
+                birth_place=i.birth_place or None,
+                death_date=i.death_date or None,
+                death_place=i.death_place or None,
+                updated_at=datetime.utcnow()
             )
-            return row["id"]
-        cur = db.execute(
-            """
-            INSERT INTO persons (xref, given, surname, sex, birth_date, birth_place, death_date, death_place, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-            """,
-            (i.xref, i.given, i.surname, i.sex, i.birth_date, i.birth_place, i.death_date, i.death_place),
-        )
-        return cur.lastrowid
+            session.add(person)
+        session.flush()
+        return person.id
 
     xref_to_id = {}
     for i in indis.values():
         xref_to_id[i.xref] = upsert_person(i)
 
     def upsert_family(f):
-        row = db.execute("SELECT id FROM families WHERE xref = ?", (f.xref,)).fetchone()
+        stmt = select(Family).where(Family.xref == f.xref)
+        family = session.execute(stmt).scalar_one_or_none()
+        
         husb_id = xref_to_id.get(f.husb) if f.husb else None
         wife_id = xref_to_id.get(f.wife) if f.wife else None
-        if row:
-            db.execute(
-                """
-                UPDATE families SET husband_person_id=?, wife_person_id=?, marriage_date=?, marriage_place=?, updated_at=datetime('now')
-                WHERE id=?
-                """,
-                (husb_id, wife_id, f.marriage_date, f.marriage_place, row["id"]),
-            )
-            fam_id = row["id"]
+        
+        if family:
+            family.husband_person_id = husb_id
+            family.wife_person_id = wife_id
+            family.marriage_date = f.marriage_date or None
+            family.marriage_place = f.marriage_place or None
+            family.updated_at = datetime.utcnow()
         else:
-            cur = db.execute(
-                """
-                INSERT INTO families (xref, husband_person_id, wife_person_id, marriage_date, marriage_place, updated_at)
-                VALUES (?, ?, ?, ?, ?, datetime('now'))
-                """,
-                (f.xref, husb_id, wife_id, f.marriage_date, f.marriage_place),
+            family = Family(
+                xref=f.xref,
+                husband_person_id=husb_id,
+                wife_person_id=wife_id,
+                marriage_date=f.marriage_date or None,
+                marriage_place=f.marriage_place or None,
+                updated_at=datetime.utcnow()
             )
-            fam_id = cur.lastrowid
-
+            session.add(family)
+        session.flush()
+        
+        # Clear existing children and re-add
+        session.execute(
+            relationships.delete().where(
+                (relationships.c.parent_person_id == husb_id) | 
+                (relationships.c.parent_person_id == wife_id)
+            )
+        )
+        
         for cxref in f.chil:
             cid = xref_to_id.get(cxref)
             if cid:
-                db.execute("INSERT OR IGNORE INTO family_children (family_id, child_person_id) VALUES (?, ?)", (fam_id, cid))
+                # Add to family_children (we need to import this)
+                from .models import family_children
+                # Check if already exists
+                existing = session.execute(
+                    select(family_children).where(
+                        (family_children.c.family_id == family.id) &
+                        (family_children.c.child_person_id == cid)
+                    )
+                ).first()
+                if not existing:
+                    session.execute(
+                        family_children.insert().values(
+                            family_id=family.id,
+                            child_person_id=cid
+                        )
+                    )
 
-        for n in f.notes:
-            if n.strip():
-                db.execute("INSERT INTO notes (family_id, note_text) VALUES (?, ?)", (fam_id, n.strip()))
+        for n_text in f.notes:
+            if n_text.strip():
+                note = Note(family_id=family.id, note_text=n_text.strip())
+                session.add(note)
 
-        return fam_id
+        return family.id
 
     for f in fams.values():
         upsert_family(f)
@@ -246,61 +299,75 @@ def import_gedcom():
     for i in indis.values():
         pid = xref_to_id.get(i.xref)
         if pid:
-            for n in i.notes:
-                if n.strip():
-                    db.execute("INSERT INTO notes (person_id, note_text) VALUES (?, ?)", (pid, n.strip()))
+            for n_text in i.notes:
+                if n_text.strip():
+                    note = Note(person_id=pid, note_text=n_text.strip())
+                    session.add(note)
 
     # Rebuild relationships
-    db.execute("DELETE FROM relationships;")
-    fam_rows = db.execute("SELECT id, husband_person_id, wife_person_id FROM families").fetchall()
-    for fr in fam_rows:
-        kids = db.execute("SELECT child_person_id FROM family_children WHERE family_id = ?", (fr["id"],)).fetchall()
-        for k in kids:
-            child_id = k["child_person_id"]
-            if fr["husband_person_id"]:
-                db.execute(
-                    "INSERT OR IGNORE INTO relationships (parent_person_id, child_person_id, rel_type) VALUES (?, ?, 'parent')",
-                    (fr["husband_person_id"], child_id),
-                )
-            if fr["wife_person_id"]:
-                db.execute(
-                    "INSERT OR IGNORE INTO relationships (parent_person_id, child_person_id, rel_type) VALUES (?, ?, 'parent')",
-                    (fr["wife_person_id"], child_id),
-                )
+    session.execute(relationships.delete())
+    families = session.execute(select(Family)).scalars().all()
+    
+    for fam in families:
+        # Get children of this family
+        from .models import family_children
+        kids_stmt = select(family_children.c.child_person_id).where(
+            family_children.c.family_id == fam.id
+        )
+        kids = session.execute(kids_stmt).scalars().all()
+        
+        for child_id in kids:
+            if fam.husband_person_id:
+                try:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=fam.husband_person_id,
+                            child_person_id=child_id,
+                            rel_type='parent'
+                        )
+                    )
+                except Exception:
+                    # Relationship already exists, ignore
+                    pass
+            if fam.wife_person_id:
+                try:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=fam.wife_person_id,
+                            child_person_id=child_id,
+                            rel_type='parent'
+                        )
+                    )
+                except Exception:
+                    # Relationship already exists, ignore
+                    pass
 
-    db.commit()
+    session.commit()
     return jsonify({"imported": to_summary(indis, fams)})
 
 @api_bp.get("/tree/<int:person_id>")
 def tree(person_id: int):
-    db = get_db()
-    root = db.execute("SELECT * FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not root:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
 
-    parents = db.execute(
-        """
-        SELECT p.* FROM relationships r
-        JOIN persons p ON p.id = r.parent_person_id
-        WHERE r.child_person_id = ?
-        ORDER BY p.surname, p.given
-        """,
-        (person_id,),
-    ).fetchall()
-    children = db.execute(
-        """
-        SELECT p.* FROM relationships r
-        JOIN persons p ON p.id = r.child_person_id
-        WHERE r.parent_person_id = ?
-        ORDER BY p.surname, p.given
-        """,
-        (person_id,),
-    ).fetchall()
+    # Get parents
+    parents_stmt = select(Person).join(
+        relationships, relationships.c.parent_person_id == Person.id
+    ).where(relationships.c.child_person_id == person_id).order_by(Person.surname, Person.given)
+    parents = session.execute(parents_stmt).scalars().all()
+
+    # Get children
+    children_stmt = select(Person).join(
+        relationships, relationships.c.child_person_id == Person.id
+    ).where(relationships.c.parent_person_id == person_id).order_by(Person.surname, Person.given)
+    children = session.execute(children_stmt).scalars().all()
 
     return jsonify({
-        "root": _row_to_person(root),
-        "parents": [_row_to_person(p) for p in parents],
-        "children": [_row_to_person(c) for c in children],
+        "root": _person_to_dict(person),
+        "parents": [_person_to_dict(p) for p in parents],
+        "children": [_person_to_dict(c) for c in children],
     })
 
 @api_bp.post("/people/<int:person_id>/media")
@@ -309,9 +376,9 @@ def upload_media(person_id: int):
     if not f:
         return jsonify({"error": "file is required"}), 400
 
-    db = get_db()
-    exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-    if not exists:
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
         return jsonify({"error": "Not found"}), 404
 
     original_name = f.filename or "upload"
@@ -333,14 +400,28 @@ def upload_media(person_id: int):
     mime = f.mimetype or "application/octet-stream"
     size_bytes = len(content)
 
-    db.execute(
-        """
-        INSERT INTO media (person_id, file_name, original_name, mime_type, sha256, size_bytes)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (person_id, stored_name, original_name, mime, sha, size_bytes),
+    # Check if media asset already exists
+    stmt = select(MediaAsset).where(MediaAsset.sha256 == sha)
+    media_asset = session.execute(stmt).scalar_one_or_none()
+    
+    if not media_asset:
+        media_asset = MediaAsset(
+            file_name=stored_name,
+            original_name=original_name,
+            mime_type=mime,
+            sha256=sha,
+            size_bytes=size_bytes
+        )
+        session.add(media_asset)
+        session.flush()
+    
+    # Create media link
+    media_link = MediaLink(
+        media_asset_id=media_asset.id,
+        person_id=person_id
     )
-    db.commit()
+    session.add(media_link)
+    session.commit()
 
     return jsonify({"stored": stored_name, "sha256": sha}), 201
 
@@ -644,3 +725,177 @@ def get_person_media_v2(person_id: int):
         "thumb_height": r["thumb_height"],
         "created_at": r["created_at"],
     } for r in rows])
+@api_bp.get("/graph")
+def graph():
+    """
+    Graph API endpoint for v2 tree navigation.
+    Returns nodes (persons and families) and edges (relationships).
+    
+    Query params:
+    - rootPersonId: Starting person (required)
+    - depth: How many generations to traverse (default: 2, max: 5)
+    """
+    root_id = request.args.get("rootPersonId", type=int)
+    depth = min(int(request.args.get("depth", 2)), 5)
+    
+    if not root_id:
+        return jsonify({"error": "rootPersonId is required"}), 400
+    
+    db = get_db()
+    root_person = db.execute("SELECT * FROM persons WHERE id = ?", (root_id,)).fetchone()
+    if not root_person:
+        return jsonify({"error": "Person not found"}), 404
+    
+    # Collect all person IDs to include
+    person_ids = {root_id}
+    to_explore = [(root_id, 0)]
+    explored = set()
+    
+    while to_explore:
+        person_id, current_depth = to_explore.pop(0)
+        if person_id in explored or current_depth >= depth:
+            continue
+        explored.add(person_id)
+        
+        # Get parents
+        parents = db.execute(
+            """
+            SELECT parent_person_id FROM relationships 
+            WHERE child_person_id = ?
+            """,
+            (person_id,)
+        ).fetchall()
+        for p in parents:
+            pid = p["parent_person_id"]
+            person_ids.add(pid)
+            to_explore.append((pid, current_depth + 1))
+        
+        # Get children
+        children = db.execute(
+            """
+            SELECT child_person_id FROM relationships 
+            WHERE parent_person_id = ?
+            """,
+            (person_id,)
+        ).fetchall()
+        for c in children:
+            cid = c["child_person_id"]
+            person_ids.add(cid)
+            to_explore.append((cid, current_depth + 1))
+    
+    # Fetch all persons in the graph
+    person_nodes = []
+    for pid in person_ids:
+        p = db.execute("SELECT * FROM persons WHERE id = ?", (pid,)).fetchone()
+        if p:
+            # Calculate quality flag (how complete is the data)
+            has_birth = bool((p["birth_date"] or "").strip() or (p["birth_place"] or "").strip())
+            has_death = bool((p["death_date"] or "").strip() or (p["death_place"] or "").strip())
+            has_name = bool((p["given"] or "").strip() or (p["surname"] or "").strip())
+            quality = "high" if (has_name and has_birth) else ("medium" if has_name else "low")
+            
+            person_nodes.append({
+                "id": f"person_{p['id']}",
+                "type": "person",
+                "data": {
+                    "id": p["id"],
+                    "xref": p["xref"],
+                    "given": p["given"],
+                    "surname": p["surname"],
+                    "sex": p["sex"],
+                    "birth_date": p["birth_date"],
+                    "birth_place": p["birth_place"],
+                    "death_date": p["death_date"],
+                    "death_place": p["death_place"],
+                    "quality": quality,
+                }
+            })
+    
+    # Fetch all families involving these persons
+    family_nodes = []
+    family_ids_seen = set()
+    
+    if person_ids:
+        placeholders = ",".join("?" * len(person_ids))
+        families = db.execute(
+            f"""
+            SELECT DISTINCT f.* FROM families f
+            WHERE f.husband_person_id IN ({placeholders})
+               OR f.wife_person_id IN ({placeholders})
+            """,
+            list(person_ids) + list(person_ids)
+        ).fetchall()
+    else:
+        families = []
+    
+    for f in families:
+        fid = f["id"]
+        if fid in family_ids_seen:
+            continue
+        family_ids_seen.add(fid)
+        
+        # Get children of this family
+        children = db.execute(
+            "SELECT child_person_id FROM family_children WHERE family_id = ?",
+            (fid,)
+        ).fetchall()
+        child_ids = [c["child_person_id"] for c in children]
+        
+        family_nodes.append({
+            "id": f"family_{fid}",
+            "type": "family",
+            "data": {
+                "id": fid,
+                "xref": f["xref"],
+                "husband_id": f["husband_person_id"],
+                "wife_id": f["wife_person_id"],
+                "marriage_date": f["marriage_date"],
+                "marriage_place": f["marriage_place"],
+                "children": child_ids,
+            }
+        })
+    
+    # Build edges
+    edges = []
+    
+    # Spouse edges: person -> family
+    for f in families:
+        fid = f["id"]
+        if f["husband_person_id"] and f["husband_person_id"] in person_ids:
+            edges.append({
+                "id": f"spouse_h_{fid}",
+                "source": f"person_{f['husband_person_id']}",
+                "target": f"family_{fid}",
+                "type": "spouse"
+            })
+        if f["wife_person_id"] and f["wife_person_id"] in person_ids:
+            edges.append({
+                "id": f"spouse_w_{fid}",
+                "source": f"person_{f['wife_person_id']}",
+                "target": f"family_{fid}",
+                "type": "spouse"
+            })
+    
+    # Child edges: family -> person
+    for f in families:
+        fid = f["id"]
+        children = db.execute(
+            "SELECT child_person_id FROM family_children WHERE family_id = ?",
+            (fid,)
+        ).fetchall()
+        for idx, c in enumerate(children):
+            cid = c["child_person_id"]
+            if cid in person_ids:
+                edges.append({
+                    "id": f"child_{fid}_{cid}",
+                    "source": f"family_{fid}",
+                    "target": f"person_{cid}",
+                    "type": "child"
+                })
+    
+    return jsonify({
+        "nodes": person_nodes + family_nodes,
+        "edges": edges,
+        "rootPersonId": root_id,
+        "depth": depth,
+    })
