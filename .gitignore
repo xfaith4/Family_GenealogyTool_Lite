@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Database
+data/family_tree.sqlite
+data/family_tree.sqlite-shm
+data/family_tree.sqlite-wal
+
+# Media
+data/media/*
+!data/media/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
