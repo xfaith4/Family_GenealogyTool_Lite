@@ -1,3 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+data/
+*.sqlite
+*.db
 # Python
 __pycache__/
 *.py[cod]
@@ -23,6 +31,7 @@ data/media/*
 *.swp
 *.swo
 *~
+.DS_Store
 
 # OS
 .DS_Store
