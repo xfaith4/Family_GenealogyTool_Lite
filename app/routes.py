@@ -4,9 +4,11 @@ from flask import Blueprint, jsonify, request, current_app, send_from_directory,
 from werkzeug.utils import secure_filename
 import os
 import hashlib
+from pathlib import Path
 
 from .db import get_db
 from .gedcom import parse_gedcom, to_summary
+from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 ui_bp = Blueprint("ui", __name__)
@@ -342,3 +344,299 @@ def upload_media(person_id: int):
 def get_media(file_name: str):
     media_dir = current_app.config["MEDIA_DIR"]
     return send_from_directory(media_dir, file_name, as_attachment=False)
+
+# New Media v2 endpoints
+
+@api_bp.post("/media/upload")
+def upload_media_v2():
+    """Upload media file and optionally link to person or family."""
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file is required"}), 400
+
+    person_id = request.form.get("person_id")
+    family_id = request.form.get("family_id")
+
+    db = get_db()
+
+    # Validate references if provided
+    if person_id:
+        exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
+        if not exists:
+            return jsonify({"error": "Person not found"}), 404
+
+    if family_id:
+        exists = db.execute("SELECT id FROM families WHERE id = ?", (family_id,)).fetchone()
+        if not exists:
+            return jsonify({"error": "Family not found"}), 404
+
+    original_name = f.filename or "upload"
+    mime = f.mimetype or "application/octet-stream"
+    content = f.read()
+    sha = compute_sha256(content)
+    size_bytes = len(content)
+
+    media_dir = current_app.config["MEDIA_DIR"]
+    os.makedirs(media_dir, exist_ok=True)
+
+    # Check if asset already exists
+    existing = db.execute("SELECT id, path FROM media_assets WHERE sha256 = ?", (sha,)).fetchone()
+    
+    if existing:
+        asset_id = existing["id"]
+        file_path = existing["path"]
+    else:
+        # Create new asset
+        filename = safe_filename(original_name, sha, mime)
+        file_path = os.path.join(media_dir, filename)
+        
+        with open(file_path, "wb") as out:
+            out.write(content)
+
+        # Generate thumbnail for images
+        thumbnail_path = None
+        thumb_width = None
+        thumb_height = None
+        
+        if is_image(mime):
+            thumb_result = create_thumbnail(file_path, media_dir, sha)
+            if thumb_result:
+                thumbnail_path, thumb_width, thumb_height = thumb_result
+                # Store relative path
+                thumbnail_path = os.path.basename(thumbnail_path)
+
+        cur = db.execute(
+            """
+            INSERT INTO media_assets (path, sha256, original_filename, mime_type, size_bytes, thumbnail_path, thumb_width, thumb_height)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (filename, sha, original_name, mime, size_bytes, thumbnail_path, thumb_width, thumb_height),
+        )
+        asset_id = cur.lastrowid
+
+    # Create link if person_id or family_id provided
+    link_id = None
+    if person_id or family_id:
+        cur = db.execute(
+            """
+            INSERT INTO media_links (asset_id, person_id, family_id)
+            VALUES (?, ?, ?)
+            """,
+            (asset_id, person_id, family_id),
+        )
+        link_id = cur.lastrowid
+
+    db.commit()
+
+    asset = db.execute("SELECT * FROM media_assets WHERE id = ?", (asset_id,)).fetchone()
+    return jsonify({
+        "asset_id": asset_id,
+        "link_id": link_id,
+        "sha256": sha,
+        "path": asset["path"],
+        "thumbnail_path": asset["thumbnail_path"],
+        "original_filename": original_name,
+    }), 201
+
+@api_bp.get("/media/assets")
+def list_media_assets():
+    """List all media assets."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT 
+            ma.*,
+            COUNT(DISTINCT ml.id) as link_count
+        FROM media_assets ma
+        LEFT JOIN media_links ml ON ml.asset_id = ma.id
+        GROUP BY ma.id
+        ORDER BY ma.created_at DESC
+        LIMIT 200
+        """
+    ).fetchall()
+    
+    return jsonify([{
+        "id": r["id"],
+        "path": r["path"],
+        "sha256": r["sha256"],
+        "original_filename": r["original_filename"],
+        "mime_type": r["mime_type"],
+        "size_bytes": r["size_bytes"],
+        "thumbnail_path": r["thumbnail_path"],
+        "thumb_width": r["thumb_width"],
+        "thumb_height": r["thumb_height"],
+        "created_at": r["created_at"],
+        "link_count": r["link_count"],
+    } for r in rows])
+
+@api_bp.get("/media/unassigned")
+def list_unassigned_media():
+    """List media assets without any links."""
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT ma.*
+        FROM media_assets ma
+        LEFT JOIN media_links ml ON ml.asset_id = ma.id
+        WHERE ml.id IS NULL
+        ORDER BY ma.created_at DESC
+        LIMIT 200
+        """
+    ).fetchall()
+    
+    return jsonify([{
+        "id": r["id"],
+        "path": r["path"],
+        "sha256": r["sha256"],
+        "original_filename": r["original_filename"],
+        "mime_type": r["mime_type"],
+        "size_bytes": r["size_bytes"],
+        "thumbnail_path": r["thumbnail_path"],
+        "thumb_width": r["thumb_width"],
+        "thumb_height": r["thumb_height"],
+        "created_at": r["created_at"],
+    } for r in rows])
+
+@api_bp.post("/media/link")
+def link_media():
+    """Link a media asset to a person or family."""
+    data = request.get_json(force=True, silent=False)
+    asset_id = data.get("asset_id")
+    person_id = data.get("person_id")
+    family_id = data.get("family_id")
+
+    if not asset_id:
+        return jsonify({"error": "asset_id is required"}), 400
+
+    if not person_id and not family_id:
+        return jsonify({"error": "Either person_id or family_id is required"}), 400
+
+    if person_id and family_id:
+        return jsonify({"error": "Cannot link to both person and family"}), 400
+
+    db = get_db()
+
+    # Validate asset exists
+    asset = db.execute("SELECT id FROM media_assets WHERE id = ?", (asset_id,)).fetchone()
+    if not asset:
+        return jsonify({"error": "Asset not found"}), 404
+
+    # Validate person/family exists
+    if person_id:
+        exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
+        if not exists:
+            return jsonify({"error": "Person not found"}), 404
+
+    if family_id:
+        exists = db.execute("SELECT id FROM families WHERE id = ?", (family_id,)).fetchone()
+        if not exists:
+            return jsonify({"error": "Family not found"}), 404
+
+    # Check if link already exists
+    existing = db.execute(
+        """
+        SELECT id FROM media_links
+        WHERE asset_id = ? AND person_id IS ? AND family_id IS ?
+        """,
+        (asset_id, person_id, family_id),
+    ).fetchone()
+
+    if existing:
+        return jsonify({"error": "Link already exists", "link_id": existing["id"]}), 400
+
+    # Create link
+    cur = db.execute(
+        """
+        INSERT INTO media_links (asset_id, person_id, family_id)
+        VALUES (?, ?, ?)
+        """,
+        (asset_id, person_id, family_id),
+    )
+    db.commit()
+
+    return jsonify({"link_id": cur.lastrowid}), 201
+
+@api_bp.delete("/media/link/<int:link_id>")
+def unlink_media(link_id: int):
+    """Remove a media link."""
+    db = get_db()
+    
+    link = db.execute("SELECT id FROM media_links WHERE id = ?", (link_id,)).fetchone()
+    if not link:
+        return jsonify({"error": "Link not found"}), 404
+
+    db.execute("DELETE FROM media_links WHERE id = ?", (link_id,))
+    db.commit()
+
+    return jsonify({"deleted": True})
+
+@api_bp.get("/media/thumbnail/<path:file_name>")
+def get_thumbnail(file_name: str):
+    """Serve a thumbnail image."""
+    media_dir = current_app.config["MEDIA_DIR"]
+    return send_from_directory(media_dir, file_name, as_attachment=False)
+
+@api_bp.get("/analytics/orphaned-media")
+def analytics_orphaned_media():
+    """Count media assets without any links."""
+    db = get_db()
+    row = db.execute(
+        """
+        SELECT COUNT(DISTINCT ma.id) as count
+        FROM media_assets ma
+        LEFT JOIN media_links ml ON ml.asset_id = ma.id
+        WHERE ml.id IS NULL
+        """
+    ).fetchone()
+    
+    return jsonify({"orphaned_count": row["count"]})
+
+@api_bp.get("/analytics/people-without-media")
+def analytics_people_without_media():
+    """Count people with no media attached."""
+    db = get_db()
+    row = db.execute(
+        """
+        SELECT COUNT(DISTINCT p.id) as count
+        FROM persons p
+        LEFT JOIN media_links ml ON ml.person_id = p.id
+        WHERE ml.id IS NULL
+        """
+    ).fetchone()
+    
+    return jsonify({"people_without_media": row["count"]})
+
+@api_bp.get("/people/<int:person_id>/media/v2")
+def get_person_media_v2(person_id: int):
+    """Get media assets linked to a person with full details."""
+    db = get_db()
+    
+    # Check person exists
+    person = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
+    if not person:
+        return jsonify({"error": "Person not found"}), 404
+
+    rows = db.execute(
+        """
+        SELECT ma.*, ml.id as link_id
+        FROM media_assets ma
+        JOIN media_links ml ON ml.asset_id = ma.id
+        WHERE ml.person_id = ?
+        ORDER BY ma.created_at DESC
+        """,
+        (person_id,),
+    ).fetchall()
+
+    return jsonify([{
+        "asset_id": r["id"],
+        "link_id": r["link_id"],
+        "path": r["path"],
+        "sha256": r["sha256"],
+        "original_filename": r["original_filename"],
+        "mime_type": r["mime_type"],
+        "size_bytes": r["size_bytes"],
+        "thumbnail_path": r["thumbnail_path"],
+        "thumb_width": r["thumb_width"],
+        "thumb_height": r["thumb_height"],
+        "created_at": r["created_at"],
+    } for r in rows])
