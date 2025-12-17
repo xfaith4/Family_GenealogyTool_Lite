@@ -409,7 +409,7 @@ def upload_media(person_id: int):
             original_filename=original_name,
             mime_type=mime,
             sha256=sha,
-            size_bytes=size_bytes,
+            size_bytes=size_bytes
         )
         session.add(media_asset)
         session.flush()
@@ -549,15 +549,15 @@ def upload_media_v2():
 def list_media_assets():
     """List all media assets."""
     session = get_session()
-    assets = session.execute(select(MediaAsset)).scalars().all()
+    rows = session.execute(
+        select(MediaAsset, func.count(MediaLink.id).label("link_count"))
+        .outerjoin(MediaLink, MediaLink.asset_id == MediaAsset.id)
+        .group_by(MediaAsset.id)
+        .order_by(MediaAsset.created_at.desc())
+        .limit(200)
+    ).all()
 
-    results = []
-    for asset in assets:
-        link_count = session.execute(
-            select(func.count(MediaLink.id)).where(MediaLink.asset_id == asset.id)
-        ).scalar_one()
-        results.append(_media_asset_dict(asset, include_id_key="id", link_count=link_count))
-    return jsonify(results)
+    return jsonify([_media_asset_dict(asset, include_id_key="id", link_count=link_count) for asset, link_count in rows])
 
 @api_bp.get("/media/unassigned")
 def list_unassigned_media():
@@ -776,6 +776,17 @@ def graph():
         ).scalars().all()
     else:
         families = []
+
+    family_ids = [f.id for f in families]
+    child_map = {}
+    if family_ids:
+        child_rows = session.execute(
+            select(family_children.c.family_id, family_children.c.child_person_id).where(
+                family_children.c.family_id.in_(family_ids)
+            )
+        ).all()
+        for fid, cid in child_rows:
+            child_map.setdefault(fid, []).append(cid)
     
     for f in families:
         fid = f.id
@@ -783,13 +794,7 @@ def graph():
             continue
         family_ids_seen.add(fid)
         
-        # Get children of this family
-        children = session.execute(
-            select(family_children.c.child_person_id).where(
-                family_children.c.family_id == fid
-            )
-        ).scalars().all()
-        child_ids = list(children)
+        child_ids = child_map.get(fid, [])
         
         family_nodes.append({
             "id": f"family_{fid}",
@@ -829,12 +834,7 @@ def graph():
     # Child edges: family -> person
     for f in families:
         fid = f.id
-        children = session.execute(
-            select(family_children.c.child_person_id).where(
-                family_children.c.family_id == fid
-            )
-        ).scalars().all()
-        for cid in children:
+        for cid in child_map.get(fid, []):
             if cid in person_ids:
                 edges.append({
                     "id": f"child_{fid}_{cid}",
