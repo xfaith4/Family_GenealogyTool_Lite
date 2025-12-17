@@ -32,4 +32,11 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.register_blueprint(api_bp)
     app.register_blueprint(ui_bp)
 
+    # Ensure tables exist for tests and first-run scenarios
+    with app.app_context():
+        from .db import get_engine
+        from .models import Base
+        engine = get_engine()
+        Base.metadata.create_all(engine)
+
     return app

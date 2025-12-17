@@ -147,11 +147,14 @@ class MediaAsset(Base):
     __tablename__ = 'media_assets'
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    file_name: Mapped[str] = mapped_column(String(500), nullable=False)
-    original_name: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    path: Mapped[str] = mapped_column(String(500), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    original_filename: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     mime_type: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    sha256: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    thumbnail_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    thumb_width: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    thumb_height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
     # Relationships
@@ -161,7 +164,7 @@ class MediaLink(Base):
     __tablename__ = 'media_links'
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    media_asset_id: Mapped[int] = mapped_column(Integer, ForeignKey('media_assets.id', ondelete='CASCADE'), nullable=False)
+    asset_id: Mapped[int] = mapped_column(Integer, ForeignKey('media_assets.id', ondelete='CASCADE'), nullable=False)
     person_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('persons.id', ondelete='CASCADE'), nullable=True)
     family_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('families.id', ondelete='CASCADE'), nullable=True)
     

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
 from werkzeug.utils import secure_filename
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, func
 from datetime import datetime
 import os
 import hashlib
 from pathlib import Path
 
 from .db import get_session
-from .models import Person, Family, Note, MediaAsset, MediaLink, relationships
+from .models import Person, Family, Note, MediaAsset, MediaLink, relationships, family_children
 from .gedcom import parse_gedcom, to_summary
 from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
 
@@ -24,7 +24,6 @@ def index():
 def unassigned_media_page():
     return render_template("unassigned.html")
 
-def _row_to_person(row):
 def _person_to_dict(p: Person) -> dict:
     return {
         "id": p.id,
@@ -118,8 +117,8 @@ def get_person(person_id: int):
         asset = link.media_asset
         media_list.append({
             "id": asset.id,
-            "file_name": asset.file_name,
-            "original_name": asset.original_name,
+            "path": asset.path,
+            "original_filename": asset.original_filename,
             "mime_type": asset.mime_type,
             "size_bytes": asset.size_bytes,
             "created_at": asset.created_at.isoformat() if asset.created_at else None
@@ -406,18 +405,18 @@ def upload_media(person_id: int):
     
     if not media_asset:
         media_asset = MediaAsset(
-            file_name=stored_name,
-            original_name=original_name,
+            path=stored_name,
+            original_filename=original_name,
             mime_type=mime,
             sha256=sha,
-            size_bytes=size_bytes
+            size_bytes=size_bytes,
         )
         session.add(media_asset)
         session.flush()
     
     # Create media link
     media_link = MediaLink(
-        media_asset_id=media_asset.id,
+        asset_id=media_asset.id,
         person_id=person_id
     )
     session.add(media_link)
@@ -430,6 +429,25 @@ def get_media(file_name: str):
     media_dir = current_app.config["MEDIA_DIR"]
     return send_from_directory(media_dir, file_name, as_attachment=False)
 
+def _media_asset_dict(asset, include_id_key: str = "id", link_count: int | None = None, link_id: int | None = None):
+    data = {
+        include_id_key: asset.id,
+        "path": asset.path,
+        "sha256": asset.sha256,
+        "original_filename": asset.original_filename,
+        "mime_type": asset.mime_type,
+        "size_bytes": asset.size_bytes,
+        "thumbnail_path": asset.thumbnail_path,
+        "thumb_width": asset.thumb_width,
+        "thumb_height": asset.thumb_height,
+        "created_at": asset.created_at.isoformat() if asset.created_at else None,
+    }
+    if link_count is not None:
+        data["link_count"] = link_count
+    if link_id is not None:
+        data["link_id"] = link_id
+    return data
+
 # New Media v2 endpoints
 
 @api_bp.post("/media/upload")
@@ -439,20 +457,19 @@ def upload_media_v2():
     if not f:
         return jsonify({"error": "file is required"}), 400
 
-    person_id = request.form.get("person_id")
-    family_id = request.form.get("family_id")
+    person_id = request.form.get("person_id", type=int)
+    family_id = request.form.get("family_id", type=int)
 
-    db = get_db()
+    if person_id and family_id:
+        return jsonify({"error": "Cannot link to both person and family"}), 400
 
-    # Validate references if provided
+    session = get_session()
+
     if person_id:
-        exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-        if not exists:
+        if not session.get(Person, person_id):
             return jsonify({"error": "Person not found"}), 404
-
     if family_id:
-        exists = db.execute("SELECT id FROM families WHERE id = ?", (family_id,)).fetchone()
-        if not exists:
+        if not session.get(Family, family_id):
             return jsonify({"error": "Family not found"}), 404
 
     original_name = f.filename or "upload"
@@ -464,123 +481,97 @@ def upload_media_v2():
     media_dir = current_app.config["MEDIA_DIR"]
     os.makedirs(media_dir, exist_ok=True)
 
-    # Check if asset already exists
-    existing = db.execute("SELECT id, path FROM media_assets WHERE sha256 = ?", (sha,)).fetchone()
-    
-    if existing:
-        asset_id = existing["id"]
-        file_path = existing["path"]
-    else:
-        # Create new asset
-        filename = safe_filename(original_name, sha, mime)
-        file_path = os.path.join(media_dir, filename)
-        
-        with open(file_path, "wb") as out:
-            out.write(content)
+    asset = session.execute(select(MediaAsset).where(MediaAsset.sha256 == sha)).scalar_one_or_none()
 
-        # Generate thumbnail for images
+    if asset:
+        stored_name = asset.path
+    else:
+        stored_name = safe_filename(original_name, sha, mime)
+        file_path = os.path.join(media_dir, stored_name)
+
+        if not os.path.exists(file_path):
+            with open(file_path, "wb") as out:
+                out.write(content)
+
         thumbnail_path = None
         thumb_width = None
         thumb_height = None
-        
+
         if is_image(mime):
             thumb_result = create_thumbnail(file_path, media_dir, sha)
             if thumb_result:
-                thumbnail_path, thumb_width, thumb_height = thumb_result
-                # Store relative path
-                thumbnail_path = os.path.basename(thumbnail_path)
+                thumbnail_full, thumb_width, thumb_height = thumb_result
+                thumbnail_path = os.path.basename(thumbnail_full)
 
-        cur = db.execute(
-            """
-            INSERT INTO media_assets (path, sha256, original_filename, mime_type, size_bytes, thumbnail_path, thumb_width, thumb_height)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (filename, sha, original_name, mime, size_bytes, thumbnail_path, thumb_width, thumb_height),
+        asset = MediaAsset(
+            path=stored_name,
+            sha256=sha,
+            original_filename=original_name,
+            mime_type=mime,
+            size_bytes=size_bytes,
+            thumbnail_path=thumbnail_path,
+            thumb_width=thumb_width,
+            thumb_height=thumb_height,
         )
-        asset_id = cur.lastrowid
+        session.add(asset)
+        session.flush()
 
-    # Create link if person_id or family_id provided
-    link_id = None
+    # Create link if requested
+    link = None
     if person_id or family_id:
-        cur = db.execute(
-            """
-            INSERT INTO media_links (asset_id, person_id, family_id)
-            VALUES (?, ?, ?)
-            """,
-            (asset_id, person_id, family_id),
-        )
-        link_id = cur.lastrowid
+        existing_link = session.execute(
+            select(MediaLink).where(
+                MediaLink.asset_id == asset.id,
+                MediaLink.person_id == person_id,
+                MediaLink.family_id == family_id,
+            )
+        ).scalar_one_or_none()
 
-    db.commit()
+        if not existing_link:
+            link = MediaLink(asset_id=asset.id, person_id=person_id, family_id=family_id)
+            session.add(link)
+            session.flush()
+        else:
+            link = existing_link
 
-    asset = db.execute("SELECT * FROM media_assets WHERE id = ?", (asset_id,)).fetchone()
+    session.commit()
+
     return jsonify({
-        "asset_id": asset_id,
-        "link_id": link_id,
-        "sha256": sha,
-        "path": asset["path"],
-        "thumbnail_path": asset["thumbnail_path"],
-        "original_filename": original_name,
+        "asset_id": asset.id,
+        "link_id": link.id if link else None,
+        "sha256": asset.sha256,
+        "path": asset.path,
+        "thumbnail_path": asset.thumbnail_path,
+        "original_filename": asset.original_filename,
     }), 201
 
 @api_bp.get("/media/assets")
 def list_media_assets():
     """List all media assets."""
-    db = get_db()
-    rows = db.execute(
-        """
-        SELECT 
-            ma.*,
-            COUNT(DISTINCT ml.id) as link_count
-        FROM media_assets ma
-        LEFT JOIN media_links ml ON ml.asset_id = ma.id
-        GROUP BY ma.id
-        ORDER BY ma.created_at DESC
-        LIMIT 200
-        """
-    ).fetchall()
-    
-    return jsonify([{
-        "id": r["id"],
-        "path": r["path"],
-        "sha256": r["sha256"],
-        "original_filename": r["original_filename"],
-        "mime_type": r["mime_type"],
-        "size_bytes": r["size_bytes"],
-        "thumbnail_path": r["thumbnail_path"],
-        "thumb_width": r["thumb_width"],
-        "thumb_height": r["thumb_height"],
-        "created_at": r["created_at"],
-        "link_count": r["link_count"],
-    } for r in rows])
+    session = get_session()
+    assets = session.execute(select(MediaAsset)).scalars().all()
+
+    results = []
+    for asset in assets:
+        link_count = session.execute(
+            select(func.count(MediaLink.id)).where(MediaLink.asset_id == asset.id)
+        ).scalar_one()
+        results.append(_media_asset_dict(asset, include_id_key="id", link_count=link_count))
+    return jsonify(results)
 
 @api_bp.get("/media/unassigned")
 def list_unassigned_media():
     """List media assets without any links."""
-    db = get_db()
-    rows = db.execute(
-        """
-        SELECT ma.*
-        FROM media_assets ma
-        LEFT JOIN media_links ml ON ml.asset_id = ma.id
-        WHERE ml.id IS NULL
-        ORDER BY ma.created_at DESC
-        LIMIT 200
-        """
-    ).fetchall()
+    session = get_session()
+    assets = session.execute(
+        select(MediaAsset)
+        .outerjoin(MediaLink, MediaLink.asset_id == MediaAsset.id)
+        .where(MediaLink.id.is_(None))
+        .order_by(MediaAsset.created_at.desc())
+        .limit(200)
+    ).scalars().all()
     
-    return jsonify([{
-        "id": r["id"],
-        "path": r["path"],
-        "sha256": r["sha256"],
-        "original_filename": r["original_filename"],
-        "mime_type": r["mime_type"],
-        "size_bytes": r["size_bytes"],
-        "thumbnail_path": r["thumbnail_path"],
-        "thumb_width": r["thumb_width"],
-        "thumb_height": r["thumb_height"],
-        "created_at": r["created_at"],
-    } for r in rows])
+    return jsonify([_media_asset_dict(asset) for asset in assets])
 
 @api_bp.post("/media/link")
 def link_media():
@@ -599,59 +590,43 @@ def link_media():
     if person_id and family_id:
         return jsonify({"error": "Cannot link to both person and family"}), 400
 
-    db = get_db()
-
-    # Validate asset exists
-    asset = db.execute("SELECT id FROM media_assets WHERE id = ?", (asset_id,)).fetchone()
+    session = get_session()
+    asset = session.get(MediaAsset, asset_id)
     if not asset:
         return jsonify({"error": "Asset not found"}), 404
 
-    # Validate person/family exists
-    if person_id:
-        exists = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
-        if not exists:
-            return jsonify({"error": "Person not found"}), 404
+    if person_id and not session.get(Person, person_id):
+        return jsonify({"error": "Person not found"}), 404
+    if family_id and not session.get(Family, family_id):
+        return jsonify({"error": "Family not found"}), 404
 
-    if family_id:
-        exists = db.execute("SELECT id FROM families WHERE id = ?", (family_id,)).fetchone()
-        if not exists:
-            return jsonify({"error": "Family not found"}), 404
-
-    # Check if link already exists
-    existing = db.execute(
-        """
-        SELECT id FROM media_links
-        WHERE asset_id = ? AND person_id IS ? AND family_id IS ?
-        """,
-        (asset_id, person_id, family_id),
-    ).fetchone()
+    existing = session.execute(
+        select(MediaLink).where(
+            MediaLink.asset_id == asset_id,
+            MediaLink.person_id == person_id,
+            MediaLink.family_id == family_id,
+        )
+    ).scalar_one_or_none()
 
     if existing:
-        return jsonify({"error": "Link already exists", "link_id": existing["id"]}), 400
+        return jsonify({"error": "Link already exists", "link_id": existing.id}), 400
 
-    # Create link
-    cur = db.execute(
-        """
-        INSERT INTO media_links (asset_id, person_id, family_id)
-        VALUES (?, ?, ?)
-        """,
-        (asset_id, person_id, family_id),
-    )
-    db.commit()
+    link = MediaLink(asset_id=asset_id, person_id=person_id, family_id=family_id)
+    session.add(link)
+    session.commit()
 
-    return jsonify({"link_id": cur.lastrowid}), 201
+    return jsonify({"link_id": link.id}), 201
 
 @api_bp.delete("/media/link/<int:link_id>")
 def unlink_media(link_id: int):
     """Remove a media link."""
-    db = get_db()
-    
-    link = db.execute("SELECT id FROM media_links WHERE id = ?", (link_id,)).fetchone()
+    session = get_session()
+    link = session.get(MediaLink, link_id)
     if not link:
         return jsonify({"error": "Link not found"}), 404
 
-    db.execute("DELETE FROM media_links WHERE id = ?", (link_id,))
-    db.commit()
+    session.delete(link)
+    session.commit()
 
     return jsonify({"deleted": True})
 
@@ -664,67 +639,48 @@ def get_thumbnail(file_name: str):
 @api_bp.get("/analytics/orphaned-media")
 def analytics_orphaned_media():
     """Count media assets without any links."""
-    db = get_db()
-    row = db.execute(
-        """
-        SELECT COUNT(DISTINCT ma.id) as count
-        FROM media_assets ma
-        LEFT JOIN media_links ml ON ml.asset_id = ma.id
-        WHERE ml.id IS NULL
-        """
-    ).fetchone()
+    session = get_session()
+    count = session.execute(
+        select(func.count(MediaAsset.id))
+        .outerjoin(MediaLink, MediaLink.asset_id == MediaAsset.id)
+        .where(MediaLink.id.is_(None))
+    ).scalar_one()
     
-    return jsonify({"orphaned_count": row["count"]})
+    return jsonify({"orphaned_count": count})
 
 @api_bp.get("/analytics/people-without-media")
 def analytics_people_without_media():
     """Count people with no media attached."""
-    db = get_db()
-    row = db.execute(
-        """
-        SELECT COUNT(DISTINCT p.id) as count
-        FROM persons p
-        LEFT JOIN media_links ml ON ml.person_id = p.id
-        WHERE ml.id IS NULL
-        """
-    ).fetchone()
+    session = get_session()
+    count = session.execute(
+        select(func.count(Person.id))
+        .outerjoin(MediaLink, MediaLink.person_id == Person.id)
+        .where(MediaLink.id.is_(None))
+    ).scalar_one()
     
-    return jsonify({"people_without_media": row["count"]})
+    return jsonify({"people_without_media": count})
 
 @api_bp.get("/people/<int:person_id>/media/v2")
 def get_person_media_v2(person_id: int):
     """Get media assets linked to a person with full details."""
-    db = get_db()
+    session = get_session()
     
-    # Check person exists
-    person = db.execute("SELECT id FROM persons WHERE id = ?", (person_id,)).fetchone()
+    person = session.get(Person, person_id)
     if not person:
         return jsonify({"error": "Person not found"}), 404
 
-    rows = db.execute(
-        """
-        SELECT ma.*, ml.id as link_id
-        FROM media_assets ma
-        JOIN media_links ml ON ml.asset_id = ma.id
-        WHERE ml.person_id = ?
-        ORDER BY ma.created_at DESC
-        """,
-        (person_id,),
-    ).fetchall()
+    rows = session.execute(
+        select(MediaLink, MediaAsset)
+        .join(MediaAsset, MediaAsset.id == MediaLink.asset_id)
+        .where(MediaLink.person_id == person_id)
+        .order_by(MediaAsset.created_at.desc())
+    ).all()
 
-    return jsonify([{
-        "asset_id": r["id"],
-        "link_id": r["link_id"],
-        "path": r["path"],
-        "sha256": r["sha256"],
-        "original_filename": r["original_filename"],
-        "mime_type": r["mime_type"],
-        "size_bytes": r["size_bytes"],
-        "thumbnail_path": r["thumbnail_path"],
-        "thumb_width": r["thumb_width"],
-        "thumb_height": r["thumb_height"],
-        "created_at": r["created_at"],
-    } for r in rows])
+    out = []
+    for link, asset in rows:
+        data = _media_asset_dict(asset, include_id_key="asset_id", link_id=link.id)
+        out.append(data)
+    return jsonify(out)
 @api_bp.get("/graph")
 def graph():
     """
@@ -741,8 +697,8 @@ def graph():
     if not root_id:
         return jsonify({"error": "rootPersonId is required"}), 400
     
-    db = get_db()
-    root_person = db.execute("SELECT * FROM persons WHERE id = ?", (root_id,)).fetchone()
+    session = get_session()
+    root_person = session.get(Person, root_id)
     if not root_person:
         return jsonify({"error": "Person not found"}), 404
     
@@ -758,99 +714,93 @@ def graph():
         explored.add(person_id)
         
         # Get parents
-        parents = db.execute(
-            """
-            SELECT parent_person_id FROM relationships 
-            WHERE child_person_id = ?
-            """,
-            (person_id,)
-        ).fetchall()
-        for p in parents:
-            pid = p["parent_person_id"]
+        parents = session.execute(
+            select(relationships.c.parent_person_id).where(
+                relationships.c.child_person_id == person_id
+            )
+        ).scalars().all()
+        for pid in parents:
             person_ids.add(pid)
             to_explore.append((pid, current_depth + 1))
         
         # Get children
-        children = db.execute(
-            """
-            SELECT child_person_id FROM relationships 
-            WHERE parent_person_id = ?
-            """,
-            (person_id,)
-        ).fetchall()
-        for c in children:
-            cid = c["child_person_id"]
+        children = session.execute(
+            select(relationships.c.child_person_id).where(
+                relationships.c.parent_person_id == person_id
+            )
+        ).scalars().all()
+        for cid in children:
             person_ids.add(cid)
             to_explore.append((cid, current_depth + 1))
     
     # Fetch all persons in the graph
     person_nodes = []
-    for pid in person_ids:
-        p = db.execute("SELECT * FROM persons WHERE id = ?", (pid,)).fetchone()
-        if p:
-            # Calculate quality flag (how complete is the data)
-            has_birth = bool((p["birth_date"] or "").strip() or (p["birth_place"] or "").strip())
-            has_death = bool((p["death_date"] or "").strip() or (p["death_place"] or "").strip())
-            has_name = bool((p["given"] or "").strip() or (p["surname"] or "").strip())
-            quality = "high" if (has_name and has_birth) else ("medium" if has_name else "low")
-            
-            person_nodes.append({
-                "id": f"person_{p['id']}",
-                "type": "person",
-                "data": {
-                    "id": p["id"],
-                    "xref": p["xref"],
-                    "given": p["given"],
-                    "surname": p["surname"],
-                    "sex": p["sex"],
-                    "birth_date": p["birth_date"],
-                    "birth_place": p["birth_place"],
-                    "death_date": p["death_date"],
-                    "death_place": p["death_place"],
-                    "quality": quality,
-                }
-            })
+    persons = session.execute(
+        select(Person).where(Person.id.in_(person_ids))
+    ).scalars().all()
+    for p in persons:
+        has_birth = bool((p.birth_date or "").strip() or (p.birth_place or "").strip())
+        has_death = bool((p.death_date or "").strip() or (p.death_place or "").strip())
+        has_name = bool((p.given or "").strip() or (p.surname or "").strip())
+        quality = "high" if (has_name and has_birth) else ("medium" if has_name else "low")
+        
+        person_nodes.append({
+            "id": f"person_{p.id}",
+            "type": "person",
+            "data": {
+                "id": p.id,
+                "xref": p.xref,
+                "given": p.given,
+                "surname": p.surname,
+                "sex": p.sex,
+                "birth_date": p.birth_date,
+                "birth_place": p.birth_place,
+                "death_date": p.death_date,
+                "death_place": p.death_place,
+                "quality": quality,
+            }
+        })
     
     # Fetch all families involving these persons
     family_nodes = []
     family_ids_seen = set()
     
     if person_ids:
-        placeholders = ",".join("?" * len(person_ids))
-        families = db.execute(
-            f"""
-            SELECT DISTINCT f.* FROM families f
-            WHERE f.husband_person_id IN ({placeholders})
-               OR f.wife_person_id IN ({placeholders})
-            """,
-            list(person_ids) + list(person_ids)
-        ).fetchall()
+        families = session.execute(
+            select(Family).where(
+                or_(
+                    Family.husband_person_id.in_(person_ids),
+                    Family.wife_person_id.in_(person_ids)
+                )
+            )
+        ).scalars().all()
     else:
         families = []
     
     for f in families:
-        fid = f["id"]
+        fid = f.id
         if fid in family_ids_seen:
             continue
         family_ids_seen.add(fid)
         
         # Get children of this family
-        children = db.execute(
-            "SELECT child_person_id FROM family_children WHERE family_id = ?",
-            (fid,)
-        ).fetchall()
-        child_ids = [c["child_person_id"] for c in children]
+        children = session.execute(
+            select(family_children.c.child_person_id).where(
+                family_children.c.family_id == fid
+            )
+        ).scalars().all()
+        child_ids = list(children)
         
         family_nodes.append({
             "id": f"family_{fid}",
             "type": "family",
             "data": {
                 "id": fid,
-                "xref": f["xref"],
-                "husband_id": f["husband_person_id"],
-                "wife_id": f["wife_person_id"],
-                "marriage_date": f["marriage_date"],
-                "marriage_place": f["marriage_place"],
+                "xref": f.xref,
+                "husband_id": f.husband_person_id,
+                "wife_id": f.wife_person_id,
+                "marriage_date": f.marriage_date,
+                "marriage_place": f.marriage_place,
                 "children": child_ids,
             }
         })
@@ -860,31 +810,31 @@ def graph():
     
     # Spouse edges: person -> family
     for f in families:
-        fid = f["id"]
-        if f["husband_person_id"] and f["husband_person_id"] in person_ids:
+        fid = f.id
+        if f.husband_person_id and f.husband_person_id in person_ids:
             edges.append({
                 "id": f"spouse_h_{fid}",
-                "source": f"person_{f['husband_person_id']}",
+                "source": f"person_{f.husband_person_id}",
                 "target": f"family_{fid}",
                 "type": "spouse"
             })
-        if f["wife_person_id"] and f["wife_person_id"] in person_ids:
+        if f.wife_person_id and f.wife_person_id in person_ids:
             edges.append({
                 "id": f"spouse_w_{fid}",
-                "source": f"person_{f['wife_person_id']}",
+                "source": f"person_{f.wife_person_id}",
                 "target": f"family_{fid}",
                 "type": "spouse"
             })
     
     # Child edges: family -> person
     for f in families:
-        fid = f["id"]
-        children = db.execute(
-            "SELECT child_person_id FROM family_children WHERE family_id = ?",
-            (fid,)
-        ).fetchall()
-        for idx, c in enumerate(children):
-            cid = c["child_person_id"]
+        fid = f.id
+        children = session.execute(
+            select(family_children.c.child_person_id).where(
+                family_children.c.family_id == fid
+            )
+        ).scalars().all()
+        for cid in children:
             if cid in person_ids:
                 edges.append({
                     "id": f"child_{fid}_{cid}",
