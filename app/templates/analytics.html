@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Analytics - Family Genealogy Tool Lite</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+  <style>
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 1rem;
+    }
+    .stat-card h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-transform: uppercase;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #212529;
+    }
+    .queue-section {
+      margin-bottom: 2rem;
+    }
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .queue-table th,
+    .queue-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .queue-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    .queue-table tr:last-child td {
+      border-bottom: none;
+    }
+    .queue-table tr:hover {
+      background: #f8f9fa;
+    }
+    .confidence-badge {
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .confidence-exact { background: #d4edda; color: #155724; }
+    .confidence-partial { background: #fff3cd; color: #856404; }
+    .confidence-ambiguous { background: #f8d7da; color: #721c24; }
+    .confidence-unparseable { background: #f8d7da; color: #721c24; }
+    .score-high { color: #dc3545; font-weight: bold; }
+    .score-medium { color: #fd7e14; }
+    .score-low { color: #6c757d; }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">📊</div>
+      <div class="title">
+        <div class="name">Analytics <span class="muted">& Cleanup</span></div>
+        <div class="sub">Data quality dashboard</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="/" class="btn btnSecondary">← Back to People</a>
+    </div>
+  </header>
+
+  <main style="padding: 2rem;">
+    <section>
+      <h2>Summary</h2>
+      <div id="summary" class="analytics-grid">
+        <div class="stat-card">
+          <h3>Total Persons</h3>
+          <div class="value" id="statTotalPersons">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Missing Birth Dates</h3>
+          <div class="value" id="statMissingDates">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Ambiguous Dates</h3>
+          <div class="value" id="statAmbiguousDates">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Pending Place Variants</h3>
+          <div class="value" id="statPlaceVariants">-</div>
+        </div>
+        <div class="stat-card">
+          <h3>Duplicate Candidates</h3>
+          <div class="value" id="statDuplicates">-</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="queue-section">
+      <h2>Date Issues</h2>
+      <div id="ambiguousDatesTable"></div>
+    </section>
+
+    <section class="queue-section">
+      <h2>Place Normalization Queue</h2>
+      <div id="placesTable"></div>
+    </section>
+
+    <section class="queue-section">
+      <h2>Duplicate Candidates</h2>
+      <div id="duplicatesTable"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Analytics generated automatically on GEDCOM import</span>
+  </footer>
+
+  <script>
+    // Fetch and display summary
+    async function loadSummary() {
+      const resp = await fetch('/api/analytics/summary');
+      const data = await resp.json();
+      
+      document.getElementById('statTotalPersons').textContent = data.total_persons;
+      document.getElementById('statMissingDates').textContent = data.dates.missing_birth;
+      document.getElementById('statAmbiguousDates').textContent = data.dates.ambiguous_birth + data.dates.unparseable_birth;
+      document.getElementById('statPlaceVariants').textContent = data.places.pending_variants;
+      document.getElementById('statDuplicates').textContent = data.duplicates.pending;
+    }
+
+    // Load ambiguous dates
+    async function loadAmbiguousDates() {
+      const resp = await fetch('/api/analytics/dates/ambiguous?limit=50');
+      const data = await resp.json();
+      
+      const container = document.getElementById('ambiguousDatesTable');
+      
+      if (data.length === 0) {
+        container.innerHTML = '<div class="empty-state">✓ No ambiguous dates found</div>';
+        return;
+      }
+      
+      let html = '<table class="queue-table"><thead><tr>';
+      html += '<th>Person</th><th>Birth Date</th><th>Canonical</th><th>Confidence</th>';
+      html += '<th>Death Date</th><th>Canonical</th><th>Confidence</th>';
+      html += '</tr></thead><tbody>';
+      
+      data.forEach(item => {
+        html += '<tr>';
+        html += `<td><a href="/?person=${item.id}">${item.given || ''} ${item.surname || ''}</a></td>`;
+        html += `<td>${item.birth_date || '-'}</td>`;
+        html += `<td>${item.birth_date_canonical || '-'}</td>`;
+        html += `<td><span class="confidence-badge confidence-${item.birth_date_confidence || 'none'}">${item.birth_date_confidence || '-'}</span></td>`;
+        html += `<td>${item.death_date || '-'}</td>`;
+        html += `<td>${item.death_date_canonical || '-'}</td>`;
+        html += `<td><span class="confidence-badge confidence-${item.death_date_confidence || 'none'}">${item.death_date_confidence || '-'}</span></td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // Load place variants
+    async function loadPlaceVariants() {
+      const resp = await fetch('/api/analytics/places/unstandardized?limit=50');
+      const data = await resp.json();
+      
+      const container = document.getElementById('placesTable');
+      
+      if (data.length === 0) {
+        container.innerHTML = '<div class="empty-state">✓ No pending place variants</div>';
+        return;
+      }
+      
+      let html = '<table class="queue-table"><thead><tr>';
+      html += '<th>Variant Name</th><th>Suggested Canonical</th><th>Confidence</th><th>Action</th>';
+      html += '</tr></thead><tbody>';
+      
+      data.forEach(item => {
+        const confPct = Math.round((item.confidence || 0) * 100);
+        html += '<tr>';
+        html += `<td>${item.variant_name}</td>`;
+        html += `<td>${item.suggested_canonical}</td>`;
+        html += `<td>${confPct}%</td>`;
+        html += `<td><button class="btn" onclick="approvePlaceVariant(${item.id})">Approve</button></td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // Load duplicate candidates
+    async function loadDuplicates() {
+      const resp = await fetch('/api/analytics/duplicates?limit=50');
+      const data = await resp.json();
+      
+      const container = document.getElementById('duplicatesTable');
+      
+      if (data.length === 0) {
+        container.innerHTML = '<div class="empty-state">✓ No duplicate candidates found</div>';
+        return;
+      }
+      
+      let html = '<table class="queue-table"><thead><tr>';
+      html += '<th>Person 1</th><th>Person 2</th><th>Similarity</th><th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      
+      data.forEach(item => {
+        const scorePct = Math.round(item.similarity_score * 100);
+        const scoreClass = scorePct >= 90 ? 'score-high' : scorePct >= 75 ? 'score-medium' : 'score-low';
+        
+        html += '<tr>';
+        html += `<td><a href="/?person=${item.person1_id}">${item.person1.given || ''} ${item.person1.surname || ''}</a><br><small>${item.person1.birth_date || ''}</small></td>`;
+        html += `<td><a href="/?person=${item.person2_id}">${item.person2.given || ''} ${item.person2.surname || ''}</a><br><small>${item.person2.birth_date || ''}</small></td>`;
+        html += `<td class="${scoreClass}">${scorePct}%</td>`;
+        html += `<td><button class="btn btnSecondary" onclick="reviewDuplicate(${item.id}, 'ignore')">Not Duplicate</button></td>`;
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // Approve place variant
+    async function approvePlaceVariant(variantId) {
+      if (!confirm('Approve this place variant? All occurrences will be updated.')) return;
+      
+      const resp = await fetch('/api/analytics/places/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variant_id: variantId })
+      });
+      
+      if (resp.ok) {
+        alert('Place variant approved!');
+        loadSummary();
+        loadPlaceVariants();
+      } else {
+        alert('Error approving place variant');
+      }
+    }
+
+    // Review duplicate
+    async function reviewDuplicate(candidateId, action) {
+      const resp = await fetch('/api/analytics/duplicates/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidate_id: candidateId, action: action })
+      });
+      
+      if (resp.ok) {
+        loadSummary();
+        loadDuplicates();
+      } else {
+        alert('Error reviewing duplicate');
+      }
+    }
+
+    // Load all data on page load
+    loadSummary();
+    loadAmbiguousDates();
+    loadPlaceVariants();
+    loadDuplicates();
+  </script>
+</body>
+</html>
