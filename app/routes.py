@@ -437,14 +437,18 @@ def graph():
     family_nodes = []
     family_ids_seen = set()
     
-    families = db.execute(
-        """
-        SELECT DISTINCT f.* FROM families f
-        WHERE f.husband_person_id IN ({})
-           OR f.wife_person_id IN ({})
-        """.format(",".join("?" * len(person_ids)), ",".join("?" * len(person_ids))),
-        list(person_ids) + list(person_ids)
-    ).fetchall()
+    if person_ids:
+        placeholders = ",".join("?" * len(person_ids))
+        families = db.execute(
+            f"""
+            SELECT DISTINCT f.* FROM families f
+            WHERE f.husband_person_id IN ({placeholders})
+               OR f.wife_person_id IN ({placeholders})
+            """,
+            list(person_ids) + list(person_ids)
+        ).fetchall()
+    else:
+        families = []
     
     for f in families:
         fid = f["id"]

@@ -3,6 +3,7 @@
  * Graph-based tree view with SVG rendering (fallback for when CDN is blocked)
  */
 
+let cy = null;  // Cytoscape instance (if available)
 let currentPersonId = null;
 let currentGraph = null;
 

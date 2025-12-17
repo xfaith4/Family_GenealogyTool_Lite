@@ -109,7 +109,8 @@ class TestApi(unittest.TestCase):
         # Find John Smith
         r = self.client.get("/api/people?q=John")
         people = r.get_json()
-        john = next(p for p in people if p["given"] == "John")
+        john = next((p for p in people if p["given"] == "John"), None)
+        self.assertIsNotNone(john, "John Smith should exist in imported GEDCOM")
         
         # Get graph with depth 2
         r = self.client.get(f"/api/graph?rootPersonId={john['id']}&depth=2")
