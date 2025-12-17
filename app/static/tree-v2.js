@@ -232,23 +232,62 @@ function renderSimpleSVG(graphData, container) {
     nodePositions.set(node.id, { x, y, node });
   });
   
-  // Draw edges first (so they're behind nodes)
+  // Prepare defs (markers) for arrowheads and the edges group
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'treeV2Arrow');
+  marker.setAttribute('markerWidth', '6');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('refX', '5');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('orient', 'auto');
+  marker.setAttribute('markerUnits', 'strokeWidth');
+  const markerPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  markerPath.setAttribute('d', 'M0,0 L6,3 L0,6 Z');
+  markerPath.setAttribute('fill', '#8cc0ff');
+  marker.appendChild(markerPath);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
   const edgesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  graphData.edges.forEach(edge => {
-    const source = nodePositions.get(edge.source);
-    const target = nodePositions.get(edge.target);
-    
-    if (source && target) {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', source.x);
-      line.setAttribute('y1', source.y);
-      line.setAttribute('x2', target.x);
-      line.setAttribute('y2', target.y);
-      line.setAttribute('stroke', '#666');
-      line.setAttribute('stroke-width', '2');
-      edgesGroup.appendChild(line);
+  const getPersonPos = (personId) => personId ? nodePositions.get(`person_${personId}`) : null;
+  const drawLine = (fromPos, toPos, opts = {}) => {
+    if (!fromPos || !toPos) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fromPos.x);
+    line.setAttribute('y1', fromPos.y);
+    line.setAttribute('x2', toPos.x);
+    line.setAttribute('y2', toPos.y);
+    line.setAttribute('stroke', opts.color || '#666');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linecap', 'round');
+    if (opts.dash) {
+      line.setAttribute('stroke-dasharray', '6 4');
+    }
+    if (opts.arrow) {
+      line.setAttribute('marker-end', 'url(#treeV2Arrow)');
+    }
+    edgesGroup.appendChild(line);
+  };
+
+  familyNodes.forEach(family => {
+    const husbandPos = getPersonPos(family.data.husband_id);
+    const wifePos = getPersonPos(family.data.wife_id);
+    if (husbandPos && wifePos) {
+      drawLine(husbandPos, wifePos, { color: '#f1c40f', dash: true });
+    }
+    const children = family.data.children || [];
+    for (const childId of children) {
+      const childPos = getPersonPos(childId);
+      if (husbandPos) {
+        drawLine(husbandPos, childPos, { color: '#7ad0d7', arrow: true });
+      }
+      if (wifePos) {
+        drawLine(wifePos, childPos, { color: '#7ad0d7', arrow: true });
+      }
     }
   });
+
   svg.appendChild(edgesGroup);
   
   // Draw person nodes
