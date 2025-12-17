@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request, current_app, send_from_directory,
 from werkzeug.utils import secure_filename
 import os
 import hashlib
+import shutil
 
 from .db import get_db
 from .gedcom import parse_gedcom, to_summary
@@ -179,7 +180,7 @@ def import_gedcom():
 
     try:
         indis, fams = parse_gedcom(text)
-    except Exception as e:
+    except (ValueError, KeyError, AttributeError) as e:
         current_app.logger.error(f"GEDCOM parsing failed: {str(e)}", exc_info=True)
         return jsonify({"error": f"Failed to parse GEDCOM: {str(e)}"}), 400
 
@@ -359,7 +360,7 @@ def upload_media(person_id: int):
         current_app.logger.info(f"Media uploaded for person {person_id}: {original_name} ({size_bytes} bytes)")
 
         return jsonify({"stored": stored_name, "sha256": sha}), 201
-    except Exception as e:
+    except (IOError, OSError) as e:
         current_app.logger.error(f"Media upload failed for person {person_id}: {str(e)}", exc_info=True)
         return jsonify({"error": f"Failed to upload media: {str(e)}"}), 500
 
@@ -412,7 +413,6 @@ def diagnostics():
 def create_backup():
     """Create a backup of the database and optionally media files."""
     from datetime import datetime
-    import shutil
     from pathlib import Path
     
     db_path = current_app.config["DATABASE"]
@@ -454,14 +454,13 @@ def create_backup():
             "media_files": media_count,
             "timestamp": timestamp,
         }), 201
-    except Exception as e:
+    except (IOError, OSError, shutil.Error) as e:
         current_app.logger.error(f"Backup failed: {str(e)}", exc_info=True)
         return jsonify({"error": f"Backup failed: {str(e)}"}), 500
 
 @api_bp.post("/restore")
 def restore_backup():
     """Restore from a backup."""
-    import shutil
     from pathlib import Path
     
     data = request.get_json(force=True, silent=False)
@@ -512,7 +511,7 @@ def restore_backup():
             "restored_from": backup_name,
             "media_files": media_count,
         }), 200
-    except Exception as e:
+    except (IOError, OSError, shutil.Error) as e:
         current_app.logger.error(f"Restore failed from {backup_name}: {str(e)}", exc_info=True)
         return jsonify({"error": f"Restore failed: {str(e)}"}), 500
 
