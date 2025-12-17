@@ -389,11 +389,7 @@ function showPersonPanel(personData) {
 }
 
 // Initialize on page load if tree=v2 query param is present
-if (window.location.search.includes('tree=v2')) {
-  window.addEventListener('DOMContentLoaded', () => {
-    // Export to global scope for other modules to use
-    window.TreeV2 = {
-      loadGraph: loadGraph,
-    };
-  });
-}
+// Export to global scope for other modules to use
+window.TreeV2 = {
+  loadGraph: loadGraph,
+};
