@@ -1,6 +1,8 @@
+import io
 import os
 import tempfile
 import unittest
+from sqlalchemy import select
 
 from app import create_app
 
@@ -19,6 +21,22 @@ SAMPLE_GED = """0 HEAD
 1 WIFE @I2@
 1 CHIL @I3@
 0 TRLR
+"""
+
+SAMPLE_RMTREE = """-- RMTree export sample
+INSERT INTO Individuals (Id, GivenName, Surname, Gender, BirthDate, BirthPlace, Notes) VALUES
+(1, 'John', 'Smith', 'M', '1 JAN 1980', 'Springfield', 'Patriarch'),
+(2, 'Jane', 'Doe', 'F', '2 FEB 1982', 'Springfield', 'Matriarch'),
+(3, 'Baby', 'Smith', 'F', '3 MAR 2005', 'Springfield', 'Child');
+INSERT INTO Relationships (ParentID, ChildID) VALUES
+(1, 3),
+(2, 3);
+INSERT INTO MediaLocations (MediaID, Path, OriginalName, Description) VALUES
+(10, 'photos/john.png', 'John.png', 'Portrait'),
+(11, 'photos/jane.png', 'Jane.jpg', 'Portrait');
+INSERT INTO MediaAssociations (MediaID, OwnerType, OwnerID) VALUES
+(10, 'Person', 1),
+(11, 'Person', 2);
 """
 
 class TestApi(unittest.TestCase):
@@ -98,17 +116,51 @@ class TestApi(unittest.TestCase):
             
             # Check families count
             families = session.query(Family).all()
-            self.assertEqual(len(families), 1)
-            
-            # Verify specific person data
-            john = session.query(Person).filter(Person.given == "John", Person.surname == "Smith").first()
+        self.assertEqual(len(families), 1)
+        
+        # Verify specific person data
+        john = session.query(Person).filter(Person.given == "John", Person.surname == "Smith").first()
+        self.assertIsNotNone(john)
+        self.assertEqual(john.sex, "M")
+        
+        # Verify family structure
+        family = families[0]
+        self.assertIsNotNone(family.husband_person_id)
+        self.assertIsNotNone(family.wife_person_id)
+
+    def test_rmtree_import_populates_people_and_media(self):
+        payload = {
+            "file": (io.BytesIO(SAMPLE_RMTREE.encode("utf-8")), "sample.rmtree")
+        }
+        r = self.client.post(
+            "/api/import/rmtree",
+            data=payload,
+            content_type="multipart/form-data"
+        )
+        self.assertEqual(r.status_code, 200)
+        summary = r.get_json()["imported"]
+        self.assertEqual(summary["people"], 3)
+        self.assertEqual(summary["media_assets"], 2)
+        self.assertEqual(summary["media_links"], 2)
+        self.assertEqual(summary["relationships"], 2)
+
+        with self.app.app_context():
+            from app.db import get_session
+            session = get_session()
+            from app.models import MediaAsset, MediaLink, Person, relationships
+
+            john = session.query(Person).filter(Person.given == "John").first()
             self.assertIsNotNone(john)
-            self.assertEqual(john.sex, "M")
-            
-            # Verify family structure
-            family = families[0]
-            self.assertIsNotNone(family.husband_person_id)
-            self.assertIsNotNone(family.wife_person_id)
+
+            assets = session.query(MediaAsset).all()
+            self.assertEqual(len(assets), 2)
+
+            john_links = session.query(MediaLink).filter(MediaLink.person_id == john.id).all()
+            self.assertEqual(len(john_links), 1)
+            self.assertEqual(john_links[0].description, "Portrait")
+
+            rels = session.execute(select(relationships)).all()
+            self.assertEqual(len(rels), 2)
 
     def test_crud_person(self):
         r = self.client.post("/api/people", json={"given":"Ada","surname":"Lovelace","sex":"F"})

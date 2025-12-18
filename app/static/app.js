@@ -379,6 +379,15 @@ async function importGedcom(file){
   await refreshPeople(($("search").value||"").trim());
 }
 
+async function importRmtree(file){
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await api("/api/import/rmtree", { method:"POST", body: fd });
+  const summary = res.imported || {};
+  alert(`Imported: ${summary.people || 0} people, ${summary.media_assets || 0} media assets, ${summary.media_links || 0} media links, ${summary.relationships || 0} relationships`);
+  await refreshPeople(($("search").value||"").trim());
+}
+
 function wire(){
   $("search").addEventListener("input", async () => {
     await refreshPeople(($("search").value || "").trim());
@@ -388,6 +397,12 @@ function wire(){
     const f = ev.target.files && ev.target.files[0];
     if(!f) return;
     await importGedcom(f);
+    ev.target.value = "";
+  });
+  $("rmtreeFile").addEventListener("change", async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    await importRmtree(f);
     ev.target.value = "";
   });
 }

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
+from typing import Any, Dict
 from werkzeug.utils import secure_filename
 from sqlalchemy import select, or_, func
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 import os
 import hashlib
@@ -12,6 +14,13 @@ from .db import get_session
 from .models import Person, Family, Note, MediaAsset, MediaLink, relationships, family_children
 from .gedcom import parse_gedcom, to_summary
 from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
+from .rmtree import (
+    collect_media_associations,
+    collect_media_locations,
+    collect_person_records,
+    collect_relationship_records,
+    parse_rmtree_sql,
+)
 
 import re
 from collections import Counter
@@ -354,6 +363,155 @@ def import_gedcom():
 
     session.commit()
     return jsonify({"imported": to_summary(indis, fams)})
+
+@api_bp.post("/import/rmtree")
+def import_rmtree():
+    session = get_session()
+
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "file is required"}), 400
+
+    text = f.read().decode("utf-8", errors="replace")
+    tables = parse_rmtree_sql(text)
+    if not tables:
+        return jsonify({"error": "failed to parse RMTree file"}), 400
+
+    person_rows = collect_person_records(tables)
+    relationship_rows = collect_relationship_records(tables)
+    media_locations = collect_media_locations(tables)
+    media_associations = collect_media_associations(tables)
+
+    if not (person_rows or relationship_rows or media_locations or media_associations):
+        return jsonify({"error": "no RMTree data found"}), 400
+
+    source_to_person_id: Dict[Any, int] = {}
+    for record in person_rows:
+        xref = record["xref"]
+        stmt = select(Person).where(Person.xref == xref)
+        person = session.execute(stmt).scalar_one_or_none()
+        now = datetime.utcnow()
+
+        if person:
+            person.given = record["given"]
+            person.surname = record["surname"]
+            person.sex = record["sex"]
+            person.birth_date = record["birth_date"]
+            person.birth_place = record["birth_place"]
+            person.death_date = record["death_date"]
+            person.death_place = record["death_place"]
+            person.updated_at = now
+        else:
+            person = Person(
+                xref=xref,
+                given=record["given"],
+                surname=record["surname"],
+                sex=record["sex"],
+                birth_date=record["birth_date"],
+                birth_place=record["birth_place"],
+                death_date=record["death_date"],
+                death_place=record["death_place"],
+                updated_at=now,
+            )
+            session.add(person)
+
+        session.flush()
+        source_to_person_id[record["source_id"]] = person.id
+
+        for note_text in record.get("notes", []):
+            note = Note(person_id=person.id, note_text=note_text)
+            session.add(note)
+
+    media_id_to_asset: Dict[Any, MediaAsset] = {}
+    media_descriptions: Dict[Any, str] = {}
+    for location in media_locations:
+        media_id = location["media_id"]
+        path = (location.get("path") or "").strip()
+        if media_id is None or not path:
+            continue
+
+        normalized_path = path.replace("\\", "/")
+        sha = hashlib.sha256(normalized_path.encode("utf-8")).hexdigest()
+        stmt = select(MediaAsset).where(MediaAsset.sha256 == sha)
+        asset = session.execute(stmt).scalar_one_or_none()
+
+        if not asset:
+            asset = MediaAsset(
+                path=normalized_path,
+                original_filename=(location.get("original_name") or Path(normalized_path).name),
+                mime_type=None,
+                sha256=sha,
+                size_bytes=None,
+            )
+            session.add(asset)
+            session.flush()
+
+        media_id_to_asset[media_id] = asset
+        if location.get("description"):
+            media_descriptions[media_id] = location["description"]
+
+    media_links_created = 0
+    for association in media_associations:
+        media_id = association.get("media_id")
+        owner_type = (association.get("owner_type") or "").lower()
+        owner_source_id = association.get("owner_id")
+        if owner_type != "person" or owner_source_id is None:
+            continue
+
+        person_id = source_to_person_id.get(owner_source_id)
+        asset = media_id_to_asset.get(media_id)
+        if not person_id or not asset:
+            continue
+
+        existing_link = session.execute(
+            select(MediaLink).where(
+                MediaLink.asset_id == asset.id,
+                MediaLink.person_id == person_id,
+            )
+        ).scalar_one_or_none()
+        if existing_link:
+            continue
+
+        description = media_descriptions.get(media_id)
+        media_link = MediaLink(
+            asset_id=asset.id,
+            person_id=person_id,
+            description=description,
+        )
+        session.add(media_link)
+        media_links_created += 1
+
+    relationship_count = 0
+    for relationship in relationship_rows:
+        parent_source = relationship.get("parent_id")
+        child_source = relationship.get("child_id")
+        parent_id = source_to_person_id.get(parent_source)
+        child_id = source_to_person_id.get(child_source)
+        if parent_id is None or child_id is None:
+            continue
+        try:
+            session.execute(
+                relationships.insert().values(
+                    parent_person_id=parent_id,
+                    child_person_id=child_id,
+                    rel_type="parent",
+                )
+            )
+            relationship_count += 1
+        except IntegrityError:
+            continue
+
+    session.commit()
+    return jsonify(
+        {
+            "imported": {
+                "people": len(source_to_person_id),
+                "media_assets": len(media_id_to_asset),
+                "media_links": media_links_created,
+                "relationships": relationship_count,
+            }
+        }
+    )
 
 @api_bp.get("/tree/<int:person_id>")
 def tree(person_id: int):
