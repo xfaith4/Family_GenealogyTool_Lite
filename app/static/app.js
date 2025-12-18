@@ -396,4 +396,19 @@ function wire(){
   wire();
   await refreshPeople();
   setButtons(false);
+
+  // Support deep-linking from Tree v2 and other pages
+  // Example: /?personId=123
+  const params = new URLSearchParams(window.location.search);
+  const personId = params.get('personId');
+  if(personId){
+    const pid = parseInt(personId, 10);
+    if(!Number.isNaN(pid)){
+      try {
+        await loadDetails(pid);
+      } catch (e) {
+        console.warn('Failed to load personId from URL:', e);
+      }
+    }
+  }
 })();

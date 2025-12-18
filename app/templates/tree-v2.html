@@ -21,6 +21,8 @@
     </div>
     <div class="actions">
       <a href="/" class="btn btnSecondary">← Back to Main View</a>
+      <a href="/analytics" class="btn btnSecondary">📊 Analytics</a>
+      <a href="/media/unassigned" class="btn btnSecondary">📷 Unassigned Media</a>
       <label class="btn btnSecondary" for="gedcomFile">Import GEDCOM</label>
       <input id="gedcomFile" type="file" accept=".ged,.gedcom,.txt" hidden />
     </div>
@@ -35,7 +37,7 @@
       <div id="peopleList" class="list"></div>
     </section>
 
-    <section class="panel span2">
+    <section class="panel treeV2Main">
       <div class="panelHeader">
         <h2>Graph Tree View</h2>
         <div class="treeV2Controls">
@@ -47,7 +49,18 @@
             <option value="4">4 generations</option>
             <option value="5">5 generations</option>
           </select>
+          <label for="layoutSelect">Layout:</label>
+          <select id="layoutSelect">
+            <option value="elk" selected>Layered (ELK)</option>
+            <option value="breadthfirst">Breadthfirst</option>
+            <option value="concentric">Concentric</option>
+            <option value="cose">Force (COSE)</option>
+          </select>
+          <input id="graphSearch" class="input inputSmall" placeholder="Find in graph..." />
+          <button id="btnFind" class="btn btnSecondary">Find</button>
+          <button id="btnFit" class="btn btnSecondary">Fit</button>
           <button id="btnRefresh" class="btn btnSecondary" disabled>Refresh</button>
+          <button id="btnExportPng" class="btn btnSecondary">Export&nbsp;PNG</button>
           <button id="btnExportTree" class="btn">Export&nbsp;CSV</button>
           <button id="btnPrintTree" class="btn btnSecondary">Print Tree</button>
         </div>
@@ -152,11 +165,35 @@
           await window.TreeV2.loadGraph(state.selected.id, depth);
         }
       });
+
+      $("layoutSelect").addEventListener("change", () => {
+        window.TreeV2.setLayout($('layoutSelect').value || 'elk');
+      });
       
       $("btnRefresh").addEventListener("click", async () => {
         if (state.selected) {
           const depth = parseInt($('depthSelect').value || 2);
           await window.TreeV2.loadGraph(state.selected.id, depth);
+        }
+      });
+
+      $("btnFit").addEventListener("click", () => {
+        window.TreeV2.fit();
+      });
+
+      $("btnExportPng").addEventListener("click", () => {
+        window.TreeV2.exportPng();
+      });
+
+      $("btnFind").addEventListener("click", () => {
+        const q = ($('graphSearch').value || '').trim();
+        if(q) window.TreeV2.findAndFocus(q);
+      });
+
+      $("graphSearch").addEventListener("keydown", (ev) => {
+        if(ev.key === 'Enter'){
+          const q = ($('graphSearch').value || '').trim();
+          if(q) window.TreeV2.findAndFocus(q);
         }
       });
       

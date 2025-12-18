@@ -13,6 +13,9 @@ from .models import Person, Family, Note, MediaAsset, MediaLink, relationships, 
 from .gedcom import parse_gedcom, to_summary
 from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
 
+import re
+from collections import Counter
+
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 ui_bp = Blueprint("ui", __name__)
 
@@ -27,6 +30,10 @@ def unassigned_media_page():
 @ui_bp.get("/tree-v2")
 def tree_v2_page():
     return render_template("tree-v2.html")
+
+@ui_bp.get("/analytics")
+def analytics_page():
+    return render_template("analytics.html")
 
 def _person_to_dict(p: Person) -> dict:
     return {
@@ -664,6 +671,236 @@ def analytics_people_without_media():
     
     return jsonify({"people_without_media": count})
 
+
+# -------------------------
+# Analytics v1 (data patterns)
+# -------------------------
+
+_YEAR_RE = re.compile(r"(\d{4})")
+
+
+def _extract_years(value: str | None) -> list[int]:
+    """Extract all 4-digit years from a GEDCOM-ish freeform date string."""
+    if not value:
+        return []
+    years = []
+    for m in _YEAR_RE.finditer(value):
+        try:
+            years.append(int(m.group(1)))
+        except Exception:
+            continue
+    return years
+
+
+def _extract_year_primary(value: str | None) -> int | None:
+    """Return the earliest year found in the string (BET/BEF/etc. -> earliest)."""
+    years = _extract_years(value)
+    return min(years) if years else None
+
+
+def _norm_text(value: str | None) -> str:
+    return (value or "").strip().lower()
+
+
+def _place_key(value: str | None) -> str:
+    """Normalize a place string for grouping (cheap + cheerful)."""
+    if not value:
+        return ""
+    v = " ".join((value or "").replace(";", ",").split())
+    return v.strip().lower()
+
+
+@api_bp.get("/analytics/overview")
+def analytics_overview():
+    """High-level counts + coverage + a few top lists."""
+    session = get_session()
+
+    counts = {
+        "people": session.execute(select(func.count(Person.id))).scalar_one(),
+        "families": session.execute(select(func.count(Family.id))).scalar_one(),
+        "notes": session.execute(select(func.count(Note.id))).scalar_one(),
+        "media_assets": session.execute(select(func.count(MediaAsset.id))).scalar_one(),
+        "media_links": session.execute(select(func.count(MediaLink.id))).scalar_one(),
+    }
+
+    # Coverage metrics (computed in Python because fields are free-form strings)
+    people_rows = session.execute(
+        select(
+            Person.id,
+            Person.given,
+            Person.surname,
+            Person.sex,
+            Person.birth_date,
+            Person.birth_place,
+            Person.death_date,
+            Person.death_place,
+        )
+    ).all()
+
+    total_people = len(people_rows) or 1
+    birth_year_known = 0
+    death_year_known = 0
+    birth_place_known = 0
+    death_place_known = 0
+    sex_known = 0
+
+    for (_pid, _g, _s, sex, bdate, bplace, ddate, dplace) in people_rows:
+        if _extract_year_primary(bdate) is not None:
+            birth_year_known += 1
+        if _extract_year_primary(ddate) is not None:
+            death_year_known += 1
+        if (bplace or "").strip():
+            birth_place_known += 1
+        if (dplace or "").strip():
+            death_place_known += 1
+        if (sex or "").strip():
+            sex_known += 1
+
+    coverage = {
+        "birth_year_pct": round((birth_year_known / total_people) * 100, 1),
+        "death_year_pct": round((death_year_known / total_people) * 100, 1),
+        "birth_place_pct": round((birth_place_known / total_people) * 100, 1),
+        "death_place_pct": round((death_place_known / total_people) * 100, 1),
+        "sex_pct": round((sex_known / total_people) * 100, 1),
+    }
+
+    # Top surnames + places via SQL (fast)
+    top_surnames_rows = session.execute(
+        select(Person.surname, func.count(Person.id))
+        .where(Person.surname.is_not(None))
+        .where(Person.surname != "")
+        .group_by(Person.surname)
+        .order_by(func.count(Person.id).desc())
+        .limit(15)
+    ).all()
+    top_surnames = [{"surname": s, "count": c} for (s, c) in top_surnames_rows]
+
+    top_birth_places_rows = session.execute(
+        select(Person.birth_place, func.count(Person.id))
+        .where(Person.birth_place.is_not(None))
+        .where(Person.birth_place != "")
+        .group_by(Person.birth_place)
+        .order_by(func.count(Person.id).desc())
+        .limit(15)
+    ).all()
+    top_birth_places = [{"place": p, "count": c} for (p, c) in top_birth_places_rows]
+
+    # Children-per-family distribution
+    fam_child_rows = session.execute(
+        select(family_children.c.family_id, func.count(family_children.c.child_person_id))
+        .group_by(family_children.c.family_id)
+    ).all()
+    child_counts = [int(c) for (_fid, c) in fam_child_rows]
+    dist = Counter(child_counts)
+    children_per_family = {
+        "avg": round((sum(child_counts) / (len(child_counts) or 1)), 2),
+        "max": max(child_counts) if child_counts else 0,
+        "distribution": [
+            {"children": k, "families": v} for k, v in sorted(dist.items(), key=lambda kv: kv[0])
+        ],
+    }
+
+    return jsonify({
+        "counts": counts,
+        "coverage": coverage,
+        "top_surnames": top_surnames,
+        "top_birth_places": top_birth_places,
+        "children_per_family": children_per_family,
+    })
+
+
+@api_bp.get("/analytics/timeseries")
+def analytics_timeseries():
+    """Births/deaths/marriages grouped by decade (best-effort year extraction)."""
+    session = get_session()
+
+    births = Counter()
+    deaths = Counter()
+    marriages = Counter()
+
+    for (bdate,) in session.execute(select(Person.birth_date)).all():
+        y = _extract_year_primary(bdate)
+        if y:
+            births[(y // 10) * 10] += 1
+
+    for (ddate,) in session.execute(select(Person.death_date)).all():
+        y = _extract_year_primary(ddate)
+        if y:
+            deaths[(y // 10) * 10] += 1
+
+    for (mdate,) in session.execute(select(Family.marriage_date)).all():
+        y = _extract_year_primary(mdate)
+        if y:
+            marriages[(y // 10) * 10] += 1
+
+    def _to_series(counter: Counter):
+        return [
+            {"decade": int(dec), "count": int(counter[dec])}
+            for dec in sorted(counter.keys())
+        ]
+
+    return jsonify({
+        "births_by_decade": _to_series(births),
+        "deaths_by_decade": _to_series(deaths),
+        "marriages_by_decade": _to_series(marriages),
+    })
+
+
+@api_bp.get("/analytics/duplicates")
+def analytics_duplicates():
+    """Potential duplicate people: same (given,surname,birth_year) with >1 record."""
+    limit = min(int(request.args.get("limit", 50)), 200)
+    session = get_session()
+    rows = session.execute(select(Person.id, Person.given, Person.surname, Person.birth_date)).all()
+
+    buckets: dict[tuple[str, str, int], list[int]] = {}
+    for pid, given, surname, bdate in rows:
+        g = _norm_text(given)
+        s = _norm_text(surname)
+        if not g or not s:
+            continue
+        y = _extract_year_primary(bdate)
+        if not y:
+            continue
+        key = (g, s, y)
+        buckets.setdefault(key, []).append(int(pid))
+
+    out = []
+    for (g, s, y), ids in buckets.items():
+        if len(ids) > 1:
+            out.append({
+                "given": g,
+                "surname": s,
+                "birth_year": y,
+                "count": len(ids),
+                "ids": ids[:25],
+            })
+
+    out.sort(key=lambda x: (-x["count"], x["surname"], x["given"], x["birth_year"]))
+    return jsonify(out[:limit])
+
+
+@api_bp.get("/analytics/migration-pairs")
+def analytics_migration_pairs():
+    """Top birth_place -> death_place pairs (best-effort normalization)."""
+    limit = min(int(request.args.get("limit", 20)), 200)
+    session = get_session()
+    rows = session.execute(select(Person.birth_place, Person.death_place)).all()
+
+    pairs = Counter()
+    for b, d in rows:
+        bk = _place_key(b)
+        dk = _place_key(d)
+        if not bk or not dk or bk == dk:
+            continue
+        pairs[(bk, dk)] += 1
+
+    out = [
+        {"from": k[0], "to": k[1], "count": int(v)}
+        for k, v in pairs.most_common(limit)
+    ]
+    return jsonify(out)
+
 @api_bp.get("/people/<int:person_id>/media/v2")
 def get_person_media_v2(person_id: int):
     """Get media assets linked to a person with full details."""
@@ -685,6 +922,8 @@ def get_person_media_v2(person_id: int):
         data = _media_asset_dict(asset, include_id_key="asset_id", link_id=link.id)
         out.append(data)
     return jsonify(out)
+
+
 @api_bp.get("/graph")
 def graph():
     """

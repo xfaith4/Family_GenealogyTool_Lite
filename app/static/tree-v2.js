@@ -6,6 +6,8 @@
 let cy = null;  // Cytoscape instance (if available)
 let currentPersonId = null;
 let currentGraph = null;
+let currentLayoutName = 'elk';
+let lastFindQuery = '';
 
 function escapeHtml(s) {
   return (s ?? "").toString()
@@ -27,6 +29,58 @@ function formatDates(data) {
     return `${birth || "?"} – ${death || "?"}`;
   }
   return "";
+}
+
+function getLayoutOptions(name) {
+  const n = (name || 'elk').toLowerCase();
+
+  if (n === 'breadthfirst') {
+    return {
+      name: 'breadthfirst',
+      directed: true,
+      padding: 40,
+      spacingFactor: 1.25,
+      animate: true,
+      animationDuration: 450,
+    };
+  }
+
+  if (n === 'concentric') {
+    return {
+      name: 'concentric',
+      padding: 50,
+      animate: true,
+      animationDuration: 450,
+      concentric: (node) => node.data('nodeType') === 'person' ? 100 : 10,
+      levelWidth: () => 1,
+    };
+  }
+
+  if (n === 'cose') {
+    return {
+      name: 'cose',
+      padding: 50,
+      animate: true,
+      animationDuration: 650,
+      idealEdgeLength: 120,
+      nodeOverlap: 8,
+    };
+  }
+
+  // Default: ELK layered
+  return {
+    name: 'elk',
+    elk: {
+      algorithm: 'layered',
+      'elk.direction': 'DOWN',
+      'elk.spacing.nodeNode': 50,
+      'elk.layered.spacing.nodeNodeBetweenLayers': 80,
+    },
+    fit: true,
+    padding: 30,
+    animate: true,
+    animationDuration: 450,
+  };
 }
 
 async function loadGraph(personId, depth = 2) {
@@ -59,11 +113,14 @@ function renderGraph(graphData) {
   // Add nodes
   for (const node of graphData.nodes) {
     if (node.type === "person") {
+      const nm = fullName(node.data);
+      const dates = formatDates(node.data);
+      const lbl = dates ? `${nm}\n${dates}` : nm;
       elements.push({
         group: 'nodes',
         data: {
           id: node.id,
-          label: fullName(node.data),
+          label: lbl,
           personData: node.data,
           nodeType: 'person',
           quality: node.data.quality,
@@ -107,6 +164,7 @@ function renderGraph(graphData) {
           'label': 'data(label)',
           'text-valign': 'center',
           'text-halign': 'center',
+          'text-wrap': 'wrap',
           'background-color': function(ele) {
             const quality = ele.data('quality');
             if (quality === 'high') return '#4a90e2';
@@ -116,12 +174,13 @@ function renderGraph(graphData) {
           'color': '#fff',
           'text-outline-color': '#333',
           'text-outline-width': 1,
+          'border-width': 1,
+          'border-color': 'rgba(255,255,255,0.25)',
           'width': 120,
           'height': 60,
           'shape': 'roundrectangle',
-          'font-size': 12,
+          'font-size': 11,
           'font-weight': 'bold',
-          'text-wrap': 'wrap',
           'text-max-width': 110,
         }
       },
@@ -143,8 +202,8 @@ function renderGraph(graphData) {
         selector: 'edge',
         style: {
           'width': 2,
-          'line-color': '#999',
-          'target-arrow-color': '#999',
+          'line-color': 'rgba(148,163,184,0.55)',
+          'target-arrow-color': 'rgba(148,163,184,0.55)',
           'target-arrow-shape': 'triangle',
           'curve-style': 'bezier',
         }
@@ -154,12 +213,14 @@ function renderGraph(graphData) {
         style: {
           'line-style': 'solid',
           'target-arrow-shape': 'none',
+          'line-color': 'rgba(244,114,182,0.75)',
         }
       },
       {
         selector: 'edge[edgeType="child"]',
         style: {
           'line-style': 'solid',
+          'target-arrow-shape': 'triangle',
         }
       },
       {
@@ -169,18 +230,16 @@ function renderGraph(graphData) {
           'border-color': '#f39c12',
         }
       }
+      ,
+      {
+        selector: 'node.highlighted',
+        style: {
+          'border-width': 4,
+          'border-color': '#22c55e',
+        }
+      }
     ],
-    layout: {
-      name: 'elk',
-      elk: {
-        algorithm: 'layered',
-        'elk.direction': 'DOWN',
-        'elk.spacing.nodeNode': 50,
-        'elk.layered.spacing.nodeNodeBetweenLayers': 80,
-      },
-      fit: true,
-      padding: 30,
-    },
+    layout: getLayoutOptions(currentLayoutName),
     minZoom: 0.3,
     maxZoom: 3,
   });
@@ -201,6 +260,69 @@ function renderGraph(graphData) {
   // Handle pan and zoom
   cy.userZoomingEnabled(true);
   cy.userPanningEnabled(true);
+}
+
+function setLayout(name){
+  currentLayoutName = (name || 'elk');
+  if (!cy) return;
+  try {
+    cy.layout(getLayoutOptions(currentLayoutName)).run();
+  } catch (e) {
+    console.warn('Layout failed:', e);
+  }
+}
+
+function fit(){
+  if (!cy) return;
+  try { cy.fit(cy.elements(), 60); } catch {}
+}
+
+function exportPng(){
+  if (!cy) {
+    alert('PNG export needs Cytoscape (the CDN might be blocked).');
+    return;
+  }
+
+  const png64 = cy.png({
+    full: true,
+    scale: 2,
+    bg: '#050810',
+  });
+
+  const a = document.createElement('a');
+  a.href = png64;
+  a.download = `family_tree_${currentPersonId || 'root'}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function findAndFocus(query){
+  if (!cy) return;
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return;
+  lastFindQuery = q;
+
+  // Clear old highlights
+  cy.nodes().removeClass('highlighted');
+
+  // Match against label, given, surname, or numeric person id
+  const matches = cy.nodes('[nodeType="person"]').filter((n) => {
+    const lbl = String(n.data('label') || '').toLowerCase();
+    const pd = n.data('personData') || {};
+    const g = String(pd.given || '').toLowerCase();
+    const s = String(pd.surname || '').toLowerCase();
+    const pid = String(pd.id || '');
+    return lbl.includes(q) || g.includes(q) || s.includes(q) || pid === q;
+  });
+
+  if (matches.length === 0){
+    alert(`No matches for: ${query}`);
+    return;
+  }
+
+  matches.addClass('highlighted');
+  cy.animate({ fit: { eles: matches, padding: 90 }, duration: 450 });
 }
 
 function renderSimpleSVG(graphData, container) {
@@ -504,4 +626,8 @@ window.TreeV2 = {
   loadGraph: loadGraph,
   exportTreeData: exportTreeData,
   printTreeView: printTreeView,
+  setLayout: setLayout,
+  fit: fit,
+  exportPng: exportPng,
+  findAndFocus: findAndFocus,
 };

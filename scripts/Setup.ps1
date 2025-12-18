@@ -33,6 +33,15 @@ Write-Host "Installing requirements..."
 & $python -m pip install --upgrade pip | Out-Host
 & $python -m pip install -r (Join-Path $RepoRoot 'requirements.txt') | Out-Host
 
+# Ensure database is reset before running migrations to avoid missing columns
+Write-Host "Removing existing database to avoid schema conflicts..."
+$dbPath = Join-Path $RepoRoot 'data\family_tree.sqlite'
+$dbWal = "${dbPath}-wal"
+$dbShm = "${dbPath}-shm"
+if (Test-Path $dbPath) { Remove-Item $dbPath -Force }
+if (Test-Path $dbWal) { Remove-Item $dbWal -Force }
+if (Test-Path $dbShm) { Remove-Item $dbShm -Force }
+
 # Run Alembic migrations
 Write-Host "Running database migrations..."
 Push-Location $RepoRoot

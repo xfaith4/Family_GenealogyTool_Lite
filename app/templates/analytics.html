@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Analytics - Family Genealogy Tool Lite</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+  <!-- Chart.js (no build step) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">📊</div>
+      <div class="title">
+        <div class="name">Family Genealogy Tool <span class="muted">Lite</span> - Analytics</div>
+        <div class="sub">Patterns, coverage, and correlations (best-effort parsing)</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="/" class="btn btnSecondary">← Back to Main View</a>
+      <a href="/tree-v2" class="btn btnSecondary">Tree v2 →</a>
+    </div>
+  </header>
+
+  <main class="analyticsGrid">
+    <section class="panel spanAll">
+      <div class="panelHeader">
+        <h2>Overview</h2>
+        <div class="row">
+          <button id="btnRefresh" class="btn btnSecondary">Refresh</button>
+        </div>
+      </div>
+      <div id="kpiRow" class="kpiRow"></div>
+      <div class="muted" style="margin-top:10px; font-size:12px;">
+        ⚠️ Dates are free-form text from GEDCOM; year/decade charts use a regex (first 4-digit year found).
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader"><h2>Births / Deaths / Marriages by decade</h2></div>
+      <canvas id="chartDecades" height="220"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader"><h2>Top surnames</h2></div>
+      <canvas id="chartSurnames" height="220"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader"><h2>Top birth places</h2></div>
+      <canvas id="chartPlaces" height="220"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader"><h2>Children per family</h2></div>
+      <canvas id="chartChildren" height="220"></canvas>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Migration pairs (birth → death)</h2>
+        <div class="row">
+          <label class="muted" style="font-size:12px;">Top</label>
+          <select id="migrationLimit" class="selectSmall">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+      </div>
+      <div id="migrationTable" class="table"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Duplicate candidates</h2>
+        <div class="row">
+          <label class="muted" style="font-size:12px;">Top</label>
+          <select id="dupeLimit" class="selectSmall">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      <div id="dupeTable" class="table"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Analytics v1 • No build step • Chart.js via CDN • Local app</span>
+  </footer>
+
+  <script src="/static/analytics.js"></script>
+</body>
+</html>
