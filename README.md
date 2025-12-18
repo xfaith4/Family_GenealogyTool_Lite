@@ -14,13 +14,12 @@ Minimal, dependency-light genealogy app designed to run cleanly on Windows.
 .\scripts\Start.ps1
 ```
 
-Open: http://127.0.0.1:3001
+Open: <http://127.0.0.1:3001>
 
 ## Importing RMTree exports
 
 Use the **Import RMTree** button in either view to load .rmtree, .sql, or .txt exports.
 The importer focuses on populated tables so it extracts individuals, media locations, and media relationships into the existing schema without trying to recreate the original database.
-
 
 ## Reset to empty
 
