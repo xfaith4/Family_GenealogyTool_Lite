@@ -169,21 +169,127 @@ function formatBytes(bytes){
 async function renderTree(id){
   const host = $("tree");
   host.classList.remove("muted");
-  const t = await api(`/api/tree/${id}`);
-  const card = (p) => `
-    <div class="treeCard">
-      <strong>${escapeHtml(fullName(p))}</strong>
-      <div class="muted" style="font-size:12px;">ID ${p.id}</div>
-    </div>`;
-  const section = (title, list) => `
-    <div class="sectionTitle">${escapeHtml(title)}</div>
-    ${list.length ? list.map(card).join("") : `<div class="muted">None</div>`}`;
+  host.innerHTML = `<div class="muted" style="text-align:center;padding:30px;">Loading tree…</div>`;
 
-  host.innerHTML = `
-    ${card(t.root)}
-    ${section("Parents", t.parents || [])}
-    ${section("Children", t.children || [])}
-  `;
+  let treeData;
+  try {
+    treeData = await api(`/api/tree/${id}`);
+  } catch (err) {
+    host.innerHTML = `<div class="muted" style="text-align:center;padding:30px;">Failed to load tree.</div>`;
+    console.error("Failed to load mini tree", err);
+    return;
+  }
+
+  host.innerHTML = '';
+  if(!treeData?.root){
+    host.innerHTML = `<div class="muted" style="text-align:center;padding:30px;">No tree data available.</div>`;
+    return;
+  }
+
+  const svgWidth = Math.max(360, host.clientWidth || 360);
+  const svgHeight = 260;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', svgWidth);
+  svg.setAttribute('height', svgHeight);
+  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+  const parentNodes = (treeData.parents || []).slice(0, 4);
+  const childNodes = (treeData.children || []).slice(0, 6);
+  const positions = new Map();
+
+  const parentY = 40;
+  const rootY = svgHeight / 2 - 10;
+  const childY = svgHeight - 60;
+
+  const drawNode = (person, x, y, opts = {}) => {
+    const width = 120;
+    const height = 40;
+    positions.set(person.id, { x, y: y + height / 2 });
+
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.setAttribute('cursor', 'pointer');
+    group.setAttribute('data-person-id', person.id);
+    group.addEventListener('click', () => loadDetails(person.id));
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', x - width / 2);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', width);
+    rect.setAttribute('height', height);
+    rect.setAttribute('rx', '10');
+    rect.setAttribute('fill', opts.fill || '#0c1621');
+    rect.setAttribute('stroke', opts.stroke || 'var(--line)');
+    rect.setAttribute('stroke-width', opts.strokeWidth || '1.8');
+    group.appendChild(rect);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', x);
+    text.setAttribute('y', y + height / 2 - 2);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('fill', '#fff');
+    text.setAttribute('font-size', '12');
+    text.setAttribute('font-weight', '600');
+    text.textContent = fullName(person);
+    group.appendChild(text);
+
+    const meta = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    meta.setAttribute('x', x);
+    meta.setAttribute('y', y + height / 2 + 14);
+    meta.setAttribute('text-anchor', 'middle');
+    meta.setAttribute('dominant-baseline', 'hanging');
+    meta.setAttribute('fill', 'var(--muted)');
+    meta.setAttribute('font-size', '10');
+    meta.textContent = `ID ${person.id}`;
+    group.appendChild(meta);
+
+    svg.appendChild(group);
+  };
+
+  const drawLine = (from, to, opts = {}) => {
+    if(!from || !to) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', from.x);
+    line.setAttribute('y1', from.y);
+    line.setAttribute('x2', to.x);
+    line.setAttribute('y2', to.y);
+    line.setAttribute('stroke', opts.color || '#7f8c9a');
+    line.setAttribute('stroke-width', opts.width || '2');
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+  };
+
+  const parentSpacing = parentNodes.length ? svgWidth / (parentNodes.length + 1) : 0;
+  parentNodes.forEach((parent, index) => {
+    const x = parentSpacing * (index + 1);
+    drawNode(parent, x, parentY, { fill: '#16354c' });
+  });
+
+  const rootX = svgWidth / 2;
+  drawNode(treeData.root, rootX, rootY, { fill: '#1b6edc', stroke: '#fff', strokeWidth: '2' });
+
+  const childSpacing = childNodes.length ? svgWidth / (childNodes.length + 1) : 0;
+  childNodes.forEach((child, index) => {
+    const x = childSpacing * (index + 1);
+    drawNode(child, x, childY, { fill: '#1b1f29' });
+  });
+
+  parentNodes.forEach(parent => {
+    drawLine(positions.get(parent.id), positions.get(treeData.root.id));
+  });
+  childNodes.forEach(child => {
+    drawLine(positions.get(treeData.root.id), positions.get(child.id));
+  });
+
+  const legend = document.createElement('div');
+  legend.style.fontSize = '12px';
+  legend.style.marginTop = '8px';
+  legend.style.color = 'var(--muted)';
+  legend.innerHTML = 'Click a box to load that person’s profile.';
+
+  host.innerHTML = '';
+  host.appendChild(svg);
+  host.appendChild(legend);
 }
 
 async function loadDetails(id){

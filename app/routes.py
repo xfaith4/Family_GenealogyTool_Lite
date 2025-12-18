@@ -24,6 +24,10 @@ def index():
 def unassigned_media_page():
     return render_template("unassigned.html")
 
+@ui_bp.get("/tree-v2")
+def tree_v2_page():
+    return render_template("tree-v2.html")
+
 def _person_to_dict(p: Person) -> dict:
     return {
         "id": p.id,

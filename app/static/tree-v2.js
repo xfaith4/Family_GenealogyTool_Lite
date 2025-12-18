@@ -59,16 +59,11 @@ function renderGraph(graphData) {
   // Add nodes
   for (const node of graphData.nodes) {
     if (node.type === "person") {
-      const label = fullName(node.data);
-      const dates = formatDates(node.data);
-      const subtitle = dates || `ID ${node.data.id}`;
-      
       elements.push({
         group: 'nodes',
         data: {
           id: node.id,
-          label: label,
-          subtitle: subtitle,
+          label: fullName(node.data),
           personData: node.data,
           nodeType: 'person',
           quality: node.data.quality,
@@ -101,7 +96,8 @@ function renderGraph(graphData) {
   }
   
   // Initialize Cytoscape
-  cy = cytoscape({
+  try {
+    cy = cytoscape({
     container: container,
     elements: elements,
     style: [
@@ -188,6 +184,12 @@ function renderGraph(graphData) {
     minZoom: 0.3,
     maxZoom: 3,
   });
+  } catch (err) {
+    console.warn("Cytoscape render failed, falling back to SVG", err);
+    cy = null;
+    renderSimpleSVG(graphData, container);
+    return;
+  }
   
   // Handle node clicks
   cy.on('tap', 'node[nodeType="person"]', function(evt) {
@@ -384,6 +386,74 @@ function renderSimpleSVG(graphData, container) {
   container.appendChild(svg);
 }
 
+function escapeCsv(value) {
+  if (value == null) return '';
+  const str = value.toString();
+  if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function exportTreeData() {
+  if (!currentGraph) {
+    alert('Load a tree before exporting.');
+    return;
+  }
+  const peopleNodes = currentGraph.nodes.filter(node => node.type === 'person');
+  if (!peopleNodes.length) {
+    alert('No person data found in the current view.');
+    return;
+  }
+
+  const header = ['Given', 'Surname', 'Sex', 'Birth Date', 'Birth Place', 'Death Date', 'Death Place', 'Quality', 'XREF'];
+  const rows = [
+    header.join(','),
+    ...peopleNodes.map(node => {
+      const data = node.data;
+      return [
+        escapeCsv(data.given),
+        escapeCsv(data.surname),
+        escapeCsv(data.sex),
+        escapeCsv(data.birth_date),
+        escapeCsv(data.birth_place),
+        escapeCsv(data.death_date),
+        escapeCsv(data.death_place),
+        escapeCsv(data.quality),
+        escapeCsv(data.xref),
+      ].join(',');
+    })
+  ];
+
+  const csvContent = rows.join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `family-tree-${currentPersonId || 'graph'}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function printTreeView() {
+  const container = document.getElementById('treeV2Container');
+  if (!container) return;
+  const win = window.open('', '_blank');
+  if (!win) return;
+  const styles = `
+    <style>
+      body { margin: 0; background: #050810; color: #fff; font-family: ui-sans-serif, system-ui, sans-serif; }
+      .tree-print { width: 100%; min-height: 100vh; padding: 20px; box-sizing: border-box; background: #050810; }
+    </style>
+  `;
+  win.document.write(`<!doctype html><html><head><title>Family Tree</title>${styles}</head><body><div class="tree-print">${container.innerHTML}</div></body></html>`);
+  win.document.close();
+  win.focus();
+  win.print();
+}
+
 function showPersonPanel(personData) {
   const panel = document.getElementById('treeV2Panel');
   panel.classList.remove('hidden');
@@ -432,4 +502,6 @@ function showPersonPanel(personData) {
 // Export to global scope for other modules to use
 window.TreeV2 = {
   loadGraph: loadGraph,
+  exportTreeData: exportTreeData,
+  printTreeView: printTreeView,
 };

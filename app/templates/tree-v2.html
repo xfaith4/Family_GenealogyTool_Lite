@@ -39,7 +39,7 @@
       <div class="panelHeader">
         <h2>Graph Tree View</h2>
         <div class="treeV2Controls">
-          <label for="depthSelect">Depth:</label>
+          <label for="depthSelect">Generations:</label>
           <select id="depthSelect">
             <option value="1">1 generation</option>
             <option value="2" selected>2 generations</option>
@@ -48,6 +48,8 @@
             <option value="5">5 generations</option>
           </select>
           <button id="btnRefresh" class="btn btnSecondary" disabled>Refresh</button>
+          <button id="btnExportTree" class="btn">Export&nbsp;CSV</button>
+          <button id="btnPrintTree" class="btn btnSecondary">Print Tree</button>
         </div>
       </div>
       <div id="treeV2Container"></div>
@@ -156,6 +158,13 @@
           const depth = parseInt($('depthSelect').value || 2);
           await window.TreeV2.loadGraph(state.selected.id, depth);
         }
+      });
+      
+      $("btnExportTree").addEventListener("click", () => {
+        window.TreeV2.exportTreeData();
+      });
+      $("btnPrintTree").addEventListener("click", () => {
+        window.TreeV2.printTreeView();
       });
     }
     
