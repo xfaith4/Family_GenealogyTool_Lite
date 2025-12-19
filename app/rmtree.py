@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import hashlib
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Tuple
 
@@ -30,6 +32,60 @@ def parse_rmtree_sql(text: str) -> Dict[str, TableData]:
             entry = tables.setdefault(table_name, TableData(columns=list(columns), rows=[]))
             entry.rows.extend(rows)
     return tables
+
+
+def load_tables_from_sqlite(db_path: str, fetch_size: int = 500) -> Dict[str, TableData]:
+    """
+    Read tables from a RootsMagic SQLite database into the TableData structure
+    used by the existing collectors. Tables and columns are normalized to
+    lowercase with underscores to make schema differences tolerant.
+    """
+    tables: Dict[str, TableData] = {}
+    uri = f"file:{Path(db_path).as_posix()}?mode=ro"
+    with sqlite3.connect(uri, uri=True) as conn:
+        conn.row_factory = sqlite3.Row
+        table_names = [
+            row["name"]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            ).fetchall()
+        ]
+        for raw_name in table_names:
+            try:
+                columns_info = conn.execute(f'PRAGMA table_info("{raw_name}")').fetchall()
+                columns = [_normalize_identifier(col["name"]) for col in columns_info]
+                if not columns:
+                    continue
+                cursor = conn.execute(f'SELECT * FROM "{raw_name}"')
+                normalized_name = _normalize_identifier(raw_name)
+                table_data = tables.setdefault(normalized_name, TableData(columns=columns, rows=[]))
+                while True:
+                    chunk = cursor.fetchmany(fetch_size)
+                    if not chunk:
+                        break
+                    for row in chunk:
+                        table_data.rows.append(tuple(row[i] for i in range(len(columns_info))))
+            except sqlite3.DatabaseError:
+                # Skip tables with unsupported collations or other issues
+                continue
+    return tables
+
+
+def sqlite_schema_fingerprint(db_path: str) -> Tuple[str, List[Tuple[Any, ...]]]:
+    """
+    Compute a deterministic fingerprint of sqlite_master to help debug schema differences.
+    Returns the fingerprint and the raw rows.
+    """
+    uri = f"file:{Path(db_path).as_posix()}?mode=ro"
+    rows: list[tuple[Any, ...]] = []
+    with sqlite3.connect(uri, uri=True) as conn:
+        cursor = conn.execute(
+            "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index','view') ORDER BY type, name"
+        )
+        rows = cursor.fetchall()
+    joined = "|".join(f"{r[0]}:{r[1]}:{r[2]}:{r[3] or ''}" for r in rows)
+    fingerprint = hashlib.sha256(joined.encode("utf-8")).hexdigest()
+    return fingerprint, rows
 
 
 def _strip_comments(text: str) -> str:
