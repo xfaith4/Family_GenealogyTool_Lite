@@ -10,7 +10,8 @@ Minimal, dependency-light genealogy app designed to run cleanly on Windows.
 ## Quick start (PowerShell)
 
 ```powershell
-.\scripts\Setup.ps1
+set-executionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\Setup.ps1 
 .\scripts\Start.ps1
 ```
 
