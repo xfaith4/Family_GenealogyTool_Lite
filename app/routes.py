@@ -217,6 +217,10 @@ def tree_v2_page():
 def analytics_page():
     return render_template("analytics.html")
 
+@ui_bp.get("/service-worker.js")
+def service_worker():
+    return send_from_directory(current_app.static_folder, "service-worker.js")
+
 def _person_to_dict(p: Person) -> dict:
     return {
         "id": p.id,

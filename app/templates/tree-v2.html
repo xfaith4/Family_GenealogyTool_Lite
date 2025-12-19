@@ -4,13 +4,15 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Tree View v2 - Family Genealogy Tool Lite</title>
+   <link rel="manifest" href="/static/manifest.webmanifest">
+   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="/static/styles.css"/>
   <!-- Cytoscape.js -->
   <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
   <!-- ELK layout for Cytoscape -->
   <script src="https://unpkg.com/cytoscape-elk@2.2.0/cytoscape-elk.js"></script>
 </head>
-<body>
+<body class="route-treev2">
   <header class="topbar">
     <div class="brand">
       <div class="logo">🌳</div>
@@ -80,6 +82,16 @@
     <span class="muted">Tree Navigation v2 (feature preview) • Local app • Data stored in ./data/family_tree.sqlite</span>
   </footer>
 
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="/" data-route="home"><span class="icon">🌳</span><span>Tree/People</span></a>
+      <a href="/media/unassigned" data-route="media"><span class="icon">📷</span><span>Unassigned</span></a>
+      <a href="/#import" data-route="import"><span class="icon">⬆️</span><span>Import</span></a>
+      <a href="/analytics" data-route="settings"><span class="icon">⚙️</span><span>Settings</span></a>
+    </div>
+  </nav>
+
+  <script src="/static/pwa.js"></script>
   <script src="/static/tree-v2.js"></script>
   <script>
     // Shared app.js utilities (minimal copy for tree-v2)
@@ -241,5 +253,6 @@
       }
     })();
   </script>
+  <script>window.setActiveNav && window.setActiveNav();</script>
 </body>
 </html>

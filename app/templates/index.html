@@ -4,9 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Family Genealogy Tool Lite</title>
+   <link rel="manifest" href="/static/manifest.webmanifest">
+   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
-<body>
+<body class="route-home">
   <header class="topbar">
     <div class="brand">
       <div class="logo">🌳</div>
@@ -61,6 +63,17 @@
     <span class="muted">Local app. Data stored in ./data/family_tree.sqlite</span>
   </footer>
 
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="/" data-route="home"><span class="icon">🌳</span><span>Tree/People</span></a>
+      <a href="/media/unassigned" data-route="media"><span class="icon">📷</span><span>Unassigned</span></a>
+      <a href="/#import" data-route="import"><span class="icon">⬆️</span><span>Import</span></a>
+      <a href="/analytics" data-route="settings"><span class="icon">⚙️</span><span>Settings</span></a>
+    </div>
+  </nav>
+
+  <script src="/static/pwa.js"></script>
   <script src="/static/app.js"></script>
+  <script>window.setActiveNav && window.setActiveNav();</script>
 </body>
 </html>
