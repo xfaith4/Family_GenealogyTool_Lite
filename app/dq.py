@@ -110,7 +110,16 @@ def _parse_date(value: str | None) -> Tuple[str | None, str | None, str | None, 
         month = month_year.group("month")
         year = month_year.group("year")
         try:
-            month_num = int(month) if month.isdigit() else datetime.strptime(month[:3].title(), "%b").month
+            month_map = {
+                "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
+                "JUL": 7, "AUG": 8, "SEP": 9, "SEPT": 9, "OCT": 10, "NOV": 11, "DEC": 12,
+            }
+            if month.isdigit():
+                month_num = int(month)
+            else:
+                month_num = month_map.get(month.upper()[:4]) or month_map.get(month.upper()[:3])
+            if not month_num:
+                month_num = datetime.strptime(month[:3].title(), "%b").month
             return f"{int(year):04d}-{month_num:02d}", "month", qualifier, 0.85, False
         except Exception:
             pass
@@ -202,12 +211,12 @@ def _detect_duplicates(session: Session) -> int:
 
                 birth_a = _parse_year(a.birth_date)
                 birth_b = _parse_year(b.birth_date)
-                birth_delta = abs(birth_a - birth_b) if (birth_a and birth_b) else None
+                birth_delta = abs(birth_a - birth_b) if (birth_a is not None and birth_b is not None) else None
                 birth_score = 0.25 if birth_delta is not None and birth_delta <= 1 else 0
 
                 death_a = _parse_year(a.death_date)
                 death_b = _parse_year(b.death_date)
-                death_delta = abs(death_a - death_b) if (death_a and death_b) else None
+                death_delta = abs(death_a - death_b) if (death_a is not None and death_b is not None) else None
                 death_score = 0.1 if death_delta is not None and death_delta <= 1 else 0
 
                 place_score = 0.15 if _norm_place(a.birth_place) and _norm_place(a.birth_place) == _norm_place(b.birth_place) else 0

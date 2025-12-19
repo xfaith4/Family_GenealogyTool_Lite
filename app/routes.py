@@ -2273,7 +2273,10 @@ def dq_undo():
                             try:
                                 ev.date_canonical = datetime.fromisoformat(target_date)
                             except Exception:
-                                ev.date_canonical = None
+                                try:
+                                    ev.date_canonical = datetime.strptime(target_date, "%Y-%m-%d")
+                                except Exception:
+                                    ev.date_canonical = None
                         else:
                             ev.date_canonical = None
 
