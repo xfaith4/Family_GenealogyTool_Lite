@@ -50,6 +50,11 @@ The importer focuses on populated tables so it extracts individuals, media locat
   - Network-first with cache fallback for HTML shell; API responses are not cached.
 - Icons: `/static/icons/icon-192.png` and `/static/icons/icon-512.png`.
 
+## Analytics drilldown contract
+- Each chart/table defines a `chartId`, title, and a `getDrilldownPayload` (implemented in `static/analytics.js`) that returns `{ type, filters, label }`.
+- Drilldowns call `POST /api/analytics/drilldown` with that payload plus pagination, and render in the right-side drawer.
+- To add a new chart, extend `buildDrilldownPayload` with the new `chartId`, add the title to `data-chart-title` in `templates/analytics.html`, and return a `type/filters` pair the backend endpoint can understand.
+
 ### Install steps (Android Chrome)
 1. Start the app normally (http://127.0.0.1:3001).
 2. Open the browser menu → “Add to Home screen” / “Install app”.

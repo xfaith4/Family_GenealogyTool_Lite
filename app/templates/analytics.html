@@ -39,29 +39,37 @@
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panelHeader"><h2>Births / Deaths / Marriages by decade</h2></div>
-      <canvas id="chartDecades" height="220"></canvas>
-    </section>
-
-    <section class="panel">
-      <div class="panelHeader"><h2>Top surnames</h2></div>
-      <canvas id="chartSurnames" height="220"></canvas>
-    </section>
-
-    <section class="panel">
-      <div class="panelHeader"><h2>Top birth places</h2></div>
-      <canvas id="chartPlaces" height="220"></canvas>
-    </section>
-
-    <section class="panel">
-      <div class="panelHeader"><h2>Children per family</h2></div>
-      <canvas id="chartChildren" height="220"></canvas>
-    </section>
-
-    <section class="panel">
+    <section class="panel" data-chart="decades">
       <div class="panelHeader">
-        <h2>Migration pairs (birth → death)</h2>
+        <h2 tabindex="0" role="button" aria-label="Expand Births, Deaths, Marriages by decade" data-chart-title="decades">Births / Deaths / Marriages by decade</h2>
+      </div>
+      <canvas id="chartDecades" height="220" aria-label="Births, deaths, marriages by decade"></canvas>
+    </section>
+
+    <section class="panel" data-chart="surnames">
+      <div class="panelHeader">
+        <h2 tabindex="0" role="button" aria-label="Expand Top surnames" data-chart-title="surnames">Top surnames</h2>
+      </div>
+      <canvas id="chartSurnames" height="220" aria-label="Top surnames"></canvas>
+    </section>
+
+    <section class="panel" data-chart="places">
+      <div class="panelHeader">
+        <h2 tabindex="0" role="button" aria-label="Expand Top birth places" data-chart-title="places">Top birth places</h2>
+      </div>
+      <canvas id="chartPlaces" height="220" aria-label="Top birth places"></canvas>
+    </section>
+
+    <section class="panel" data-chart="children">
+      <div class="panelHeader">
+        <h2 tabindex="0" role="button" aria-label="Expand Children per family" data-chart-title="children">Children per family</h2>
+      </div>
+      <canvas id="chartChildren" height="220" aria-label="Children per family"></canvas>
+    </section>
+
+    <section class="panel" data-chart="migration">
+      <div class="panelHeader">
+        <h2 tabindex="0" role="button" aria-label="Expand Migration pairs" data-chart-title="migration">Migration pairs (birth → death)</h2>
         <div class="row">
           <label class="muted" style="font-size:12px;">Top</label>
           <select id="migrationLimit" class="selectSmall">
@@ -71,12 +79,12 @@
           </select>
         </div>
       </div>
-      <div id="migrationTable" class="table"></div>
+      <div id="migrationTable" class="table" aria-label="Migration pairs table"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-chart="duplicates">
       <div class="panelHeader">
-        <h2>Duplicate candidates</h2>
+        <h2 tabindex="0" role="button" aria-label="Expand Duplicate candidates" data-chart-title="duplicates">Duplicate candidates</h2>
         <div class="row">
           <label class="muted" style="font-size:12px;">Top</label>
           <select id="dupeLimit" class="selectSmall">
@@ -86,9 +94,40 @@
           </select>
         </div>
       </div>
-      <div id="dupeTable" class="table"></div>
+      <div id="dupeTable" class="table" aria-label="Duplicate candidates table"></div>
     </section>
   </main>
+
+  <div id="drilldownDrawer" class="drawer hidden" role="dialog" aria-modal="true" aria-labelledby="drilldownTitle">
+    <div class="drawerHeader">
+      <div>
+        <div id="drilldownTitle" class="drawerTitle">People</div>
+        <div id="drilldownSub" class="drawerSub muted"></div>
+      </div>
+      <button id="btnCloseDrawer" class="btn btnSecondary" aria-label="Close drilldown drawer">✕</button>
+    </div>
+    <div class="drawerBody">
+      <div id="drilldownContent" class="drawerContent"></div>
+      <div class="drawerFooter">
+        <div class="row">
+          <button id="drilldownPrev" class="btn btnSecondary">Prev</button>
+          <button id="drilldownNext" class="btn btnSecondary">Next</button>
+          <button id="drilldownCopy" class="btn btnSecondary">Copy IDs</button>
+        </div>
+        <div id="drilldownPage" class="muted" style="font-size:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chartOverlay" class="overlay hidden" role="dialog" aria-modal="true">
+    <div class="overlayCard">
+      <div class="overlayHeader">
+        <div id="overlayTitle" class="overlayTitle"></div>
+        <button id="btnCloseOverlay" class="btn btnSecondary" aria-label="Close expanded chart">✕</button>
+      </div>
+      <div id="overlayBody" class="overlayBody"></div>
+    </div>
+  </div>
 
   <footer class="footer">
     <span class="muted">Analytics v1 • No build step • Chart.js via CDN • Local app</span>

@@ -1340,6 +1340,23 @@ def _extract_year_primary(value: str | None) -> int | None:
     years = _extract_years(value)
     return min(years) if years else None
 
+def _person_summary(p: Person) -> dict:
+    """Compact person shape for drilldowns."""
+    birth_year = _extract_year_primary(p.birth_date)
+    death_year = _extract_year_primary(p.death_date)
+    return {
+        "id": p.id,
+        "xref": p.xref,
+        "given": p.given,
+        "surname": p.surname,
+        "birth_date": p.birth_date,
+        "death_date": p.death_date,
+        "birth_year": birth_year,
+        "death_year": death_year,
+        "birth_place": p.birth_place,
+        "death_place": p.death_place,
+    }
+
 
 def _norm_text(value: str | None) -> str:
     return (value or "").strip().lower()
@@ -1351,6 +1368,97 @@ def _place_key(value: str | None) -> str:
         return ""
     v = " ".join((value or "").replace(";", ",").split())
     return v.strip().lower()
+
+def _people_for_drilldown(drill_type: str, filters: dict, session) -> list[Person]:
+    drill_type = (drill_type or "").lower()
+    filters = filters or {}
+
+    if drill_type == "surname":
+        surname = (filters.get("surname") or "").strip().lower()
+        if not surname:
+            return []
+        stmt = select(Person).where(func.lower(Person.surname) == surname).order_by(Person.surname, Person.given)
+        return session.execute(stmt).scalars().all()
+
+    if drill_type == "birth_place":
+        place = (filters.get("place") or "").strip().lower()
+        if not place:
+            return []
+        stmt = select(Person).where(func.lower(func.trim(Person.birth_place)) == place).order_by(Person.surname, Person.given)
+        return session.execute(stmt).scalars().all()
+
+    if drill_type in {"birth_decade", "death_decade", "marriage_decade"}:
+        decade = filters.get("decade")
+        if decade is None:
+            return []
+        decade = int(decade)
+        if drill_type == "marriage_decade":
+            fams = session.execute(select(Family)).scalars().all()
+            hits: list[int] = []
+            for fam in fams:
+                year = _extract_year_primary(fam.marriage_date)
+                if year and (year // 10) * 10 == decade:
+                    if fam.husband_person_id:
+                        hits.append(fam.husband_person_id)
+                    if fam.wife_person_id:
+                        hits.append(fam.wife_person_id)
+            if not hits:
+                return []
+            stmt = select(Person).where(Person.id.in_(hits)).order_by(Person.surname, Person.given)
+            return session.execute(stmt).scalars().all()
+
+        people = session.execute(select(Person)).scalars().all()
+        out = []
+        for p in people:
+            date_val = p.birth_date if drill_type == "birth_decade" else p.death_date
+            year = _extract_year_primary(date_val)
+            if year and (year // 10) * 10 == decade:
+                out.append(p)
+        out.sort(key=lambda x: (x.surname or "", x.given or ""))
+        return out
+
+    if drill_type == "children_count":
+        children = filters.get("children")
+        if children is None:
+            return []
+        child_rows = session.execute(
+            select(family_children.c.family_id, func.count(family_children.c.child_person_id))
+            .group_by(family_children.c.family_id)
+        ).all()
+        fam_ids = [fid for (fid, cnt) in child_rows if int(cnt) == int(children)]
+        if not fam_ids:
+            return []
+        fams = session.execute(select(Family).where(Family.id.in_(fam_ids))).scalars().all()
+        person_ids: set[int] = set()
+        for fam in fams:
+            if fam.husband_person_id:
+                person_ids.add(fam.husband_person_id)
+            if fam.wife_person_id:
+                person_ids.add(fam.wife_person_id)
+        if not person_ids:
+            return []
+        stmt = select(Person).where(Person.id.in_(person_ids)).order_by(Person.surname, Person.given)
+        return session.execute(stmt).scalars().all()
+
+    if drill_type == "migration_pair":
+        from_place = _place_key(filters.get("from"))
+        to_place = _place_key(filters.get("to"))
+        people = session.execute(select(Person)).scalars().all()
+        out = []
+        for p in people:
+            if _place_key(p.birth_place) == from_place and _place_key(p.death_place) == to_place:
+                out.append(p)
+        out.sort(key=lambda x: (x.surname or "", x.given or ""))
+        return out
+
+    if drill_type == "duplicate_cluster":
+        ids = filters.get("ids") or []
+        if not ids:
+            return []
+        stmt = select(Person).where(Person.id.in_(ids)).order_by(Person.surname, Person.given)
+        return session.execute(stmt).scalars().all()
+
+    return []
 
 
 @api_bp.get("/analytics/overview")
@@ -1543,6 +1651,24 @@ def analytics_migration_pairs():
         for k, v in pairs.most_common(limit)
     ]
     return jsonify(out)
+
+@api_bp.post("/analytics/drilldown")
+def analytics_drilldown():
+    """Generic drilldown endpoint for analytics charts."""
+    data = request.get_json(force=True, silent=False) or {}
+    drill_type = data.get("type")
+    filters = data.get("filters") or {}
+    page = max(int(data.get("page", 1) or 1), 1)
+    page_size = min(max(int(data.get("pageSize", 20) or 20), 1), 200)
+
+    session = get_session()
+    people = _people_for_drilldown(drill_type, filters, session)
+    total = len(people)
+    start = (page - 1) * page_size
+    end = start + page_size
+    items = [_person_summary(p) for p in people[start:end]]
+
+    return jsonify({"items": items, "total": total, "page": page, "pageSize": page_size})
 
 @api_bp.get("/people/<int:person_id>/media/v2")
 def get_person_media_v2(person_id: int):
