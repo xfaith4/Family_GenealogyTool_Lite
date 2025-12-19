@@ -64,14 +64,14 @@ def load_tables_from_sqlite(db_path: str, fetch_size: int = 500) -> Dict[str, Ta
                     if not chunk:
                         break
                     for row in chunk:
-                        table_data.rows.append(tuple(row[col["name"]] for col in columns_info))
+                        table_data.rows.append(tuple(row[i] for i in range(len(columns_info))))
             except sqlite3.DatabaseError:
                 # Skip tables with unsupported collations or other issues
                 continue
     return tables
 
 
-def sqlite_schema_fingerprint(db_path: str) -> tuple[str, list[tuple[Any, ...]]]:
+def sqlite_schema_fingerprint(db_path: str) -> Tuple[str, List[Tuple[Any, ...]]]:
     """
     Compute a deterministic fingerprint of sqlite_master to help debug schema differences.
     Returns the fingerprint and the raw rows.

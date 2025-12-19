@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
-from typing import Any, Dict
+from typing import Any, Dict, List
 from werkzeug.utils import secure_filename
 from sqlalchemy import select, or_, func
 from sqlalchemy.exc import IntegrityError
@@ -32,6 +32,7 @@ from collections import Counter
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 ui_bp = Blueprint("ui", __name__)
+RELATIONSHIP_PARENT_TYPE = "parent"
 
 @ui_bp.get("/")
 def index():
@@ -347,7 +348,7 @@ def import_gedcom():
                         relationships.insert().values(
                             parent_person_id=fam.husband_person_id,
                             child_person_id=child_id,
-                            rel_type='parent'
+                            rel_type=RELATIONSHIP_PARENT_TYPE
                         )
                     )
                 except Exception:
@@ -359,7 +360,7 @@ def import_gedcom():
                         relationships.insert().values(
                             parent_person_id=fam.wife_person_id,
                             child_person_id=child_id,
-                            rel_type='parent'
+                            rel_type=RELATIONSHIP_PARENT_TYPE
                         )
                     )
                 except Exception:
@@ -438,7 +439,7 @@ def import_rmtree():
             received=request.content_length,
         )
 
-    warnings: list[str] = []
+    warnings: List[str] = []
     orphan_relationships = 0
     orphan_media = 0
 
@@ -511,7 +512,8 @@ def import_rmtree():
             )
 
         try:
-            conn = sqlite3.connect(f"file:{sqlite_path}?mode=ro", uri=True)
+            sqlite_resolved = Path(sqlite_path).resolve()
+            conn = sqlite3.connect(f"file:{sqlite_resolved.as_posix()}?mode=ro", uri=True)
         except sqlite3.DatabaseError as exc:  # noqa: BLE001
             return _error("open_failed", f"Could not open SQLite database: {exc}", 422)
 
@@ -578,6 +580,7 @@ def import_rmtree():
 
         media_id_to_asset: Dict[Any, MediaAsset] = {}
         media_descriptions: Dict[Any, str] = {}
+        needs_media_flush = False
         for location in media_locations:
             media_id = location["media_id"]
             path = (location.get("path") or "").strip()
@@ -598,11 +601,14 @@ def import_rmtree():
                     size_bytes=None,
                 )
                 session.add(asset)
-                session.flush()
+                needs_media_flush = True
 
             media_id_to_asset[media_id] = asset
             if location.get("description"):
                 media_descriptions[media_id] = location["description"]
+
+        if needs_media_flush:
+            session.flush()
 
         media_links_created = 0
         for association in media_associations:
@@ -650,7 +656,7 @@ def import_rmtree():
                     relationships.insert().values(
                         parent_person_id=parent_id,
                         child_person_id=child_id,
-                        rel_type="parent",
+                        rel_type=RELATIONSHIP_PARENT_TYPE,
                     )
                 )
                 relationship_count += 1
@@ -668,6 +674,7 @@ def import_rmtree():
             "places": 0,
             "sources": 0,
         }
+        warnings.append("Event/place/source import not yet implemented; counts set to 0.")
         schema_info = {
             "user_version": user_version,
             "fingerprint": fingerprint,

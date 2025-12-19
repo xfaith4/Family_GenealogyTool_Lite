@@ -40,12 +40,21 @@ def _write_sample_rmtree(db_path: str):
         )
         """
     )
-    conn.execute("INSERT INTO PersonTable VALUES (1, 'John', 'Smith', 'M', '1 JAN 1980', 'Springfield', 'Patriarch')")
-    conn.execute("INSERT INTO PersonTable VALUES (2, 'Jane', 'Doe', 'F', '2 FEB 1982', 'Springfield', 'Matriarch')")
-    conn.execute("INSERT INTO PersonTable VALUES (3, 'Baby', 'Smith', 'F', '3 MAR 2005', 'Springfield', 'Child')")
+    conn.execute(
+        "INSERT INTO PersonTable VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (1, "John", "Smith", "M", "1 JAN 1980", "Springfield", "Patriarch"),
+    )
+    conn.execute(
+        "INSERT INTO PersonTable VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (2, "Jane", "Doe", "F", "2 FEB 1982", "Springfield", "Matriarch"),
+    )
+    conn.execute(
+        "INSERT INTO PersonTable VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (3, "Baby", "Smith", "F", "3 MAR 2005", "Springfield", "Child"),
+    )
     conn.execute("CREATE TABLE Relationships (ParentID INTEGER, ChildID INTEGER)")
-    conn.execute("INSERT INTO Relationships VALUES (1, 3)")
-    conn.execute("INSERT INTO Relationships VALUES (2, 3)")
+    conn.execute("INSERT INTO Relationships VALUES (?, ?)", (1, 3))
+    conn.execute("INSERT INTO Relationships VALUES (?, ?)", (2, 3))
     conn.execute(
         """
         CREATE TABLE MediaLocations (
@@ -56,8 +65,14 @@ def _write_sample_rmtree(db_path: str):
         )
         """
     )
-    conn.execute("INSERT INTO MediaLocations VALUES (10, 'photos/john.png', 'John.png', 'Portrait')")
-    conn.execute("INSERT INTO MediaLocations VALUES (11, 'photos/jane.png', 'Jane.jpg', 'Portrait')")
+    conn.execute(
+        "INSERT INTO MediaLocations VALUES (?, ?, ?, ?)",
+        (10, "photos/john.png", "John.png", "Portrait"),
+    )
+    conn.execute(
+        "INSERT INTO MediaLocations VALUES (?, ?, ?, ?)",
+        (11, "photos/jane.png", "Jane.jpg", "Portrait"),
+    )
     conn.execute(
         """
         CREATE TABLE MediaAssociations (
@@ -67,8 +82,8 @@ def _write_sample_rmtree(db_path: str):
         )
         """
     )
-    conn.execute("INSERT INTO MediaAssociations VALUES (10, 'Person', 1)")
-    conn.execute("INSERT INTO MediaAssociations VALUES (11, 'Person', 2)")
+    conn.execute("INSERT INTO MediaAssociations VALUES (?, ?, ?)", (10, "Person", 1))
+    conn.execute("INSERT INTO MediaAssociations VALUES (?, ?, ?)", (11, "Person", 2))
     conn.commit()
     conn.close()
 
