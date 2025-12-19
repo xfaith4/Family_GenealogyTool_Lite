@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Data Quality • Family Genealogy Tool Lite</title>
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body class="route-data-quality">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🧹</div>
+      <div class="title">
+        <div class="name">Data Quality</div>
+        <div class="sub">Detect, review, and fix issues safely</div>
+      </div>
+    </div>
+    <div class="actions wrap">
+      <button id="btnScan" class="btn">Scan for issues</button>
+      <a href="/" class="btn btnSecondary">🌳 Tree</a>
+      <a href="/analytics" class="btn btnSecondary">📊 Analytics</a>
+    </div>
+  </header>
+
+  <main class="panel span2 dataQualityMain">
+    <div class="tabs">
+      <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="duplicates">Duplicates</button>
+      <button data-tab="places">Places</button>
+      <button data-tab="dates">Dates</button>
+      <button data-tab="integrity">Integrity</button>
+      <button data-tab="changelog">Change Log</button>
+    </div>
+
+    <section id="tab-overview" class="tabContent active">
+      <div class="scoreCard">
+        <div class="scoreLabel">Data Quality Score</div>
+        <div id="dqScore" class="scoreValue">--</div>
+        <div class="muted small">Higher is better; derived from duplicates, dates, places, and integrity.</div>
+      </div>
+      <div class="grid cols2 gap16">
+        <div class="panel">
+          <div class="panelHeader"><h3>Coverage</h3></div>
+          <ul class="list" id="dqCoverage"></ul>
+        </div>
+        <div class="panel">
+          <div class="panelHeader"><h3>Queues</h3></div>
+          <ul class="list" id="dqQueues"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-duplicates" class="tabContent">
+      <div class="panelHeader">
+        <h3>Duplicate Review Queue</h3>
+      </div>
+      <div id="dupList" class="list"></div>
+      <div class="muted small">Side-by-side merge controls appear after selecting a pair.</div>
+    </section>
+
+    <section id="tab-places" class="tabContent">
+      <div class="panelHeader">
+        <h3>Place Clusters</h3>
+      </div>
+      <div id="placeList" class="list"></div>
+    </section>
+
+    <section id="tab-dates" class="tabContent">
+      <div class="panelHeader">
+        <h3>Date Fix Queue</h3>
+      </div>
+      <div id="dateList" class="list"></div>
+    </section>
+
+    <section id="tab-integrity" class="tabContent">
+      <div class="panelHeader">
+        <h3>Integrity Warnings</h3>
+      </div>
+      <div id="integrityList" class="list"></div>
+    </section>
+
+    <section id="tab-changelog" class="tabContent">
+      <div class="panelHeader">
+        <h3>Change Log</h3>
+      </div>
+      <div id="logList" class="list"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">All cleanups are logged with undo payloads. Changes are deterministic and reversible.</span>
+  </footer>
+
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="/" data-route="home"><span class="icon">🌳</span><span>Tree/People</span></a>
+      <a href="/analytics" data-route="analytics"><span class="icon">📊</span><span>Analytics</span></a>
+      <a href="/media/unassigned" data-route="media"><span class="icon">📷</span><span>Unassigned</span></a>
+      <a href="/data-quality" data-route="data-quality" class="active"><span class="icon">🧹</span><span>Data Quality</span></a>
+    </div>
+  </nav>
+
+  <script src="/static/pwa.js"></script>
+  <script src="/static/data-quality.js"></script>
+  <script>window.setActiveNav && window.setActiveNav();</script>
+</body>
+</html>

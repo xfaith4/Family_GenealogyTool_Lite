@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
-from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Table, Column, Index, Enum as SQLEnum, Float
+from sqlalchemy import String, Integer, Text, DateTime, ForeignKey, Table, Column, Index, Enum as SQLEnum, Float, Boolean
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 import enum
 
@@ -216,4 +216,56 @@ class DataQualityFlag(Base):
     __table_args__ = (
         Index('idx_data_quality_entity', 'entity_type', 'entity_id'),
         Index('idx_data_quality_flag_type', 'flag_type'),
+    )
+
+
+class DataQualityIssue(Base):
+    __tablename__ = "dq_issues"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    issue_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="warning", index=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    entity_ids: Mapped[str] = mapped_column(Text, nullable=False)  # JSON list for flexibility
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="open", index=True)
+    confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    impact_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    explanation_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    detected_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("idx_dq_issue_type_status", "issue_type", "status"),
+        Index("idx_dq_issue_detected", "detected_at"),
+    )
+
+
+class DataQualityActionLog(Base):
+    __tablename__ = "dq_action_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    action_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False)
+    undo_payload_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    applied_by: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+
+class DateNormalization(Base):
+    __tablename__ = "date_normalizations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False)  # 'person' | 'event' | 'family'
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    raw_value: Mapped[str] = mapped_column(String(255), nullable=False)
+    normalized: Mapped[Optional[str]] = mapped_column(String(25), nullable=True)  # yyyy or yyyy-MM or yyyy-MM-dd
+    precision: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # year|month|day|range
+    qualifier: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # about/before/after/between
+    confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    is_ambiguous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    detected_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_date_norm_entity", "entity_type", "entity_id"),
+        Index("idx_date_norm_confidence", "confidence"),
     )

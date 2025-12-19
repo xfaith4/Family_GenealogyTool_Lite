@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
 from typing import Any, Dict, List, Iterable, Tuple
 from werkzeug.utils import secure_filename
-from sqlalchemy import select, or_, and_, func
+from sqlalchemy import select, or_, and_, func, update
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 import os
@@ -15,9 +15,25 @@ import sqlite3
 import shutil
 import mimetypes
 import logging
+import json
 
 from .db import get_session
-from .models import Person, Family, Note, MediaAsset, MediaLink, relationships, family_children
+from .models import (
+    Person,
+    Family,
+    Note,
+    Event,
+    EventType,
+    MediaAsset,
+    MediaLink,
+    relationships,
+    family_children,
+    DataQualityIssue,
+    DataQualityActionLog,
+    DateNormalization,
+    Place,
+    PlaceVariant,
+)
 from .gedcom import parse_gedcom, to_summary
 from .media_utils import compute_sha256, is_image, create_thumbnail, safe_filename
 from .rmtree import (
@@ -28,6 +44,7 @@ from .rmtree import (
     load_tables_from_sqlite,
     sqlite_schema_fingerprint,
 )
+from .dq import run_detection, build_summary, log_action
 
 import re
 from collections import Counter
@@ -1735,3 +1752,535 @@ def graph():
         "rootPersonId": root_id,
         "depth": depth,
     })
+
+
+# -------------------------
+# Data Quality APIs
+# -------------------------
+
+def _issue_to_dict(issue: DataQualityIssue) -> dict:
+    try:
+        explanation = json.loads(issue.explanation_json or "{}")
+    except Exception:
+        explanation = {}
+    try:
+        entity_ids = json.loads(issue.entity_ids)
+    except Exception:
+        entity_ids = []
+    return {
+        "id": issue.id,
+        "issue_type": issue.issue_type,
+        "severity": issue.severity,
+        "entity_type": issue.entity_type,
+        "entity_ids": entity_ids,
+        "status": issue.status,
+        "confidence": issue.confidence,
+        "impact_score": issue.impact_score,
+        "explanation": explanation,
+        "detected_at": issue.detected_at.isoformat(),
+        "resolved_at": issue.resolved_at.isoformat() if issue.resolved_at else None,
+    }
+
+
+@api_bp.post("/dq/scan")
+def dq_scan():
+    incremental = bool(request.args.get("incremental"))
+    session = get_session()
+    results = run_detection(session, incremental=incremental)
+    session.commit()
+    return jsonify({"ran": results})
+
+
+@api_bp.get("/dq/summary")
+def dq_summary():
+    session = get_session()
+    summary = build_summary(session)
+    return jsonify(summary)
+
+
+@api_bp.get("/dq/issues")
+def dq_issues():
+    issue_type = request.args.get("type")
+    status = request.args.get("status")
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = min(int(request.args.get("perPage", 50)), 200)
+
+    session = get_session()
+    stmt = select(DataQualityIssue).order_by(DataQualityIssue.detected_at.desc())
+    if issue_type:
+        stmt = stmt.where(DataQualityIssue.issue_type == issue_type)
+    if status:
+        stmt = stmt.where(DataQualityIssue.status == status)
+
+    rows = session.execute(stmt.offset((page - 1) * per_page).limit(per_page)).scalars().all()
+    total_stmt = select(func.count(DataQualityIssue.id))
+    if issue_type:
+        total_stmt = total_stmt.where(DataQualityIssue.issue_type == issue_type)
+    if status:
+        total_stmt = total_stmt.where(DataQualityIssue.status == status)
+    total = session.execute(total_stmt).scalar_one()
+    return jsonify({
+        "items": [_issue_to_dict(r) for r in rows],
+        "page": page,
+        "perPage": per_page,
+        "total": total,
+    })
+
+
+@api_bp.get("/dq/actions/log")
+def dq_actions_log():
+    page = max(int(request.args.get("page", 1)), 1)
+    per_page = min(int(request.args.get("perPage", 50)), 200)
+    session = get_session()
+    stmt = (
+        select(DataQualityActionLog)
+        .order_by(DataQualityActionLog.created_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    )
+    rows = session.execute(stmt).scalars().all()
+    items = []
+    for r in rows:
+        items.append({
+            "id": r.id,
+            "action_type": r.action_type,
+            "payload": json.loads(r.payload_json or "{}"),
+            "undo": bool(r.undo_payload_json),
+            "created_at": r.created_at.isoformat(),
+            "applied_by": r.applied_by,
+        })
+    total = session.execute(select(func.count(DataQualityActionLog.id))).scalar_one()
+    return jsonify({"items": items, "page": page, "perPage": per_page, "total": total})
+
+
+@api_bp.post("/dq/actions/mergePeople")
+def dq_merge_people():
+    data = request.get_json(force=True, silent=False)
+    from_id = data.get("fromId")
+    into_id = data.get("intoId")
+    user = data.get("user")
+    if not from_id or not into_id:
+        return jsonify({"error": "fromId and intoId are required"}), 400
+    if from_id == into_id:
+        return jsonify({"error": "Cannot merge the same person"}), 400
+
+    session = get_session()
+    primary = session.get(Person, into_id)
+    secondary = session.get(Person, from_id)
+    if not primary or not secondary:
+        return jsonify({"error": "Person not found"}), 404
+
+    # Collect undo payload
+    relationships_rows = session.execute(
+        select(relationships.c.parent_person_id, relationships.c.child_person_id, relationships.c.rel_type).where(
+            or_(
+                relationships.c.parent_person_id == from_id,
+                relationships.c.child_person_id == from_id,
+            )
+        )
+    ).all()
+    family_rows = session.execute(
+        select(Family.id, Family.husband_person_id, Family.wife_person_id).where(
+            or_(Family.husband_person_id == from_id, Family.wife_person_id == from_id)
+        )
+    ).all()
+    family_child_rows = session.execute(
+        select(family_children.c.family_id, family_children.c.child_person_id).where(
+            family_children.c.child_person_id == from_id
+        )
+    ).all()
+    media_rows = session.execute(
+        select(MediaLink.id, MediaLink.asset_id, MediaLink.person_id, MediaLink.family_id).where(
+            MediaLink.person_id == from_id
+        )
+    ).all()
+    event_rows = session.execute(
+        select(Event.id, Event.person_id).where(Event.person_id == from_id)
+    ).all()
+
+    undo_payload = {
+        "from_person": _person_to_dict(secondary),
+        "relationships": [list(r) for r in relationships_rows],
+        "families": [{"id": fid, "husband_person_id": h, "wife_person_id": w} for fid, h, w in family_rows],
+        "family_children": [{"family_id": fid, "child_person_id": cid} for fid, cid in family_child_rows],
+        "media_links": [{"id": rid, "asset_id": aid, "person_id": pid, "family_id": fid} for rid, aid, pid, fid in media_rows],
+        "events": [{"id": eid, "person_id": pid} for eid, pid in event_rows],
+    }
+
+    try:
+        session.execute(update(Event).where(Event.person_id == from_id).values(person_id=into_id))
+        session.execute(update(MediaLink).where(MediaLink.person_id == from_id).values(person_id=into_id))
+        session.execute(
+            update(Family)
+            .where(Family.husband_person_id == from_id)
+            .values(husband_person_id=into_id)
+        )
+        session.execute(
+            update(Family)
+            .where(Family.wife_person_id == from_id)
+            .values(wife_person_id=into_id)
+        )
+        session.execute(
+            relationships.update()
+            .where(relationships.c.parent_person_id == from_id)
+            .values(parent_person_id=into_id)
+        )
+        session.execute(
+            relationships.update()
+            .where(relationships.c.child_person_id == from_id)
+            .values(child_person_id=into_id)
+        )
+        session.execute(
+            family_children.update()
+            .where(family_children.c.child_person_id == from_id)
+            .values(child_person_id=into_id)
+        )
+        session.delete(secondary)
+
+        action_entry = log_action(
+            session,
+            "merge_people",
+            {"fromId": from_id, "intoId": into_id},
+            undo_payload,
+            user,
+        )
+
+        session.execute(
+            update(DataQualityIssue)
+            .where(
+                DataQualityIssue.issue_type == "duplicate_person",
+                DataQualityIssue.status == "open",
+                DataQualityIssue.entity_ids.like(f"%{from_id}%"),
+            )
+            .values(status="resolved", resolved_at=datetime.utcnow())
+        )
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"mergedInto": into_id, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+@api_bp.post("/dq/actions/normalizePlaces")
+def dq_normalize_places():
+    data = request.get_json(force=True, silent=False)
+    canonical_value = (data.get("canonical") or "").strip()
+    variants = [v.strip() for v in data.get("variants") or [] if v]
+    applied_by = data.get("user")
+    if not canonical_value or not variants:
+        return jsonify({"error": "canonical and variants are required"}), 400
+
+    session = get_session()
+    place = session.execute(select(Place).where(Place.name_canonical == canonical_value)).scalar_one_or_none()
+    if not place:
+        place = Place(name_canonical=canonical_value)
+        session.add(place)
+        session.flush()
+
+    undo_events: list[dict] = []
+    undo_persons: list[dict] = []
+
+    try:
+        for variant in variants:
+            existing_variant = session.execute(
+                select(PlaceVariant).where(PlaceVariant.name_variant == variant)
+            ).scalar_one_or_none()
+            if not existing_variant:
+                pv = PlaceVariant(place_id=place.id, name_variant=variant)
+                session.add(pv)
+            affected_events = session.execute(
+                select(Event.id, Event.place_id, Event.place_raw).where(Event.place_raw == variant)
+            ).all()
+            session.execute(
+                update(Event)
+                .where(Event.place_raw == variant)
+                .values(place_id=place.id)
+            )
+            for eid, prev_pid, prev_raw in affected_events:
+                undo_events.append({"id": eid, "place_id": prev_pid, "place_raw": prev_raw})
+
+            people_rows = session.execute(
+                select(Person.id, Person.birth_place, Person.death_place).where(
+                    or_(Person.birth_place == variant, Person.death_place == variant)
+                )
+            ).all()
+            for pid, bplace, dplace in people_rows:
+                undo_persons.append({"id": pid, "birth_place": bplace, "death_place": dplace})
+                if bplace == variant:
+                    session.execute(update(Person).where(Person.id == pid).values(birth_place=canonical_value))
+                if dplace == variant:
+                    session.execute(update(Person).where(Person.id == pid).values(death_place=canonical_value))
+
+        action_entry = log_action(
+            session,
+            "normalize_places",
+            {"canonical": canonical_value, "variants": variants},
+            {"events": undo_events, "persons": undo_persons},
+            applied_by,
+        )
+
+        session.execute(
+            update(DataQualityIssue)
+            .where(DataQualityIssue.issue_type == "place_cluster", DataQualityIssue.status == "open")
+            .values(status="resolved", resolved_at=datetime.utcnow())
+        )
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"canonical_place_id": place.id, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+def _update_event_date_canonical(event: Event, normalized: str | None) -> None:
+    if not normalized or len(normalized) < 4:
+        event.date_canonical = None
+        return
+    try:
+        if len(normalized) == 10:
+            event.date_canonical = datetime.strptime(normalized, "%Y-%m-%d")
+        elif len(normalized) == 7:
+            event.date_canonical = datetime.strptime(normalized + "-01", "%Y-%m-%d")
+        elif len(normalized) == 4:
+            event.date_canonical = datetime.strptime(normalized + "-01-01", "%Y-%m-%d")
+    except Exception:
+        event.date_canonical = None
+
+
+@api_bp.post("/dq/actions/normalizeDates")
+def dq_normalize_dates():
+    data = request.get_json(force=True, silent=False)
+    items = data.get("items") or []
+    applied_by = data.get("user")
+    if not items:
+        return jsonify({"error": "items required"}), 400
+
+    session = get_session()
+    undo_payload = []
+
+    try:
+        for item in items:
+            entity_type = item.get("entity_type")
+            entity_id = item.get("entity_id")
+            normalized = item.get("normalized")
+            precision = item.get("precision")
+            qualifier = item.get("qualifier")
+            raw = item.get("raw")
+            confidence = item.get("confidence")
+            is_ambiguous = bool(item.get("ambiguous"))
+
+            existing = session.execute(
+                select(DateNormalization).where(
+                    DateNormalization.entity_type == entity_type,
+                    DateNormalization.entity_id == entity_id,
+                    DateNormalization.raw_value == raw,
+                )
+            ).scalar_one_or_none()
+
+            prev_event_date = None
+            if entity_type == "event":
+                ev_for_prev = session.get(Event, entity_id)
+                if ev_for_prev and ev_for_prev.date_canonical:
+                    prev_event_date = ev_for_prev.date_canonical.isoformat()
+
+            if existing:
+                undo_payload.append({
+                    "id": existing.id,
+                    "normalized": existing.normalized,
+                    "precision": existing.precision,
+                    "qualifier": existing.qualifier,
+                    "confidence": existing.confidence,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "event_date_canonical": prev_event_date,
+                })
+                existing.normalized = normalized
+                existing.precision = precision
+                existing.qualifier = qualifier
+                existing.confidence = confidence
+                existing.is_ambiguous = is_ambiguous
+            else:
+                dn = DateNormalization(
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    raw_value=raw or "",
+                    normalized=normalized,
+                    precision=precision,
+                    qualifier=qualifier,
+                    confidence=confidence,
+                    is_ambiguous=is_ambiguous,
+                )
+                session.add(dn)
+                session.flush()
+                undo_payload.append({
+                    "id": dn.id,
+                    "delete": True,
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "event_date_canonical": prev_event_date,
+                })
+
+            if entity_type == "event":
+                event = session.get(Event, entity_id)
+                if event:
+                    _update_event_date_canonical(event, normalized)
+
+        action_entry = log_action(
+            session,
+            "normalize_dates",
+            {"items": items},
+            {"items": undo_payload},
+            applied_by,
+        )
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"updated": len(items), "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+@api_bp.post("/dq/actions/undo")
+def dq_undo():
+    data = request.get_json(force=True, silent=False)
+    action_id = data.get("action_id")
+    if not action_id:
+        return jsonify({"error": "action_id required"}), 400
+    session = get_session()
+    action = session.get(DataQualityActionLog, action_id)
+    if not action:
+        return jsonify({"error": "action not found"}), 404
+    undo_payload = json.loads(action.undo_payload_json or "{}")
+    action_payload = json.loads(action.payload_json or "{}")
+
+    try:
+        if action.action_type == "merge_people":
+            person_data = undo_payload.get("from_person") or {}
+            restored = Person(
+                id=person_data.get("id"),
+                xref=person_data.get("xref"),
+                given=person_data.get("given"),
+                surname=person_data.get("surname"),
+                sex=person_data.get("sex"),
+                birth_date=person_data.get("birth_date"),
+                birth_place=person_data.get("birth_place"),
+                death_date=person_data.get("death_date"),
+                death_place=person_data.get("death_place"),
+            )
+            session.add(restored)
+            session.flush()
+
+            for rel in undo_payload.get("relationships", []):
+                parent_id, child_id, rel_type = rel
+                into_id = action_payload.get("intoId")
+                session.execute(
+                    relationships.delete().where(
+                        and_(
+                            relationships.c.parent_person_id == into_id,
+                            relationships.c.child_person_id == child_id,
+                        )
+                    )
+                )
+                session.execute(
+                    relationships.delete().where(
+                        and_(
+                            relationships.c.child_person_id == into_id,
+                            relationships.c.parent_person_id == parent_id,
+                        )
+                    )
+                )
+                session.execute(
+                    relationships.insert().values(
+                        parent_person_id=parent_id,
+                        child_person_id=child_id,
+                        rel_type=rel_type,
+                    )
+                )
+
+            for fam in undo_payload.get("families", []):
+                fid = fam.get("id")
+                session.execute(
+                    update(Family)
+                    .where(Family.id == fid)
+                    .values(husband_person_id=fam.get("husband_person_id"), wife_person_id=fam.get("wife_person_id"))
+                )
+
+            for child in undo_payload.get("family_children", []):
+                fid = child.get("family_id")
+                cid = child.get("child_person_id")
+                into_id = action_payload.get("intoId")
+                session.execute(
+                    family_children.delete().where(
+                        and_(
+                            family_children.c.family_id == fid,
+                            family_children.c.child_person_id == into_id,
+                        )
+                    )
+                )
+                session.execute(
+                    family_children.insert().values(family_id=fid, child_person_id=cid)
+                )
+
+            for ml in undo_payload.get("media_links", []):
+                session.execute(
+                    update(MediaLink)
+                    .where(MediaLink.id == ml.get("id"))
+                    .values(person_id=ml.get("person_id"))
+                )
+
+            for ev in undo_payload.get("events", []):
+                session.execute(
+                    update(Event).where(Event.id == ev.get("id")).values(person_id=ev.get("person_id"))
+                )
+
+        elif action.action_type == "normalize_places":
+            for ev in undo_payload.get("events", []):
+                session.execute(
+                    update(Event)
+                    .where(Event.id == ev.get("id"))
+                    .values(place_id=ev.get("place_id"), place_raw=ev.get("place_raw"))
+                )
+            for p in undo_payload.get("persons", []):
+                session.execute(
+                    update(Person)
+                    .where(Person.id == p.get("id"))
+                    .values(birth_place=p.get("birth_place"), death_place=p.get("death_place"))
+                )
+        elif action.action_type == "normalize_dates":
+            for item in undo_payload.get("items", []):
+                norm = session.get(DateNormalization, item.get("id"))
+                if item.get("delete"):
+                    if norm:
+                        session.delete(norm)
+                else:
+                    if norm:
+                        norm.normalized = item.get("normalized")
+                        norm.precision = item.get("precision")
+                        norm.qualifier = item.get("qualifier")
+                        norm.confidence = item.get("confidence")
+                if item.get("entity_type") == "event":
+                    ev = session.get(Event, item.get("entity_id"))
+                    if ev:
+                        target_date = item.get("event_date_canonical")
+                        if target_date:
+                            try:
+                                ev.date_canonical = datetime.fromisoformat(target_date)
+                            except Exception:
+                                ev.date_canonical = None
+                        else:
+                            ev.date_canonical = None
+
+        session.delete(action)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"undone": True})
+
+
+@ui_bp.get("/data-quality")
+def data_quality_page():
+    return render_template("data-quality.html")

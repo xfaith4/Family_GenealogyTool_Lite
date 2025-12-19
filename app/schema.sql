@@ -85,3 +85,45 @@ CREATE INDEX IF NOT EXISTS idx_media_assets_sha256 ON media_assets(sha256);
 CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id);
+
+-- Data Quality tables
+CREATE TABLE IF NOT EXISTS dq_issues (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  issue_type TEXT NOT NULL,
+  severity TEXT NOT NULL DEFAULT 'warning',
+  entity_type TEXT NOT NULL,
+  entity_ids TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',
+  confidence REAL,
+  impact_score REAL,
+  explanation_json TEXT,
+  detected_at DATETIME NOT NULL DEFAULT (datetime('now')),
+  resolved_at DATETIME
+);
+CREATE INDEX IF NOT EXISTS idx_dq_issue_type_status ON dq_issues(issue_type, status);
+CREATE INDEX IF NOT EXISTS idx_dq_issue_detected ON dq_issues(detected_at);
+
+CREATE TABLE IF NOT EXISTS dq_action_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  action_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  undo_payload_json TEXT,
+  created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+  applied_by TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_dq_action_type ON dq_action_log(action_type);
+
+CREATE TABLE IF NOT EXISTS date_normalizations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_type TEXT NOT NULL,
+  entity_id INTEGER NOT NULL,
+  raw_value TEXT NOT NULL,
+  normalized TEXT,
+  precision TEXT,
+  qualifier TEXT,
+  confidence REAL,
+  is_ambiguous INTEGER NOT NULL DEFAULT 0,
+  detected_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_date_norm_entity ON date_normalizations(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_date_norm_confidence ON date_normalizations(confidence);
