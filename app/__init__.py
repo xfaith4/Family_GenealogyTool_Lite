@@ -34,9 +34,10 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     # Ensure tables exist for tests and first-run scenarios
     with app.app_context():
-        from .db import get_engine
+        from .db import get_engine, ensure_media_links_asset_id
         from .models import Base
         engine = get_engine()
         Base.metadata.create_all(engine)
+        ensure_media_links_asset_id(engine)
 
     return app

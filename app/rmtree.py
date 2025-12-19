@@ -318,7 +318,10 @@ def _table_has_media_path(columns: List[str]) -> bool:
 
 def _table_has_media_reference(columns: List[str]) -> bool:
     has_media = any("media" in col for col in columns)
-    has_target = any(kw in col for kw in ("person", "family", "owner", "object"))
+    has_target = any(
+        any(kw in col for kw in ("person", "family", "owner", "object"))
+        for col in columns
+    )
     return has_media and has_target
 
 

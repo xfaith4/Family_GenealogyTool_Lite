@@ -1,5 +1,5 @@
 from flask import g
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
 
 # Global engine and session factory
@@ -44,3 +44,62 @@ def init_app(app) -> None:
     
     # Register teardown
     app.teardown_appcontext(close_session)
+
+
+def ensure_media_links_asset_id(engine) -> None:
+    """Backfill asset_id column for legacy databases missing it."""
+    inspector = inspect(engine)
+    if "media_links" not in inspector.get_table_names():
+        return
+
+    def _create_media_links_table(conn):
+        conn.execute(
+            text(
+                """
+                CREATE TABLE media_links (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    asset_id INTEGER NOT NULL,
+                    person_id INTEGER,
+                    family_id INTEGER,
+                    description TEXT,
+                    created_at DATETIME NOT NULL,
+                    FOREIGN KEY(asset_id) REFERENCES media_assets(id) ON DELETE CASCADE,
+                    FOREIGN KEY(person_id) REFERENCES persons(id) ON DELETE CASCADE,
+                    FOREIGN KEY(family_id) REFERENCES families(id) ON DELETE CASCADE
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
+
+    columns = {col["name"] for col in inspector.get_columns("media_links")}
+    if "asset_id" in columns:
+        with engine.begin() as conn:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
+        return
+
+    with engine.begin() as conn:
+        if "media_asset_id" in columns:
+            conn.execute(text("ALTER TABLE media_links RENAME TO media_links_old"))
+            _create_media_links_table(conn)
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO media_links (id, asset_id, person_id, family_id, description, created_at)
+                    SELECT id, media_asset_id, person_id, family_id, description, created_at
+                    FROM media_links_old
+                    WHERE media_asset_id IS NOT NULL
+                    """
+                )
+            )
+            conn.execute(text("DROP TABLE media_links_old"))
+        else:
+            row_count = conn.execute(text("SELECT COUNT(*) FROM media_links")).scalar()
+            if row_count == 0:
+                conn.execute(text("DROP TABLE media_links"))
+                _create_media_links_table(conn)
+            else:
+                conn.execute(text("ALTER TABLE media_links ADD COLUMN asset_id INTEGER"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
