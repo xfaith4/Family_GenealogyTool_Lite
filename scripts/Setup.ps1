@@ -14,8 +14,11 @@ $ErrorActionPreference = 'Stop'
 
 $ScriptDir = $PSScriptRoot
 $RepoRoot  = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($ScriptDir, '..'))
+$DataDir   = [System.IO.Path]::Combine($RepoRoot, 'data')
+$DbPath    = [System.IO.Path]::Combine($DataDir, 'family_tree.sqlite')
 
 Write-Host "RepoRoot: $RepoRoot"
+Write-Host "Database path: $DbPath"
 
 # Locate Python
 $python = $null
@@ -35,12 +38,17 @@ Write-Host "Installing requirements..."
 
 # Ensure database is reset before running migrations to avoid missing columns
 Write-Host "Removing existing database to avoid schema conflicts..."
-$dbPath = Join-Path $RepoRoot 'data\family_tree.sqlite'
-$dbWal = "${dbPath}-wal"
-$dbShm = "${dbPath}-shm"
-if (Test-Path $dbPath) { Remove-Item $dbPath -Force }
-if (Test-Path $dbWal) { Remove-Item $dbWal -Force }
-if (Test-Path $dbShm) { Remove-Item $dbShm -Force }
+New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+$dbWal = "${DbPath}-wal"
+$dbShm = "${DbPath}-shm"
+try {
+    if (Test-Path $DbPath) { Remove-Item $DbPath -Force -ErrorAction Stop; Write-Host "Deleted $DbPath" }
+    else { Write-Host "No existing DB found at $DbPath" }
+    if (Test-Path $dbWal) { Remove-Item $dbWal -Force -ErrorAction Stop; Write-Host "Deleted $dbWal" }
+    if (Test-Path $dbShm) { Remove-Item $dbShm -Force -ErrorAction Stop; Write-Host "Deleted $dbShm" }
+} catch {
+    throw "Failed to remove existing database at $DbPath. Close any open handles and try again. $_"
+}
 
 # Run Alembic migrations
 Write-Host "Running database migrations..."

@@ -155,7 +155,13 @@ class MediaAsset(Base):
     thumbnail_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     thumb_width: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     thumb_height: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="unassigned")
+    source_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    
+    __table_args__ = (
+        Index('idx_media_assets_original_filename', 'original_filename'),
+    )
     
     # Relationships
     links: Mapped[List["MediaLink"]] = relationship("MediaLink", back_populates="media_asset", cascade="all, delete-orphan")

@@ -13,10 +13,12 @@ def create_app(test_config: dict | None = None) -> Flask:
     data_dir = repo_root / "data"
     data_dir.mkdir(exist_ok=True)
     (data_dir / "media").mkdir(exist_ok=True)
+    (data_dir / "media_ingest").mkdir(exist_ok=True)
 
     app.config.from_mapping(
         DATABASE=str(data_dir / "family_tree.sqlite"),
         MEDIA_DIR=str(data_dir / "media"),
+        MEDIA_INGEST_DIR=str(data_dir / "media_ingest"),
         MAX_CONTENT_LENGTH=25 * 1024 * 1024,
         JSON_SORT_KEYS=False,
         TESTING=False,
