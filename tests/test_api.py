@@ -1,7 +1,9 @@
 import io
 import os
+import sqlite3
 import tempfile
 import unittest
+import zipfile
 from sqlalchemy import select
 
 from app import create_app
@@ -23,21 +25,52 @@ SAMPLE_GED = """0 HEAD
 0 TRLR
 """
 
-SAMPLE_RMTREE = """-- RMTree export sample
-INSERT INTO Individuals (Id, GivenName, Surname, Gender, BirthDate, BirthPlace, Notes) VALUES
-(1, 'John', 'Smith', 'M', '1 JAN 1980', 'Springfield', 'Patriarch'),
-(2, 'Jane', 'Doe', 'F', '2 FEB 1982', 'Springfield', 'Matriarch'),
-(3, 'Baby', 'Smith', 'F', '3 MAR 2005', 'Springfield', 'Child');
-INSERT INTO Relationships (ParentID, ChildID) VALUES
-(1, 3),
-(2, 3);
-INSERT INTO MediaLocations (MediaID, Path, OriginalName, Description) VALUES
-(10, 'photos/john.png', 'John.png', 'Portrait'),
-(11, 'photos/jane.png', 'Jane.jpg', 'Portrait');
-INSERT INTO MediaAssociations (MediaID, OwnerType, OwnerID) VALUES
-(10, 'Person', 1),
-(11, 'Person', 2);
-"""
+def _write_sample_rmtree(db_path: str):
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE PersonTable (
+            PersonID INTEGER PRIMARY KEY,
+            Given TEXT,
+            Surname TEXT,
+            Sex TEXT,
+            BirthDate TEXT,
+            BirthPlace TEXT,
+            Notes TEXT
+        )
+        """
+    )
+    conn.execute("INSERT INTO PersonTable VALUES (1, 'John', 'Smith', 'M', '1 JAN 1980', 'Springfield', 'Patriarch')")
+    conn.execute("INSERT INTO PersonTable VALUES (2, 'Jane', 'Doe', 'F', '2 FEB 1982', 'Springfield', 'Matriarch')")
+    conn.execute("INSERT INTO PersonTable VALUES (3, 'Baby', 'Smith', 'F', '3 MAR 2005', 'Springfield', 'Child')")
+    conn.execute("CREATE TABLE Relationships (ParentID INTEGER, ChildID INTEGER)")
+    conn.execute("INSERT INTO Relationships VALUES (1, 3)")
+    conn.execute("INSERT INTO Relationships VALUES (2, 3)")
+    conn.execute(
+        """
+        CREATE TABLE MediaLocations (
+            MediaID INTEGER,
+            Path TEXT,
+            OriginalName TEXT,
+            Description TEXT
+        )
+        """
+    )
+    conn.execute("INSERT INTO MediaLocations VALUES (10, 'photos/john.png', 'John.png', 'Portrait')")
+    conn.execute("INSERT INTO MediaLocations VALUES (11, 'photos/jane.png', 'Jane.jpg', 'Portrait')")
+    conn.execute(
+        """
+        CREATE TABLE MediaAssociations (
+            MediaID INTEGER,
+            OwnerType TEXT,
+            OwnerID INTEGER
+        )
+        """
+    )
+    conn.execute("INSERT INTO MediaAssociations VALUES (10, 'Person', 1)")
+    conn.execute("INSERT INTO MediaAssociations VALUES (11, 'Person', 2)")
+    conn.commit()
+    conn.close()
 
 class TestApi(unittest.TestCase):
     def setUp(self):
@@ -128,10 +161,23 @@ class TestApi(unittest.TestCase):
         self.assertIsNotNone(family.husband_person_id)
         self.assertIsNotNone(family.wife_person_id)
 
-    def test_rmtree_import_populates_people_and_media(self):
-        payload = {
-            "file": (io.BytesIO(SAMPLE_RMTREE.encode("utf-8")), "sample.rmtree")
-        }
+    def test_rmtree_import_missing_file(self):
+        r = self.client.post("/api/import/rmtree", data={}, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 400)
+        body = r.get_json()
+        self.assertEqual(body["error"], "missing_file")
+
+    def test_rmtree_invalid_signature(self):
+        payload = {"file": (io.BytesIO(b"not a sqlite file"), "sample.rmtree")}
+        r = self.client.post("/api/import/rmtree", data=payload, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 422)
+        self.assertEqual(r.get_json()["error"], "invalid_signature")
+
+    def test_rmtree_import_populates_people_and_media_from_sqlite(self):
+        db_file = os.path.join(self.tmpdir.name, "sample.rmtree")
+        _write_sample_rmtree(db_file)
+        with open(db_file, "rb") as fh:
+            payload = {"file": (io.BytesIO(fh.read()), "sample.rmtree")}
         r = self.client.post(
             "/api/import/rmtree",
             data=payload,
@@ -161,6 +207,23 @@ class TestApi(unittest.TestCase):
 
             rels = session.execute(select(relationships)).all()
             self.assertEqual(len(rels), 2)
+
+    def test_rmtree_rmbackup_extraction(self):
+        db_file = os.path.join(self.tmpdir.name, "inner.rmtree")
+        _write_sample_rmtree(db_file)
+        zip_path = os.path.join(self.tmpdir.name, "backup.rmbackup")
+        with zipfile.ZipFile(zip_path, "w") as zf:
+            zf.write(db_file, arcname="family/inner.rmtree")
+        with open(zip_path, "rb") as fh:
+            payload = {"file": (io.BytesIO(fh.read()), "backup.rmbackup")}
+        r = self.client.post(
+            "/api/import/rmtree",
+            data=payload,
+            content_type="multipart/form-data"
+        )
+        self.assertEqual(r.status_code, 200)
+        summary = r.get_json()["imported"]
+        self.assertEqual(summary["people"], 3)
 
     def test_crud_person(self):
         r = self.client.post("/api/people", json={"given":"Ada","surname":"Lovelace","sex":"F"})

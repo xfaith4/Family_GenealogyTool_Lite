@@ -9,6 +9,10 @@ from datetime import datetime
 import os
 import hashlib
 from pathlib import Path
+import tempfile
+import zipfile
+import sqlite3
+import shutil
 
 from .db import get_session
 from .models import Person, Family, Note, MediaAsset, MediaLink, relationships, family_children
@@ -19,7 +23,8 @@ from .rmtree import (
     collect_media_locations,
     collect_person_records,
     collect_relationship_records,
-    parse_rmtree_sql,
+    load_tables_from_sqlite,
+    sqlite_schema_fingerprint,
 )
 
 import re
@@ -367,151 +372,319 @@ def import_gedcom():
 @api_bp.post("/import/rmtree")
 def import_rmtree():
     session = get_session()
+    start_time = datetime.utcnow()
+    logger = current_app.logger
+
+    # Temporary diagnostics for input handling
+    json_error = None
+    try:
+        request.get_json(force=False, silent=False)
+    except Exception as exc:  # noqa: BLE001
+        json_error = str(exc)
+    file_meta = {
+        key: getattr(f, "content_length", None) or getattr(f, "mimetype", None) or "unknown"
+        for key, f in request.files.items()
+    }
+    logger.info(
+        "RMTree import request",
+        extra={
+            "method": request.method,
+            "content_type": request.content_type,
+            "content_length": request.content_length,
+            "files": file_meta,
+            "form_keys": list(request.form.keys()),
+            "json_error": json_error,
+        },
+    )
+
+    def _job(status: str, error: str | None = None) -> Dict[str, Any]:
+        return {
+            "status": status,
+            "error": error,
+            "started_at": start_time.isoformat() + "Z",
+            "ended_at": datetime.utcnow().isoformat() + "Z",
+        }
+
+    def _error(code: str, message: str, status_code: int = 400, **details):
+        payload = {"error": code, "message": message, "details": details, "job": _job("failed", code)}
+        return jsonify(payload), status_code
+
+    if not request.content_type or not request.content_type.startswith("multipart/form-data"):
+        return _error(
+            "invalid_content_type",
+            "Expected multipart/form-data with field 'file'.",
+            400,
+            expected="multipart/form-data with field 'file'",
+            got=request.content_type,
+        )
 
     f = request.files.get("file")
     if not f:
-        return jsonify({"error": "file is required"}), 400
-
-    text = f.read().decode("utf-8", errors="replace")
-    tables = parse_rmtree_sql(text)
-    if not tables:
-        return jsonify({"error": "failed to parse RMTree file"}), 400
-
-    person_rows = collect_person_records(tables)
-    relationship_rows = collect_relationship_records(tables)
-    media_locations = collect_media_locations(tables)
-    media_associations = collect_media_associations(tables)
-
-    if not (person_rows or relationship_rows or media_locations or media_associations):
-        return jsonify({"error": "no RMTree data found"}), 400
-
-    source_to_person_id: Dict[Any, int] = {}
-    for record in person_rows:
-        xref = record["xref"]
-        stmt = select(Person).where(Person.xref == xref)
-        person = session.execute(stmt).scalar_one_or_none()
-        now = datetime.utcnow()
-
-        if person:
-            person.given = record["given"]
-            person.surname = record["surname"]
-            person.sex = record["sex"]
-            person.birth_date = record["birth_date"]
-            person.birth_place = record["birth_place"]
-            person.death_date = record["death_date"]
-            person.death_place = record["death_place"]
-            person.updated_at = now
-        else:
-            person = Person(
-                xref=xref,
-                given=record["given"],
-                surname=record["surname"],
-                sex=record["sex"],
-                birth_date=record["birth_date"],
-                birth_place=record["birth_place"],
-                death_date=record["death_date"],
-                death_place=record["death_place"],
-                updated_at=now,
-            )
-            session.add(person)
-
-        session.flush()
-        source_to_person_id[record["source_id"]] = person.id
-
-        for note_text in record.get("notes", []):
-            note = Note(person_id=person.id, note_text=note_text)
-            session.add(note)
-
-    media_id_to_asset: Dict[Any, MediaAsset] = {}
-    media_descriptions: Dict[Any, str] = {}
-    for location in media_locations:
-        media_id = location["media_id"]
-        path = (location.get("path") or "").strip()
-        if media_id is None or not path:
-            continue
-
-        normalized_path = path.replace("\\", "/")
-        sha = hashlib.sha256(normalized_path.encode("utf-8")).hexdigest()
-        stmt = select(MediaAsset).where(MediaAsset.sha256 == sha)
-        asset = session.execute(stmt).scalar_one_or_none()
-
-        if not asset:
-            asset = MediaAsset(
-                path=normalized_path,
-                original_filename=(location.get("original_name") or Path(normalized_path).name),
-                mime_type=None,
-                sha256=sha,
-                size_bytes=None,
-            )
-            session.add(asset)
-            session.flush()
-
-        media_id_to_asset[media_id] = asset
-        if location.get("description"):
-            media_descriptions[media_id] = location["description"]
-
-    media_links_created = 0
-    for association in media_associations:
-        media_id = association.get("media_id")
-        owner_type = (association.get("owner_type") or "").lower()
-        owner_source_id = association.get("owner_id")
-        if owner_type != "person" or owner_source_id is None:
-            continue
-
-        person_id = source_to_person_id.get(owner_source_id)
-        asset = media_id_to_asset.get(media_id)
-        if not person_id or not asset:
-            continue
-
-        existing_link = session.execute(
-            select(MediaLink).where(
-                MediaLink.asset_id == asset.id,
-                MediaLink.person_id == person_id,
-            )
-        ).scalar_one_or_none()
-        if existing_link:
-            continue
-
-        description = media_descriptions.get(media_id)
-        media_link = MediaLink(
-            asset_id=asset.id,
-            person_id=person_id,
-            description=description,
+        return _error(
+            "missing_file",
+            "File upload is required under form field 'file'.",
+            400,
+            expected="multipart/form-data with field 'file'",
+            got_files=list(request.files.keys()),
         )
-        session.add(media_link)
-        media_links_created += 1
 
-    relationship_count = 0
-    for relationship in relationship_rows:
-        parent_source = relationship.get("parent_id")
-        child_source = relationship.get("child_id")
-        parent_id = source_to_person_id.get(parent_source)
-        child_id = source_to_person_id.get(child_source)
-        if parent_id is None or child_id is None:
-            continue
-        try:
-            session.execute(
-                relationships.insert().values(
-                    parent_person_id=parent_id,
-                    child_person_id=child_id,
-                    rel_type="parent",
-                )
+    max_len = current_app.config.get("MAX_CONTENT_LENGTH")
+    if max_len and request.content_length and request.content_length > max_len:
+        return _error(
+            "file_too_large",
+            f"Upload exceeds limit of {max_len} bytes.",
+            413,
+            limit=max_len,
+            received=request.content_length,
+        )
+
+    warnings: list[str] = []
+    orphan_relationships = 0
+    orphan_media = 0
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        upload_path = os.path.join(tmpdir, secure_filename(f.filename or "upload"))
+        size = 0
+        first_chunk = b""
+        with open(upload_path, "wb") as out:
+            while True:
+                chunk = f.stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                if not first_chunk:
+                    first_chunk = chunk[:32]
+                out.write(chunk)
+                size += len(chunk)
+
+        if size == 0:
+            return _error("empty_file", "Uploaded file is empty.", 400)
+        if max_len and size > max_len:
+            return _error(
+                "file_too_large",
+                f"Upload exceeds limit of {max_len} bytes.",
+                413,
+                limit=max_len,
+                received=size,
             )
-            relationship_count += 1
-        except IntegrityError:
-            continue
 
-    session.commit()
-    return jsonify(
-        {
-            "imported": {
-                "people": len(source_to_person_id),
-                "media_assets": len(media_id_to_asset),
-                "media_links": media_links_created,
-                "relationships": relationship_count,
-            }
+        logger.info(
+            "RMTree upload received",
+            extra={
+                "filename": f.filename,
+                "size_bytes": size,
+            },
+        )
+
+        signature = first_chunk[:16]
+        is_zip = signature.startswith(b"PK\x03\x04")
+        is_sqlite = signature.startswith(b"SQLite format 3\x00")
+        sqlite_path = upload_path
+
+        if is_zip:
+            try:
+                with zipfile.ZipFile(upload_path) as zf:
+                    members = [m for m in zf.namelist() if m.lower().endswith(".rmtree")]
+                    if not members:
+                        return _error(
+                            "invalid_archive",
+                            "No .rmtree file found inside backup.",
+                            400,
+                            archive_members=zf.namelist(),
+                        )
+                    member = members[0]
+                    extracted_path = os.path.join(tmpdir, os.path.basename(member))
+                    with zf.open(member) as src, open(extracted_path, "wb") as dst:
+                        shutil.copyfileobj(src, dst)
+                    sqlite_path = extracted_path
+                    with open(sqlite_path, "rb") as check_fp:
+                        header = check_fp.read(16)
+                    if not header.startswith(b"SQLite format 3\x00"):
+                        return _error("invalid_signature", "Embedded file is not a SQLite RMTree database.", 422)
+            except zipfile.BadZipFile:
+                return _error("invalid_archive", "Backup file is not a valid ZIP archive.", 422)
+        elif not is_sqlite:
+            return _error(
+                "invalid_signature",
+                "Unrecognized file signature. Expected ZIP (.rmbackup) or SQLite (.rmtree).",
+                422,
+                got=signature.hex(),
+            )
+
+        try:
+            conn = sqlite3.connect(f"file:{sqlite_path}?mode=ro", uri=True)
+        except sqlite3.DatabaseError as exc:  # noqa: BLE001
+            return _error("open_failed", f"Could not open SQLite database: {exc}", 422)
+
+        try:
+            conn.row_factory = sqlite3.Row
+            quick_check = conn.execute("PRAGMA quick_check").fetchone()
+            quick_result = quick_check[0] if quick_check else "unknown"
+            if quick_result != "ok":
+                warnings.append(f"PRAGMA quick_check reported: {quick_result}")
+            user_version_row = conn.execute("PRAGMA user_version").fetchone()
+            user_version = user_version_row[0] if user_version_row else 0
+            fingerprint, schema_rows = sqlite_schema_fingerprint(sqlite_path)
+        except sqlite3.DatabaseError as exc:  # noqa: BLE001
+            conn.close()
+            return _error("integrity_check_failed", f"SQLite integrity check failed: {exc}", 422)
+
+        tables = load_tables_from_sqlite(sqlite_path)
+        conn.close()
+
+        person_rows = collect_person_records(tables)
+        relationship_rows = collect_relationship_records(tables)
+        media_locations = collect_media_locations(tables)
+        media_associations = collect_media_associations(tables)
+
+        if not (person_rows or relationship_rows or media_locations or media_associations):
+            return _error("no_data", "No usable RMTree data was found in the database.", 400)
+
+        source_to_person_id: Dict[Any, int] = {}
+        for record in person_rows:
+            xref = record["xref"]
+            stmt = select(Person).where(Person.xref == xref)
+            person = session.execute(stmt).scalar_one_or_none()
+            now = datetime.utcnow()
+
+            if person:
+                person.given = record["given"]
+                person.surname = record["surname"]
+                person.sex = record["sex"]
+                person.birth_date = record["birth_date"]
+                person.birth_place = record["birth_place"]
+                person.death_date = record["death_date"]
+                person.death_place = record["death_place"]
+                person.updated_at = now
+            else:
+                person = Person(
+                    xref=xref,
+                    given=record["given"],
+                    surname=record["surname"],
+                    sex=record["sex"],
+                    birth_date=record["birth_date"],
+                    birth_place=record["birth_place"],
+                    death_date=record["death_date"],
+                    death_place=record["death_place"],
+                    updated_at=now,
+                )
+                session.add(person)
+
+            session.flush()
+            source_to_person_id[record["source_id"]] = person.id
+
+            for note_text in record.get("notes", []):
+                note = Note(person_id=person.id, note_text=note_text)
+                session.add(note)
+
+        media_id_to_asset: Dict[Any, MediaAsset] = {}
+        media_descriptions: Dict[Any, str] = {}
+        for location in media_locations:
+            media_id = location["media_id"]
+            path = (location.get("path") or "").strip()
+            if media_id is None or not path:
+                continue
+
+            normalized_path = path.replace("\\", "/")
+            sha = hashlib.sha256(normalized_path.encode("utf-8")).hexdigest()
+            stmt = select(MediaAsset).where(MediaAsset.sha256 == sha)
+            asset = session.execute(stmt).scalar_one_or_none()
+
+            if not asset:
+                asset = MediaAsset(
+                    path=normalized_path,
+                    original_filename=(location.get("original_name") or Path(normalized_path).name),
+                    mime_type=None,
+                    sha256=sha,
+                    size_bytes=None,
+                )
+                session.add(asset)
+                session.flush()
+
+            media_id_to_asset[media_id] = asset
+            if location.get("description"):
+                media_descriptions[media_id] = location["description"]
+
+        media_links_created = 0
+        for association in media_associations:
+            media_id = association.get("media_id")
+            owner_type = (association.get("owner_type") or "").lower()
+            owner_source_id = association.get("owner_id")
+            if owner_type != "person" or owner_source_id is None:
+                continue
+
+            person_id = source_to_person_id.get(owner_source_id)
+            asset = media_id_to_asset.get(media_id)
+            if not person_id or not asset:
+                orphan_media += 1
+                continue
+
+            existing_link = session.execute(
+                select(MediaLink).where(
+                    MediaLink.asset_id == asset.id,
+                    MediaLink.person_id == person_id,
+                )
+            ).scalar_one_or_none()
+            if existing_link:
+                continue
+
+            description = media_descriptions.get(media_id)
+            media_link = MediaLink(
+                asset_id=asset.id,
+                person_id=person_id,
+                description=description,
+            )
+            session.add(media_link)
+            media_links_created += 1
+
+        relationship_count = 0
+        for relationship in relationship_rows:
+            parent_source = relationship.get("parent_id")
+            child_source = relationship.get("child_id")
+            parent_id = source_to_person_id.get(parent_source)
+            child_id = source_to_person_id.get(child_source)
+            if parent_id is None or child_id is None:
+                orphan_relationships += 1
+                continue
+            try:
+                session.execute(
+                    relationships.insert().values(
+                        parent_person_id=parent_id,
+                        child_person_id=child_id,
+                        rel_type="parent",
+                    )
+                )
+                relationship_count += 1
+            except IntegrityError:
+                continue
+
+        session.commit()
+
+        summary = {
+            "people": len(source_to_person_id),
+            "media_assets": len(media_id_to_asset),
+            "media_links": media_links_created,
+            "relationships": relationship_count,
+            "events": 0,
+            "places": 0,
+            "sources": 0,
         }
-    )
+        schema_info = {
+            "user_version": user_version,
+            "fingerprint": fingerprint,
+            "objects_seen": len(schema_rows),
+        }
+        return jsonify(
+            {
+                "imported": summary,
+                "warnings": warnings,
+                "orphaned": {
+                    "relationships": orphan_relationships,
+                    "media_links": orphan_media,
+                },
+                "schema": schema_info,
+                "job": _job("completed"),
+            }
+        )
 
 @api_bp.get("/tree/<int:person_id>")
 def tree(person_id: int):
