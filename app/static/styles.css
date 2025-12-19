@@ -200,6 +200,44 @@ body{
   display: none;
 }
 
+/* Data Quality */
+.tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.tabs button{
+  border:1px solid var(--line);
+  background:var(--panel2);
+  color:var(--text);
+  padding:8px 12px;
+  border-radius:12px;
+  cursor:pointer;
+}
+.tabs button.active{border-color:var(--btn); background:rgba(44,123,229,0.15);}
+.tabContent{display:none;}
+.tabContent.active{display:block;}
+.scoreCard{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+  background:rgba(0,0,0,0.12);
+}
+.scoreLabel{color:var(--muted); font-size:12px;}
+.scoreValue{font-size:32px; font-weight:700;}
+.listItem{
+  border:1px solid var(--line);
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+  background:rgba(0,0,0,0.12);
+}
+.small{font-size:12px;}
+.grid.cols2{grid-template-columns:1fr 1fr;}
+.gap16{gap:16px;}
+
 #treeV2Panel .panelHeader {
   display: flex;
   justify-content: space-between;
