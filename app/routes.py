@@ -1658,8 +1658,11 @@ def analytics_drilldown():
     data = request.get_json(force=True, silent=False) or {}
     drill_type = data.get("type")
     filters = data.get("filters") or {}
-    page = max(int(data.get("page", 1) or 1), 1)
-    page_size = min(max(int(data.get("pageSize", 20) or 20), 1), 200)
+    try:
+        page = max(int(data.get("page", 1) or 1), 1)
+        page_size = min(max(int(data.get("pageSize", 20) or 20), 1), 200)
+    except Exception:
+        return jsonify({"error": "Invalid pagination"}), 400
 
     session = get_session()
     people = _people_for_drilldown(drill_type, filters, session)

@@ -229,7 +229,10 @@ function changeDrilldownPage(delta){
 function copyCurrentIds(){
   const ids = (drilldownState.items || []).map((p) => p.id).filter(Boolean);
   if(ids.length === 0) return;
-  copyToClipboard(ids.join(', ')).catch(()=>{});
+  copyToClipboard(ids.join(', ')).catch((err)=>{
+    console.warn('Failed to copy IDs', err);
+    alert('Copy failed. Please try selecting manually.');
+  });
 }
 
 function closeDrilldown(){
