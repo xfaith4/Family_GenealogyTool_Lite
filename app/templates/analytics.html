@@ -105,21 +105,6 @@
 
   <script src="/static/pwa.js"></script>
   <script src="/static/analytics.js"></script>
-  <script>
-    (function(){
-      const path = window.location.pathname;
-      document.querySelectorAll('.bottomNav a').forEach(a => {
-        const r = a.dataset.route;
-        if((path === '/' && r === 'home') ||
-           (path.startsWith('/media') && r === 'media') ||
-           (path.startsWith('/analytics') && r === 'settings')){
-          a.classList.add('active');
-        }
-        if(r === 'import' && path === '/'){
-          a.classList.add('active');
-        }
-      });
-    })();
-  </script>
+  <script>window.setActiveNav && window.setActiveNav();</script>
 </body>
 </html>

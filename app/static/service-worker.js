@@ -21,7 +21,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k === STATIC_CACHE ? null : caches.delete(k))))
+      Promise.all(keys.filter((k) => k !== STATIC_CACHE).map((k) => caches.delete(k)))
     )
   );
 });
@@ -31,7 +31,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
-  if (url.origin === location.origin && url.pathname.startsWith("/api/")) return;
+  if (url.origin === location.origin && url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   // Network-first for HTML/navigation
   if (request.mode === "navigate" || request.headers.get("accept")?.includes("text/html")) {
