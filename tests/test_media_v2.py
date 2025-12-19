@@ -11,12 +11,15 @@ class TestMediaV2(unittest.TestCase):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.db_path = os.path.join(self.tmpdir.name, "test.sqlite")
         self.media_dir = os.path.join(self.tmpdir.name, "media")
+        self.media_ingest = os.path.join(self.tmpdir.name, "media_ingest")
         os.makedirs(self.media_dir, exist_ok=True)
+        os.makedirs(self.media_ingest, exist_ok=True)
 
         self.app = create_app({
             "TESTING": True,
             "DATABASE": self.db_path,
             "MEDIA_DIR": self.media_dir,
+            "MEDIA_INGEST_DIR": self.media_ingest,
         })
         self.client = self.app.test_client()
 

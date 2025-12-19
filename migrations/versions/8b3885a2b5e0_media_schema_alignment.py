@@ -19,6 +19,9 @@ depends_on = None
 
 
 def upgrade() -> None:
+    conn = op.get_bind()
+    conn.execute(sa.text("DROP INDEX IF EXISTS ix_media_assets_sha256"))
+
     op.rename_table("media_assets", "media_assets_old")
     op.create_table(
         "media_assets",
@@ -35,7 +38,11 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_media_assets_sha256"), "media_assets", ["sha256"], unique=True
+        op.f("ix_media_assets_sha256"),
+        "media_assets",
+        ["sha256"],
+        unique=True,
+        if_not_exists=True,
     )
     op.execute(
         """
