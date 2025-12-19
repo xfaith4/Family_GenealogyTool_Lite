@@ -96,6 +96,7 @@ def _parse_date(value: str | None) -> Tuple[str | None, str | None, str | None, 
         qualifier = qual_m.group(1).lower()
 
     # Exact date formats
+    # Attempt both day-first and month-first; no heuristic disambiguation beyond trying both.
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d"):
         try:
             dt = datetime.strptime(raw, fmt)
@@ -104,12 +105,12 @@ def _parse_date(value: str | None) -> Tuple[str | None, str | None, str | None, 
             continue
 
     # Month year e.g. Mar 1881 / 03 1881
-    month_year = re.match(r"(?P<month>[A-Za-z]{3,9}|\d{1,2})[ ,/]+(?P<year>\d{3,4})", raw)
+    month_year = re.match(r"(?P<month>[A-Za-z]{3,9}|\d{1,2})[ ,/]+(?P<year>\d{3,4})", raw, re.IGNORECASE)
     if month_year:
         month = month_year.group("month")
         year = month_year.group("year")
         try:
-            month_num = int(month) if month.isdigit() else datetime.strptime(month[:3], "%b").month
+            month_num = int(month) if month.isdigit() else datetime.strptime(month[:3].title(), "%b").month
             return f"{int(year):04d}-{month_num:02d}", "month", qualifier, 0.85, False
         except Exception:
             pass
@@ -161,8 +162,8 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
     When incremental=False, open issues are replaced.
     """
     if not incremental:
-        session.query(DataQualityIssue).delete()
-        session.query(DateNormalization).delete()
+        session.execute(DataQualityIssue.__table__.delete())
+        session.execute(DateNormalization.__table__.delete())
 
     duplicate_count = _detect_duplicates(session)
     place_cluster_count = _detect_places(session)

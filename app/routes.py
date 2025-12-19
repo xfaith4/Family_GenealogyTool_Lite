@@ -1945,15 +1945,20 @@ def dq_merge_people():
             user,
         )
 
-        session.execute(
-            update(DataQualityIssue)
-            .where(
+        dup_issues = session.execute(
+            select(DataQualityIssue).where(
                 DataQualityIssue.issue_type == "duplicate_person",
                 DataQualityIssue.status == "open",
-                DataQualityIssue.entity_ids.like(f"%{from_id}%"),
             )
-            .values(status="resolved", resolved_at=datetime.utcnow())
-        )
+        ).scalars().all()
+        for issue in dup_issues:
+            try:
+                ids = json.loads(issue.entity_ids)
+            except Exception:
+                ids = []
+            if from_id in ids or into_id in ids:
+                issue.status = "resolved"
+                issue.resolved_at = datetime.utcnow()
         session.commit()
     except Exception:
         session.rollback()
