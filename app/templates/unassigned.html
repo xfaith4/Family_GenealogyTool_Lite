@@ -4,9 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Unassigned Media • Family Genealogy Tool</title>
+   <link rel="manifest" href="/static/manifest.webmanifest">
+   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
-<body>
+<body class="route-media">
   <header class="topbar">
     <div class="brand">
       <div class="logo">🌳</div>
@@ -37,6 +39,32 @@
     <span class="muted">Media not yet linked to any person or family</span>
   </footer>
 
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="/" data-route="home"><span class="icon">🌳</span><span>Tree/People</span></a>
+      <a href="/media/unassigned" data-route="media"><span class="icon">📷</span><span>Unassigned</span></a>
+      <a href="/#import" data-route="import"><span class="icon">⬆️</span><span>Import</span></a>
+      <a href="/analytics" data-route="settings"><span class="icon">⚙️</span><span>Settings</span></a>
+    </div>
+  </nav>
+
+  <script src="/static/pwa.js"></script>
   <script src="/static/unassigned.js"></script>
+  <script>
+    (function(){
+      const path = window.location.pathname;
+      document.querySelectorAll('.bottomNav a').forEach(a => {
+        const r = a.dataset.route;
+        if((path === '/' && r === 'home') ||
+           (path.startsWith('/media') && r === 'media') ||
+           (path.startsWith('/analytics') && r === 'settings')){
+          a.classList.add('active');
+        }
+        if(r === 'import' && path === '/'){
+          a.classList.add('active');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>

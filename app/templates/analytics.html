@@ -4,11 +4,13 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Analytics - Family Genealogy Tool Lite</title>
+   <link rel="manifest" href="/static/manifest.webmanifest">
+   <meta name="theme-color" content="#0b0f14">
   <link rel="stylesheet" href="/static/styles.css"/>
   <!-- Chart.js (no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="route-analytics">
   <header class="topbar">
     <div class="brand">
       <div class="logo">📊</div>
@@ -92,6 +94,32 @@
     <span class="muted">Analytics v1 • No build step • Chart.js via CDN • Local app</span>
   </footer>
 
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="/" data-route="home"><span class="icon">🌳</span><span>Tree/People</span></a>
+      <a href="/media/unassigned" data-route="media"><span class="icon">📷</span><span>Unassigned</span></a>
+      <a href="/#import" data-route="import"><span class="icon">⬆️</span><span>Import</span></a>
+      <a href="/analytics" data-route="settings"><span class="icon">⚙️</span><span>Settings</span></a>
+    </div>
+  </nav>
+
+  <script src="/static/pwa.js"></script>
   <script src="/static/analytics.js"></script>
+  <script>
+    (function(){
+      const path = window.location.pathname;
+      document.querySelectorAll('.bottomNav a').forEach(a => {
+        const r = a.dataset.route;
+        if((path === '/' && r === 'home') ||
+           (path.startsWith('/media') && r === 'media') ||
+           (path.startsWith('/analytics') && r === 'settings')){
+          a.classList.add('active');
+        }
+        if(r === 'import' && path === '/'){
+          a.classList.add('active');
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
