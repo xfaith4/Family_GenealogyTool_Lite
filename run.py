@@ -3,11 +3,13 @@ import sys
 
 try:
     from app import create_app
-except ModuleNotFoundError as e:
+except (ModuleNotFoundError, ImportError) as e:
     print("=" * 70)
     print("ERROR: Required dependencies are not installed.")
     print("=" * 70)
-    print(f"\nMissing module: {e.name}")
+    # Extract module name safely from the error message
+    module_name = getattr(e, 'name', None) or str(e).split("'")[1] if "'" in str(e) else 'unknown'
+    print(f"\nMissing module: {module_name}")
     print("\nPlease run the setup script first:")
     print("  • On Termux/Linux: ./scripts/termux-setup.sh")
     print("  • On Windows:      .\\scripts\\Setup.ps1")
