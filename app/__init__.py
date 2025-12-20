@@ -1,5 +1,6 @@
 from flask import Flask
 from pathlib import Path
+import os
 
 def create_app(test_config: dict | None = None) -> Flask:
     """
@@ -10,13 +11,24 @@ def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__, instance_relative_config=False)
 
     repo_root = Path(__file__).resolve().parents[1]
-    data_dir = repo_root / "data"
-    data_dir.mkdir(exist_ok=True)
+    
+    # Support environment variable for database path (for Termux and other environments)
+    db_path_env = os.environ.get("APP_DB_PATH")
+    if db_path_env:
+        db_path = Path(db_path_env)
+        if not db_path.is_absolute():
+            db_path = repo_root / db_path
+    else:
+        db_path = repo_root / "data" / "family_tree.sqlite"
+    
+    # Ensure parent directory exists
+    data_dir = db_path.parent
+    data_dir.mkdir(parents=True, exist_ok=True)
     (data_dir / "media").mkdir(exist_ok=True)
     (data_dir / "media_ingest").mkdir(exist_ok=True)
 
     app.config.from_mapping(
-        DATABASE=str(data_dir / "family_tree.sqlite"),
+        DATABASE=str(db_path),
         MEDIA_DIR=str(data_dir / "media"),
         MEDIA_INGEST_DIR=str(data_dir / "media_ingest"),
         MAX_CONTENT_LENGTH=25 * 1024 * 1024,
