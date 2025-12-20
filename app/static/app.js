@@ -34,9 +34,18 @@ function renderList(){
   for(const p of state.people){
     const div = document.createElement("div");
     div.className = "item";
+    // Build metadata string with birth/death info, minimize ID display
+    let meta = [];
+    if(p.birth_date) meta.push(`b. ${escapeHtml(p.birth_date)}`);
+    if(p.death_date) meta.push(`d. ${escapeHtml(p.death_date)}`);
+    if(p.sex) meta.push(escapeHtml(p.sex));
+    // Only show ID if no other metadata
+    if(meta.length === 0) {
+      meta.push(`ID ${p.id}`);
+    }
     div.innerHTML = `
       <div class="name">${escapeHtml(fullName(p))}</div>
-      <div class="meta">ID ${p.id}${p.xref ? " • " + escapeHtml(p.xref) : ""}${p.sex ? " • " + escapeHtml(p.sex) : ""}</div>
+      <div class="meta">${meta.join(" • ")}</div>
     `;
     div.onclick = () => loadDetails(p.id);
     el.appendChild(div);

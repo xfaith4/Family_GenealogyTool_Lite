@@ -49,8 +49,15 @@
     </div>
   </nav>
 
+  <button class="helpButton" onclick="showHelp('media')" aria-label="Show help" title="Help & Documentation">?</button>
+
   <script src="/static/pwa.js"></script>
+  <script src="/static/help.js"></script>
   <script src="/static/unassigned.js"></script>
-  <script>window.setActiveNav && window.setActiveNav();</script>
+  <script>
+    window.setActiveNav && window.setActiveNav();
+    // Initialize help system
+    initHelp();
+  </script>
 </body>
 </html>

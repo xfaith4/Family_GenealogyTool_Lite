@@ -53,12 +53,12 @@
             <option value="4">4 generations</option>
             <option value="5">5 generations</option>
           </select>
-          <label for="layoutSelect">Layout:</label>
-          <select id="layoutSelect">
-            <option value="elk" selected>Layered (ELK)</option>
-            <option value="breadthfirst">Breadthfirst</option>
-            <option value="concentric">Concentric</option>
-            <option value="cose">Force (COSE)</option>
+          <label for="layoutSelect" title="Different layouts reveal different patterns">Layout:</label>
+          <select id="layoutSelect" title="Choose a layout to discover different relationship patterns">
+            <option value="elk" selected>📊 Layered (generations)</option>
+            <option value="breadthfirst">🎯 Breadthfirst (centered)</option>
+            <option value="concentric">⭕ Concentric (distance)</option>
+            <option value="cose">🔮 Force (convergences)</option>
           </select>
           <input id="graphSearch" class="input inputSmall" placeholder="Find in graph..." />
           <button id="btnFind" class="btn btnSecondary">Find</button>
@@ -71,7 +71,7 @@
       </div>
       <div id="treeV2Container"></div>
       <div class="muted" style="margin-top: 10px; font-size: 12px;">
-        💡 Click a person to see details • Drag to pan • Scroll to zoom
+        💡 Click a person to see details • Drag to pan • Scroll to zoom • Diamond nodes (⚭) are marriages • Click ? for help understanding each layout
       </div>
     </section>
   </main>
@@ -92,7 +92,10 @@
     </div>
   </nav>
 
+  <button class="helpButton" onclick="showHelp('tree-v2')" aria-label="Show help" title="Help & Documentation">?</button>
+
   <script src="/static/pwa.js"></script>
+  <script src="/static/help.js"></script>
   <script src="/static/tree-v2.js"></script>
   <script>
     // Shared app.js utilities (minimal copy for tree-v2)
@@ -134,9 +137,18 @@
       for(const p of state.people){
         const div = document.createElement("div");
         div.className = "item";
+        // Build metadata string with birth/death info, minimize ID display
+        let meta = [];
+        if(p.birth_date) meta.push(`b. ${escapeHtml(p.birth_date)}`);
+        if(p.death_date) meta.push(`d. ${escapeHtml(p.death_date)}`);
+        if(p.sex) meta.push(escapeHtml(p.sex));
+        // Only show ID if no other metadata
+        if(meta.length === 0) {
+          meta.push(`ID ${p.id}`);
+        }
         div.innerHTML = `
           <div class="name">${escapeHtml(fullName(p))}</div>
-          <div class="meta">ID ${p.id}${p.xref ? " • " + escapeHtml(p.xref) : ""}${p.sex ? " • " + escapeHtml(p.sex) : ""}</div>
+          <div class="meta">${meta.join(" • ")}</div>
         `;
         div.onclick = async () => {
           state.selected = p;
@@ -254,6 +266,10 @@
       }
     })();
   </script>
-  <script>window.setActiveNav && window.setActiveNav();</script>
+  <script>
+    window.setActiveNav && window.setActiveNav();
+    // Initialize help system
+    initHelp();
+  </script>
 </body>
 </html>

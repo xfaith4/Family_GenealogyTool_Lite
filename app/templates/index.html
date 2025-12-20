@@ -54,7 +54,7 @@
     <section class="panel span2">
       <div class="panelHeader">
         <h2>Mini Tree</h2>
-        <div class="muted">Parents + children (fast + simple)</div>
+        <div class="muted">Quick view: parents and children • Shows immediate family connections</div>
       </div>
       <div id="tree" class="tree muted">Select a person…</div>
     </section>
@@ -74,8 +74,15 @@
     </div>
   </nav>
 
+  <button class="helpButton" onclick="showHelp('main')" aria-label="Show help" title="Help & Documentation">?</button>
+
   <script src="/static/pwa.js"></script>
+  <script src="/static/help.js"></script>
   <script src="/static/app.js"></script>
-  <script>window.setActiveNav && window.setActiveNav();</script>
+  <script>
+    window.setActiveNav && window.setActiveNav();
+    // Initialize help system
+    initHelp();
+  </script>
 </body>
 </html>
