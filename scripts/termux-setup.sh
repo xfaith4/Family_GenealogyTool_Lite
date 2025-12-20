@@ -36,7 +36,8 @@ echo ""
 echo "Installing required Termux packages..."
 echo "This may take several minutes on first run..."
 
-pkg install -y python git binutils || {
+# Install base packages and image libraries needed for Pillow
+pkg install -y python git binutils libjpeg-turbo libpng zlib || {
     echo "ERROR: Failed to install packages. Check your internet connection."
     exit 1
 }

@@ -102,9 +102,9 @@ export APP_DB_PATH=/path/to/custom/db.sqlite
 If you prefer manual control, follow these steps:
 
 ```bash
-# 1. Install packages
+# 1. Install packages (including image libraries for Pillow)
 pkg update
-pkg install python git binutils -y
+pkg install python git binutils libjpeg-turbo libpng zlib -y
 
 # 2. Create virtual environment
 python -m venv .venv
@@ -209,6 +209,24 @@ pip install Pillow
 pip install SQLAlchemy
 pip install alembic
 pip install pytest
+```
+
+### Pillow Build Failures
+
+**Symptom**: Error message like "The headers or library files could not be found for jpeg" when installing Pillow
+
+**Solution**:
+```bash
+# Install required image libraries for Pillow
+pkg install libjpeg-turbo libpng zlib -y
+
+# Clear pip cache and retry
+pip cache purge
+pip install --no-cache-dir Pillow
+
+# If still failing, try upgrading pip and setuptools
+pip install --upgrade pip setuptools wheel
+pip install --no-cache-dir Pillow
 ```
 
 ### Python Module Not Found
