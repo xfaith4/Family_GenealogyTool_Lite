@@ -1,5 +1,20 @@
 import os
-from app import create_app
+import sys
+
+try:
+    from app import create_app
+except ModuleNotFoundError as e:
+    print("=" * 70)
+    print("ERROR: Required dependencies are not installed.")
+    print("=" * 70)
+    print(f"\nMissing module: {e.name}")
+    print("\nPlease run the setup script first:")
+    print("  • On Termux/Linux: ./scripts/termux-setup.sh")
+    print("  • On Windows:      .\\scripts\\Setup.ps1")
+    print("  • Manual setup:    pip install -r requirements.txt")
+    print("\nSee README.md or docs/TERMUX.md for detailed setup instructions.")
+    print("=" * 70)
+    sys.exit(1)
 
 app = create_app()
 
