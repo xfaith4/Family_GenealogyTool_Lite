@@ -7,8 +7,20 @@ except (ModuleNotFoundError, ImportError) as e:
     print("=" * 70)
     print("ERROR: Required dependencies are not installed.")
     print("=" * 70)
+    
     # Extract module name safely from the error message
-    module_name = getattr(e, 'name', None) or str(e).split("'")[1] if "'" in str(e) else 'unknown'
+    module_name = 'unknown'
+    if hasattr(e, 'name') and e.name:
+        module_name = e.name
+    else:
+        # Try to parse module name from error message
+        error_msg = str(e)
+        if "'" in error_msg:
+            try:
+                module_name = error_msg.split("'")[1]
+            except IndexError:
+                pass
+    
     print(f"\nMissing module: {module_name}")
     print("\nPlease run the setup script first:")
     print("  • On Termux/Linux: ./scripts/termux-setup.sh")
