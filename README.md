@@ -1,6 +1,6 @@
 # Family Genealogy Tool Lite
 
-Minimal, dependency-light genealogy app designed to run cleanly on Windows.
+Minimal, dependency-light genealogy app designed to run cleanly on Windows and Android.
 
 - **Backend:** Flask
 - **Database:** SQLite (single file)
@@ -16,6 +16,24 @@ set-executionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
 Open: <http://127.0.0.1:3001>
+
+## Run on Android (Termux)
+
+You can run this app natively on Android using Termux—no root or Docker required!
+
+**Quick setup:**
+```bash
+# Install Termux from F-Droid, then:
+pkg install git -y
+git clone https://github.com/xfaith4/Family_GenealogyTool_Lite.git
+cd Family_GenealogyTool_Lite
+./scripts/termux-setup.sh
+./scripts/termux-run.sh
+```
+
+Open in your Android browser: <http://127.0.0.1:3001>
+
+📖 **Full guide:** See [docs/TERMUX.md](docs/TERMUX.md) for detailed instructions, troubleshooting, and configuration options.
 
 ## Importing RMTree exports
 

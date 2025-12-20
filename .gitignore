@@ -25,6 +25,9 @@ data/
 *.db
 data/media/*
 !data/media/.gitkeep
+data/media_ingest/*
+!data/media_ingest/.gitkeep
+!data/.gitkeep
 
 # IDE/editor
 .vscode/
