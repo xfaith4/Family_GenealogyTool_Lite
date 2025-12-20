@@ -1,5 +1,9 @@
 """
 Test environment variable configuration for Termux compatibility
+
+Note: `create_app` is imported inside test functions (not at module level)
+to ensure each test gets a fresh Flask app with the environment variables
+set specifically for that test, avoiding cross-test contamination.
 """
 import os
 import pytest
@@ -11,6 +15,7 @@ def test_default_configuration():
     for key in ['APP_DB_PATH', 'APP_BIND_HOST', 'APP_PORT', 'APP_DEBUG']:
         os.environ.pop(key, None)
     
+    # Import after clearing env vars to get fresh app
     from app import create_app
     app = create_app()
     
@@ -26,6 +31,7 @@ def test_custom_db_path_absolute():
     os.environ['APP_DB_PATH'] = custom_path
     
     try:
+        # Import after setting env var to get fresh app
         from app import create_app
         app = create_app()
         assert app.config['DATABASE'] == custom_path
@@ -41,6 +47,7 @@ def test_custom_db_path_relative():
     os.environ['APP_DB_PATH'] = custom_path
     
     try:
+        # Import after setting env var to get fresh app
         from app import create_app
         app = create_app()
         # Relative path should be resolved from repo root

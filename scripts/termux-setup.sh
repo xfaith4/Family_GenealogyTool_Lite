@@ -109,6 +109,7 @@ mkdir -p "$DATA_DIR/media_ingest"
 
 # Remove existing database to avoid conflicts (fresh setup)
 echo ""
+echo "⚠️  WARNING: This will remove any existing database!"
 if [ -f "$DB_PATH" ]; then
     echo "Removing existing database for fresh setup..."
     rm -f "$DB_PATH"
