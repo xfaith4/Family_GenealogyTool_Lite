@@ -123,7 +123,7 @@ fi
 echo ""
 echo "Running database migrations..."
 cd "$REPO_ROOT"
-python -m alembic upgrade head || {
+"$PYTHON" -m alembic upgrade head || {
     echo "ERROR: Database migration failed."
     exit 1
 }

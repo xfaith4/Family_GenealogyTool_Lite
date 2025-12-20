@@ -298,7 +298,7 @@ pip install -r requirements.txt
 # Test the health endpoint
 curl http://127.0.0.1:3001/api/health
 
-# If it returns {"status":"ok"}, the app is working
+# If it returns {"ok":true}, the app is working
 # If connection refused, check if app is actually running
 ```
 
