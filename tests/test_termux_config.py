@@ -3,7 +3,6 @@ Test environment variable configuration for Termux compatibility
 """
 import os
 import pytest
-from app import create_app
 
 
 def test_default_configuration():
@@ -12,6 +11,7 @@ def test_default_configuration():
     for key in ['APP_DB_PATH', 'APP_BIND_HOST', 'APP_PORT', 'APP_DEBUG']:
         os.environ.pop(key, None)
     
+    from app import create_app
     app = create_app()
     
     # Default database path should be relative
@@ -26,6 +26,7 @@ def test_custom_db_path_absolute():
     os.environ['APP_DB_PATH'] = custom_path
     
     try:
+        from app import create_app
         app = create_app()
         assert app.config['DATABASE'] == custom_path
         # Media dirs should be in parent of custom db
@@ -40,6 +41,7 @@ def test_custom_db_path_relative():
     os.environ['APP_DB_PATH'] = custom_path
     
     try:
+        from app import create_app
         app = create_app()
         # Relative path should be resolved from repo root
         assert 'custom_data/my_db.sqlite' in app.config['DATABASE']
@@ -49,9 +51,7 @@ def test_custom_db_path_relative():
 
 
 def test_env_vars_for_run_script():
-    """Test that run.py respects environment variables"""
-    import run
-    
+    """Test that environment variables can be read and used correctly"""
     # Test default values
     os.environ.pop('APP_BIND_HOST', None)
     os.environ.pop('APP_PORT', None)

@@ -16,9 +16,11 @@ def create_app(test_config: dict | None = None) -> Flask:
     db_path_env = os.environ.get("APP_DB_PATH")
     if db_path_env:
         db_path = Path(db_path_env)
+        # Convert relative paths to absolute based on repo root
         if not db_path.is_absolute():
             db_path = repo_root / db_path
     else:
+        # Default path
         db_path = repo_root / "data" / "family_tree.sqlite"
     
     # Ensure parent directory exists

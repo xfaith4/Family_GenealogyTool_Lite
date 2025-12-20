@@ -45,7 +45,7 @@ echo ""
 
 # Check if port is already in use
 if command -v netstat >/dev/null 2>&1; then
-    if netstat -an | grep -q ":$APP_PORT "; then
+    if netstat -an | grep -E ":${APP_PORT} |:${APP_PORT}\$" | grep -q LISTEN; then
         echo "WARNING: Port $APP_PORT appears to be in use!"
         echo "If the app fails to start, try:"
         echo "  export APP_PORT=3002"
@@ -53,7 +53,7 @@ if command -v netstat >/dev/null 2>&1; then
         echo ""
     fi
 elif command -v ss >/dev/null 2>&1; then
-    if ss -an | grep -q ":$APP_PORT "; then
+    if ss -an | grep -E ":${APP_PORT} |:${APP_PORT}\$" | grep -q LISTEN; then
         echo "WARNING: Port $APP_PORT appears to be in use!"
         echo "If the app fails to start, try:"
         echo "  export APP_PORT=3002"
