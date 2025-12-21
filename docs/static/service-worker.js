@@ -1,15 +1,17 @@
-const STATIC_CACHE = "fgtl-static-v1";
+const STATIC_CACHE = "fgtl-static-v2";
 const STATIC_ASSETS = [
-  "/",
-  "/static/styles.css",
-  "/static/app.js",
-  "/static/unassigned.js",
-  "/static/tree-v2.js",
-  "/static/analytics.js",
-  "/static/pwa.js",
-  "/static/manifest.webmanifest",
-  "/static/icons/icon-192.png",
-  "/static/icons/icon-512.png"
+  "./",
+  "./index.html",
+  "./tree.html",
+  "./analytics.html",
+  "./static/styles.css",
+  "./static/app-static.js",
+  "./static/data-adapter.js",
+  "./static/pwa.js",
+  "./static/help.js",
+  "./static/manifest.webmanifest",
+  "./static/icons/icon-192.png",
+  "./static/icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -31,8 +33,18 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
-  if (url.origin === location.origin && url.pathname.startsWith("/api/")) {
-    event.respondWith(fetch(request));
+
+  // Network-first for JSON data files
+  if (url.pathname.includes("/data/") && url.pathname.endsWith(".json")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
     return;
   }
 
@@ -45,13 +57,13 @@ self.addEventListener("fetch", (event) => {
           caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match(request).then((resp) => resp || caches.match("/")))
+        .catch(() => caches.match(request).then((resp) => resp || caches.match("./")))
     );
     return;
   }
 
   // Cache-first for static assets
-  if (url.origin === location.origin && url.pathname.startsWith("/static/")) {
+  if (url.pathname.includes("/static/")) {
     event.respondWith(
       caches.match(request).then(
         (cached) =>
