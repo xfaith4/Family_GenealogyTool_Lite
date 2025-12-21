@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Family Genealogy Tool Lite - Static Version</title>
+  <link rel="manifest" href="./static/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="./static/styles.css"/>
+</head>
+<body class="route-home">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🌳</div>
+      <div class="title">
+        <div class="name">Family Genealogy Tool <span class="muted">Lite</span></div>
+        <div class="sub">Static • GitHub Pages • Read-only view</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="./tree.html" class="btn btnSecondary">🌳 Tree View</a>
+      <a href="./analytics.html" class="btn btnSecondary">📊 Analytics</a>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>People</h2>
+        <input id="search" class="input" placeholder="Search (given/surname)..." />
+      </div>
+      <div id="peopleList" class="list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panelHeader">
+        <h2>Details</h2>
+      </div>
+
+      <div id="details" class="details muted">Select a person…</div>
+    </section>
+
+    <section class="panel span2">
+      <div class="panelHeader">
+        <h2>Mini Tree</h2>
+        <div class="muted">Quick view: parents and children • Shows immediate family connections</div>
+      </div>
+      <div id="tree" class="tree muted">Select a person…</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Static version hosted on GitHub Pages • Data loaded from JSON files</span>
+  </footer>
+
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="./index.html" data-route="home"><span class="icon">🌳</span><span>People</span></a>
+      <a href="./tree.html" data-route="tree"><span class="icon">🌲</span><span>Tree</span></a>
+      <a href="./analytics.html" data-route="analytics"><span class="icon">📊</span><span>Analytics</span></a>
+    </div>
+  </nav>
+
+  <button class="helpButton" onclick="showHelp('main')" aria-label="Show help" title="Help & Documentation">?</button>
+
+  <script src="./static/help.js"></script>
+  <script src="./static/data-adapter.js"></script>
+  <script src="./static/app-static.js"></script>
+  <script>
+    window.setActiveNav && window.setActiveNav();
+    // Initialize help system
+    initHelp && initHelp();
+  </script>
+</body>
+</html>
