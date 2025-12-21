@@ -29,6 +29,10 @@ data/media_ingest/*
 !data/media_ingest/.gitkeep
 !data/.gitkeep
 
+# Allow docs/data JSON files for GitHub Pages
+!docs/data/
+!docs/data/*.json
+
 # IDE/editor
 .vscode/
 .idea/

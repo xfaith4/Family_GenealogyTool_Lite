@@ -7,6 +7,21 @@ Minimal, dependency-light genealogy app designed to run cleanly on Windows and A
 - **Frontend:** Vanilla HTML/CSS/JS (no build step)
 - **No Node / no native modules / no WSL / no Docker**
 
+## 🌐 GitHub Pages Static Version
+
+A read-only static version is available that can be hosted on GitHub Pages:
+- **No backend required** - All data loaded from JSON files
+- **Perfect for sharing** - Host your family tree online
+- **See it in action:** [View the static demo](docs/)
+
+To create your own static version:
+1. Import your genealogy data into the app
+2. Run `python3 scripts/export_to_json.py` to export to JSON
+3. Enable GitHub Pages in your repo settings (point to `/docs`)
+4. Your family tree will be live at `https://yourusername.github.io/repo-name/`
+
+See [docs/README.md](docs/README.md) for full instructions.
+
 ## Quick start (PowerShell)
 
 ```powershell

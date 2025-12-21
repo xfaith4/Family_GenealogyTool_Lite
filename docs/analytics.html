@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Analytics - Family Genealogy Tool Lite</title>
+  <link rel="manifest" href="./static/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="./static/styles.css"/>
+  <style>
+    .statsGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .statCard {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .statCard .value {
+      font-size: 2.5em;
+      font-weight: 700;
+      color: #007bff;
+      margin-bottom: 8px;
+    }
+    
+    .statCard .label {
+      font-size: 1.1em;
+      color: #666;
+    }
+    
+    .chartSection {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .chartSection h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .barChart {
+      margin-top: 20px;
+    }
+    
+    .barRow {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .barLabel {
+      width: 150px;
+      font-weight: 500;
+    }
+    
+    .barContainer {
+      flex: 1;
+      background: #f0f0f0;
+      border-radius: 4px;
+      height: 30px;
+      position: relative;
+      margin: 0 10px;
+    }
+    
+    .barFill {
+      background: linear-gradient(90deg, #007bff, #0056b3);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    .barValue {
+      min-width: 40px;
+      text-align: right;
+      font-weight: 600;
+    }
+    
+    .listSection {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .listSection h3 {
+      margin-top: 0;
+    }
+    
+    .listItem {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .listItem:last-child {
+      border-bottom: none;
+    }
+    
+    .listItem:hover {
+      background: #f8f9fa;
+    }
+  </style>
+</head>
+<body class="route-analytics">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">📊</div>
+      <div class="title">
+        <div class="name">Family Genealogy Tool <span class="muted">Lite</span></div>
+        <div class="sub">Analytics Dashboard</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="./index.html" class="btn btnSecondary">← People List</a>
+      <a href="./tree.html" class="btn btnSecondary">🌳 Tree View</a>
+    </div>
+  </header>
+
+  <main style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+    <h2>Statistics Overview</h2>
+    <div id="statsGrid" class="statsGrid">
+      <div class="muted">Loading statistics...</div>
+    </div>
+    
+    <div id="charts"></div>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Static version hosted on GitHub Pages • Data loaded from JSON files</span>
+  </footer>
+
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="./index.html" data-route="home"><span class="icon">🌳</span><span>People</span></a>
+      <a href="./tree.html" data-route="tree"><span class="icon">🌲</span><span>Tree</span></a>
+      <a href="./analytics.html" data-route="analytics"><span class="icon">📊</span><span>Analytics</span></a>
+    </div>
+  </nav>
+
+  <script src="./static/help.js"></script>
+  <script src="./static/data-adapter.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    
+    function escapeHtml(s){
+      return (s ?? "").toString()
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+    
+    async function renderStats() {
+      const stats = await window.dataAdapter.getStatistics();
+      const persons = await window.dataAdapter.getPersons();
+      
+      const statsGrid = $('statsGrid');
+      statsGrid.innerHTML = '';
+      
+      // Create stat cards
+      const statsData = [
+        { value: stats.totalPersons, label: 'Total Persons' },
+        { value: stats.totalFamilies, label: 'Families' },
+        { value: stats.maleCount, label: 'Male' },
+        { value: stats.femaleCount, label: 'Female' },
+        { value: stats.unknownGender, label: 'Unknown Gender' },
+        { value: stats.totalEvents, label: 'Events' }
+      ];
+      
+      statsData.forEach(stat => {
+        const card = document.createElement('div');
+        card.className = 'statCard';
+        card.innerHTML = `
+          <div class="value">${stat.value}</div>
+          <div class="label">${stat.label}</div>
+        `;
+        statsGrid.appendChild(card);
+      });
+    }
+    
+    async function renderCharts() {
+      const persons = await window.dataAdapter.getPersons();
+      const chartsContainer = $('charts');
+      
+      // Surname distribution
+      const surnameCount = {};
+      persons.forEach(p => {
+        const surname = p.surname || 'Unknown';
+        surnameCount[surname] = (surnameCount[surname] || 0) + 1;
+      });
+      
+      const sortedSurnames = Object.entries(surnameCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+      
+      const maxCount = Math.max(...sortedSurnames.map(s => s[1]));
+      
+      const surnameChart = document.createElement('div');
+      surnameChart.className = 'chartSection';
+      surnameChart.innerHTML = '<h3>Top 10 Surnames</h3><div class="barChart"></div>';
+      
+      const barChart = surnameChart.querySelector('.barChart');
+      sortedSurnames.forEach(([surname, count]) => {
+        const row = document.createElement('div');
+        row.className = 'barRow';
+        const percentage = (count / maxCount) * 100;
+        row.innerHTML = `
+          <div class="barLabel">${escapeHtml(surname)}</div>
+          <div class="barContainer">
+            <div class="barFill" style="width: ${percentage}%"></div>
+          </div>
+          <div class="barValue">${count}</div>
+        `;
+        barChart.appendChild(row);
+      });
+      
+      chartsContainer.appendChild(surnameChart);
+      
+      // Birth century distribution
+      const centuryCount = {};
+      persons.forEach(p => {
+        if (p.birth_date) {
+          // Extract year from various date formats
+          const yearMatch = p.birth_date.match(/\d{4}/);
+          if (yearMatch) {
+            const year = parseInt(yearMatch[0]);
+            const century = Math.floor(year / 100) * 100;
+            centuryCount[century] = (centuryCount[century] || 0) + 1;
+          }
+        }
+      });
+      
+      if (Object.keys(centuryCount).length > 0) {
+        const sortedCenturies = Object.entries(centuryCount)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+        
+        const maxCenturyCount = Math.max(...sortedCenturies.map(c => c[1]));
+        
+        const centuryChart = document.createElement('div');
+        centuryChart.className = 'chartSection';
+        centuryChart.innerHTML = '<h3>Birth Century Distribution</h3><div class="barChart"></div>';
+        
+        const centuryBarChart = centuryChart.querySelector('.barChart');
+        sortedCenturies.forEach(([century, count]) => {
+          const row = document.createElement('div');
+          row.className = 'barRow';
+          const percentage = (count / maxCenturyCount) * 100;
+          row.innerHTML = `
+            <div class="barLabel">${century}s</div>
+            <div class="barContainer">
+              <div class="barFill" style="width: ${percentage}%"></div>
+            </div>
+            <div class="barValue">${count}</div>
+          `;
+          centuryBarChart.appendChild(row);
+        });
+        
+        chartsContainer.appendChild(centuryChart);
+      }
+      
+      // Recent additions
+      const recentPersons = [...persons]
+        .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+        .slice(0, 10);
+      
+      if (recentPersons.length > 0) {
+        const recentSection = document.createElement('div');
+        recentSection.className = 'listSection';
+        recentSection.innerHTML = '<h3>Recently Added</h3>';
+        
+        recentPersons.forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'listItem';
+          const name = `${p.given || ''} ${p.surname || ''}`.trim() || '(unnamed)';
+          const date = new Date(p.created_at).toLocaleDateString();
+          item.innerHTML = `
+            <span>${escapeHtml(name)}</span>
+            <span class="muted">${date}</span>
+          `;
+          item.style.cursor = 'pointer';
+          item.onclick = () => {
+            window.location.href = `./index.html?person=${p.id}`;
+          };
+          recentSection.appendChild(item);
+        });
+        
+        chartsContainer.appendChild(recentSection);
+      }
+    }
+    
+    // Set active nav
+    window.setActiveNav = function() {
+      const path = window.location.pathname;
+      const links = document.querySelectorAll('.bottomNav a');
+      links.forEach(link => {
+        link.classList.remove('active');
+        const route = link.getAttribute('data-route');
+        if (
+          (route === 'home' && (path === '/' || path === '/index.html')) ||
+          (route === 'tree' && path.includes('tree')) ||
+          (route === 'analytics' && path.includes('analytics'))
+        ) {
+          link.classList.add('active');
+        }
+      });
+    };
+    
+    // Initialize
+    (async function init() {
+      try {
+        await renderStats();
+        await renderCharts();
+        window.setActiveNav();
+        console.log('✓ Analytics loaded');
+      } catch (error) {
+        console.error('Error loading analytics:', error);
+        $('statsGrid').innerHTML = `<div class="muted error">Error loading data: ${error.message}</div>`;
+      }
+    })();
+  </script>
+</body>
+</html>

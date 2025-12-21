@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Tree View - Family Genealogy Tool Lite</title>
+  <link rel="manifest" href="./static/manifest.webmanifest">
+  <meta name="theme-color" content="#0b0f14">
+  <link rel="stylesheet" href="./static/styles.css"/>
+  <style>
+    .treeContainer {
+      padding: 20px;
+      overflow: auto;
+    }
+    
+    .personCard {
+      background: #fff;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 8px;
+      min-width: 200px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .personCard:hover {
+      border-color: #007bff;
+      cursor: pointer;
+    }
+    
+    .personCard .name {
+      font-weight: 600;
+      font-size: 1.1em;
+      margin-bottom: 4px;
+    }
+    
+    .personCard .dates {
+      font-size: 0.9em;
+      color: #666;
+    }
+    
+    .generation {
+      margin-bottom: 20px;
+      border-left: 3px solid #007bff;
+      padding-left: 20px;
+    }
+    
+    .generationTitle {
+      font-weight: 600;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+    
+    .filters {
+      background: #f8f9fa;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    
+    .filters label {
+      display: inline-block;
+      margin-right: 16px;
+    }
+  </style>
+</head>
+<body class="route-tree">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🌳</div>
+      <div class="title">
+        <div class="name">Family Genealogy Tool <span class="muted">Lite</span></div>
+        <div class="sub">Tree View</div>
+      </div>
+    </div>
+    <div class="actions">
+      <a href="./index.html" class="btn btnSecondary">← People List</a>
+      <a href="./analytics.html" class="btn btnSecondary">📊 Analytics</a>
+    </div>
+  </header>
+
+  <main style="padding: 20px;">
+    <div class="filters">
+      <label>
+        <input type="checkbox" id="showDates" checked /> Show Dates
+      </label>
+      <label>
+        <input type="checkbox" id="showPlaces" /> Show Places
+      </label>
+      <label>
+        Sort by:
+        <select id="sortBy">
+          <option value="name">Name</option>
+          <option value="birth">Birth Date</option>
+          <option value="surname">Surname</option>
+        </select>
+      </label>
+      <button id="btnRefresh" class="btn btnSecondary">Refresh</button>
+    </div>
+    
+    <div id="treeContainer" class="treeContainer">
+      <div class="muted">Loading tree data...</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <span class="muted">Static version hosted on GitHub Pages • Data loaded from JSON files</span>
+  </footer>
+
+  <nav class="bottomNav" aria-label="Primary">
+    <div class="navItems">
+      <a href="./index.html" data-route="home"><span class="icon">🌳</span><span>People</span></a>
+      <a href="./tree.html" data-route="tree"><span class="icon">🌲</span><span>Tree</span></a>
+      <a href="./analytics.html" data-route="analytics"><span class="icon">📊</span><span>Analytics</span></a>
+    </div>
+  </nav>
+
+  <script src="./static/help.js"></script>
+  <script src="./static/data-adapter.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    
+    function escapeHtml(s){
+      return (s ?? "").toString()
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+    
+    function fullName(p){
+      const g = (p.given || "").trim();
+      const s = (p.surname || "").trim();
+      const name = `${g} ${s}`.trim();
+      return name || "(unnamed)";
+    }
+    
+    function formatDates(p) {
+      const parts = [];
+      if (p.birth_date) parts.push(`b. ${p.birth_date}`);
+      if (p.death_date) parts.push(`d. ${p.death_date}`);
+      return parts.join(' • ') || 'Dates unknown';
+    }
+    
+    function formatPlaces(p) {
+      const parts = [];
+      if (p.birth_place) parts.push(`Born: ${p.birth_place}`);
+      if (p.death_place) parts.push(`Died: ${p.death_place}`);
+      return parts.join(' • ') || '';
+    }
+    
+    async function renderTree() {
+      const showDates = $('showDates').checked;
+      const showPlaces = $('showPlaces').checked;
+      const sortBy = $('sortBy').value;
+      
+      const persons = await window.dataAdapter.getPersons();
+      
+      // Sort persons
+      let sorted = [...persons];
+      if (sortBy === 'name') {
+        sorted.sort((a, b) => fullName(a).localeCompare(fullName(b)));
+      } else if (sortBy === 'birth') {
+        sorted.sort((a, b) => (a.birth_date || '').localeCompare(b.birth_date || ''));
+      } else if (sortBy === 'surname') {
+        sorted.sort((a, b) => (a.surname || '').localeCompare(b.surname || ''));
+      }
+      
+      // Group by surname
+      const bySurname = {};
+      sorted.forEach(p => {
+        const surname = p.surname || 'Unknown';
+        if (!bySurname[surname]) bySurname[surname] = [];
+        bySurname[surname].push(p);
+      });
+      
+      const container = $('treeContainer');
+      container.innerHTML = '';
+      
+      const surnames = Object.keys(bySurname).sort();
+      
+      surnames.forEach(surname => {
+        const generation = document.createElement('div');
+        generation.className = 'generation';
+        
+        const title = document.createElement('div');
+        title.className = 'generationTitle';
+        title.textContent = `${surname} Family (${bySurname[surname].length})`;
+        generation.appendChild(title);
+        
+        bySurname[surname].forEach(person => {
+          const card = document.createElement('div');
+          card.className = 'personCard';
+          
+          let html = `<div class="name">${escapeHtml(fullName(person))}</div>`;
+          
+          if (showDates) {
+            html += `<div class="dates">${escapeHtml(formatDates(person))}</div>`;
+          }
+          
+          if (showPlaces && formatPlaces(person)) {
+            html += `<div class="dates">${escapeHtml(formatPlaces(person))}</div>`;
+          }
+          
+          card.innerHTML = html;
+          card.onclick = () => {
+            window.location.href = `./index.html?person=${person.id}`;
+          };
+          
+          generation.appendChild(card);
+        });
+        
+        container.appendChild(generation);
+      });
+      
+      // Add summary
+      const summary = document.createElement('div');
+      summary.className = 'muted';
+      summary.style.marginTop = '20px';
+      summary.textContent = `Total: ${persons.length} persons in ${surnames.length} surname groups`;
+      container.appendChild(summary);
+    }
+    
+    // Event handlers
+    $('showDates')?.addEventListener('change', renderTree);
+    $('showPlaces')?.addEventListener('change', renderTree);
+    $('sortBy')?.addEventListener('change', renderTree);
+    $('btnRefresh')?.addEventListener('click', renderTree);
+    
+    // Set active nav
+    window.setActiveNav = function() {
+      const path = window.location.pathname;
+      const links = document.querySelectorAll('.bottomNav a');
+      links.forEach(link => {
+        link.classList.remove('active');
+        const route = link.getAttribute('data-route');
+        if (
+          (route === 'home' && (path === '/' || path === '/index.html')) ||
+          (route === 'tree' && path.includes('tree')) ||
+          (route === 'analytics' && path.includes('analytics'))
+        ) {
+          link.classList.add('active');
+        }
+      });
+    };
+    
+    // Initialize
+    (async function init() {
+      try {
+        await renderTree();
+        window.setActiveNav();
+        console.log('✓ Tree view loaded');
+      } catch (error) {
+        console.error('Error loading tree:', error);
+        $('treeContainer').innerHTML = `<div class="muted error">Error loading data: ${error.message}</div>`;
+      }
+    })();
+  </script>
+</body>
+</html>
