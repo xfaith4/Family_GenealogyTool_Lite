@@ -1,0 +1,3400 @@
+0 HEAD
+1 SUBM @SUBM1@
+1 SOUR Ancestry.com Family Trees
+2 NAME Ancestry.com Member Trees
+2 VERS 2025.08
+2 _TREE Hofstetter Family Tree
+3 RIN 53857536
+3 _ENV prd
+2 CORP Ancestry.com
+3 PHON 801-705-7000
+3 WWW www.ancestry.com
+3 ADDR 1300 West Traverse Parkway
+4 CONT Lehi, UT  84043
+4 CONT USA
+1 DATE 27 Sep 2025
+2 TIME 18:24:48
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @SUBM1@ SUBM
+1 NAME Ancestry.com Member Trees Submitter
+0 @I13579230616@ INDI
+1 NAME Pamela Jean /Hofstetter/
+2 GIVN Pamela Jean
+2 SURN Hofstetter
+1 SEX F
+1 FAMC @F103@
+1 FAMS @F65@
+1 BIRT
+2 DATE 17 January 1959
+2 PLAC Salina, Kansas
+2 OBJE @O455@
+1 OBJE @O38@
+2 _PRIM Y
+1 OBJE @O172@
+1 OBJE @O199@
+1 OBJE @O141@
+1 OBJE @O2@
+1 OBJE @O471@
+1 OBJE @O477@
+1 OBJE @O455@
+1 OBJE @O216@
+1 OBJE @O33@
+0 @I13579230617@ INDI
+1 NAME Dale Allen /Hofstetter/
+2 GIVN Dale Allen
+2 SURN Hofstetter
+2 SOUR @S_1492437404@
+3 _APID 1,1788::247300977
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594195
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5137924
+1 SEX M
+1 FAMC @F31@
+1 FAMS @F103@
+1 FAMS @F79@
+1 FAMS @F104@
+1 BIRT
+2 DATE 6 June 1933
+2 PLAC Moline, IL
+2 SOUR @S_1492437404@
+3 _APID 1,1788::247300977
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594195
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5137924
+2 NOTE Born in Moline Public Hospital.
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594195
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594195
+2 NOTE Age: 6; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1950
+2 PLAC East Moline, Illinois, USA
+2 SOUR @S302923301@
+3 PAGE "U.S., School Yearbooks, 1880-2012"; School Name: United Township High School; Year: 1950
+3 _APID 1,1265::227982142
+1 GRAD
+2 DATE 07Jun1951
+2 PLAC East Moline, Rock Island, Illinois, USA
+1 RESI
+2 DATE 1960-1971
+2 PLAC 2015 3X Avenue, East Moline, IL  
+2 OBJE @O216@
+1 RESI
+2 DATE Abt 1977
+2 PLAC 2422 Whispering Oaks CT. , East Moline
+2 SOUR @S371180592@
+3 PAGE The Argus; Publication Date: 15/ Nov/ 1977; Publication Place: Rock Island, Illinois, USA; URL: https://www.newspapers.com/image/645263646/?article=d3afc988-ba83-443e-ae77-2448fc7931e8&focus=0.39595625,0.017636118,0.6236734,0.19100435&xid=3398
+3 DATA
+4 WWW https://www.newspapers.com/image/645263646/?article=d3afc988-ba83-443e-ae77-2448fc7931e8&focus=0.39595625,0.017636118,0.6236734,0.19100435&xid=3398
+3 _APID 1,62116::263981059
+1 RETI
+2 DATE 31May1986
+2 PLAC East Moline, IL
+2 NOTE Dale retired from John Deere after more that 21 years of service.  He started at Plow Works in 1964 as a drill press operator, then as an inspector.  At the time of his retirement, Dale was a Systems Analyst in the Business Systems Dept.
+1 RESI
+2 DATE 1993
+2 PLAC East Moline, IL
+2 SOUR @S_1492437404@
+3 _APID 1,1788::247300977
+2 NOTE Age: 60
+1 DEAT
+2 DATE 15 Dec 2005
+2 PLAC Ocala, Marion, Florida, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5137924
+2 OBJE @O198@
+2 OBJE @O407@
+2 NOTE Age at Death: 72 
+3 CONT Place of Rest: Hampton Cemetery, Hampton, IL
+1 BURI
+2 DATE 2005
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5137924
+2 OBJE @O439@
+2 NOTE Plot:  Sec 3 Blk 5 Lot 6 Cremains
+1 SOUR @S302923301@
+2 PAGE "U.S., School Yearbooks, 1880-2012"; School Name: United Township High School; Year: 1950
+2 _APID 1,1265::227982142
+1 SOUR @S_1492437404@
+2 _APID 1,1788::247300977
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594195
+1 SOUR @S371180592@
+2 PAGE The Argus; Publication Date: 15/ Nov/ 1977; Publication Place: Rock Island, Illinois, USA; URL: https://www.newspapers.com/image/645263646/?article=d3afc988-ba83-443e-ae77-2448fc7931e8&focus=0.39595625,0.017636118,0.6236734,0.19100435&xid=3398
+2 DATA
+3 WWW https://www.newspapers.com/image/645263646/?article=d3afc988-ba83-443e-ae77-2448fc7931e8&focus=0.39595625,0.017636118,0.6236734,0.19100435&xid=3398
+2 _APID 1,62116::263981059
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5137924
+1 OBJE @O312@
+2 _PRIM Y
+1 OBJE @O353@
+1 OBJE @O302@
+1 OBJE @O247@
+1 OBJE @O404@
+1 OBJE @O187@
+1 OBJE @O345@
+1 OBJE @O8@
+1 OBJE @O110@
+1 OBJE @O256@
+1 OBJE @O45@
+1 OBJE @O448@
+1 OBJE @O421@
+1 OBJE @O435@
+1 OBJE @O188@
+1 OBJE @O225@
+1 OBJE @O216@
+1 OBJE @O324@
+1 OBJE @O420@
+1 OBJE @O459@
+1 OBJE @O398@
+1 OBJE @O316@
+1 OBJE @O492@
+1 OBJE @O198@
+1 OBJE @O407@
+1 OBJE @O240@
+1 OBJE @O327@
+1 OBJE @O494@
+1 OBJE @O439@
+1 OBJE @O397@
+1 OBJE @O369@
+0 @I13579259681@ INDI
+1 NAME Harold M. /Hofstetter/
+2 GIVN Harold M.
+2 SURN Hofstetter
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594192
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279777
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444116
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095411
+2 SOUR @S_1491402144@
+3 _APID 1,8790::1064485
+1 SEX M
+1 FAMC @F41@
+1 FAMS @F31@
+1 BIRT
+2 DATE 14 Nov 1907
+2 PLAC Hampton, Ill.
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594192
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279777
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444116
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095411
+2 SOUR @S_1491402144@
+3 _APID 1,8790::1064485
+1 BAPM
+2 DATE 14 May 1922
+2 PLAC Trinity Lutheran Church, Moline, Rock Island, Illinois, USA
+2 SOUR @S371193157@
+3 PAGE Archives of the Evangelical Lutheran Church in America; Elk Grove Village, IL, USA; Swedish American Baptisms, Marriages, Deaths, and Burials; Parish: Trinity Lutheran Church; ELCA Film Number: A87-88; SSIRC Film Number: A087
+3 _APID 1,61584::63100404
+1 RESI
+2 DATE 1910
+2 PLAC Watertown, Rock Island, Illinois
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095411
+2 NOTE Age in 1910: 2; Age in 1910: 2 5/12; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1920
+2 PLAC Moline Ward 7, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279777
+2 NOTE Age: 12; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1930
+2 PLAC East Moline, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444116
+2 NOTE Age in 1930: 22; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594192
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594192
+2 NOTE Age: 32; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S371182407@
+3 PAGE National Archives at St. Louis; St. Louis, Missouri; WWII Draft Registration Cards for Illinois, 10/16/1940-03/31/1947; Record Group: Records of the Selective Service System, 147; Box: 782
+3 _APID 1,2238::39664459
+1 DEAT
+2 DATE 18 Sep 1964
+2 PLAC Wisconsin
+2 SOUR @S_1491402144@
+3 _APID 1,8790::1064485
+2 OBJE @O81@
+2 NOTE Age: 56
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730554906:1030:18903470
+1 SOUR @S371182407@
+2 PAGE National Archives at St. Louis; St. Louis, Missouri; WWII Draft Registration Cards for Illinois, 10/16/1940-03/31/1947; Record Group: Records of the Selective Service System, 147; Box: 782
+2 _APID 1,2238::39664459
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594192
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+2 _APID 1,6061::96279777
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+2 _APID 1,6224::87444116
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115095411
+1 SOUR @S_1491402144@
+2 _APID 1,8790::1064485
+1 SOUR @S371193157@
+2 PAGE Archives of the Evangelical Lutheran Church in America; Elk Grove Village, IL, USA; Swedish American Baptisms, Marriages, Deaths, and Burials; Parish: Trinity Lutheran Church; ELCA Film Number: A87-88; SSIRC Film Number: A087
+2 _APID 1,61584::63100404
+1 OBJE @O35@
+2 _PRIM Y
+1 OBJE @O490@
+1 OBJE @O103@
+1 OBJE @O471@
+1 OBJE @O245@
+1 OBJE @O45@
+1 OBJE @O421@
+1 OBJE @O188@
+1 OBJE @O216@
+1 OBJE @O431@
+1 OBJE @O81@
+1 OBJE @O282@
+1 OBJE @O46@
+0 @I13579259689@ INDI
+1 NAME Theodosia /Hanewacker/
+2 GIVN Theodosia
+2 SURN Hanewacker
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594193
+2 SOUR @S_1492157692@
+3 PAGE Number: 320-26-8145; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28142100
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283420
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444147
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097522
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442657
+1 SEX F
+1 FAMC @F102@
+1 FAMS @F31@
+1 BIRT
+2 DATE 2 March 1907
+2 PLAC Hampton, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594193
+2 SOUR @S_1492157692@
+3 PAGE Number: 320-26-8145; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28142100
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283420
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444147
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097522
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442657
+2 OBJE @O135@
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097522
+2 NOTE Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283420
+2 NOTE Age: 12; Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1924
+2 PLAC Moline, Illinois, USA
+2 SOUR @S302923301@
+3 PAGE "U.S., School Yearbooks, 1880-2012"; School Name: Moline High School; Year: 1924
+3 _APID 1,1265::409590062
+1 GRAD
+2 DATE 1925
+2 OBJE @O254@
+2 NOTE High School Graduation
+1 _EMPLOY
+2 DATE June 1925 - July 1930
+2 PLAC East Moline State Hospital
+2 OBJE @O167@
+2 OBJE @O245@
+2 NOTE Clerk Stenographer
+1 RESI
+2 DATE 1930
+2 PLAC East Moline, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+3 _APID 1,6224::87444147
+2 NOTE Age in 1930: 23; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594193
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594193
+2 NOTE Age: 33; Marital Status: Married; Relation to Head of House: Wife
+1 _EMPLOY
+2 DATE 6 Feb 1948 - 1972
+2 PLAC East Moline State Hospital
+2 OBJE @O252@
+2 NOTE Medical Records Librarian
+1 RETI
+2 DATE 1972
+2 PLAC East Moline State Hospital
+2 OBJE @O121@
+2 OBJE @O173@
+2 OBJE @O388@
+2 OBJE @O11@
+2 OBJE @O229@
+1 EVEN
+2 TYPE 80th Birthday
+2 DATE 2 Mar 1987
+2 PLAC Moline, IL
+2 OBJE @O420@
+2 NOTE Theo's 80th Birthday celebration at Immanuel Lutheran Church.  With her children Patricia, Dale and Harold (Ike).
+1 EVEN
+2 TYPE Civil
+2 PLAC Illinois
+2 SOUR @S_1492157692@
+3 PAGE Number: 320-26-8145; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28142100
+1 DEAT
+2 DATE 27 Nov 1992
+2 PLAC Moline, Rock Island, Illinois, USA
+2 SOUR @S_1492157692@
+3 PAGE Number: 320-26-8145; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28142100
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442657
+2 OBJE @O379@
+2 NOTE Age at Death: 85
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442657
+2 OBJE @O81@
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730554904:1030:18903470
+1 SOUR @S302923301@
+2 PAGE "U.S., School Yearbooks, 1880-2012"; School Name: Moline High School; Year: 1924
+2 _APID 1,1265::409590062
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594193
+1 SOUR @S_1492157692@
+2 PAGE Number: 320-26-8145; Issue State: Illinois; Issue Date: Before 1951
+2 _APID 1,3693::28142100
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283420
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: East Moline, Rock Island, Illinois; Roll: 552; Page: 11A; Enumeration District: 24; Image: 478.0; FHL microfilm: 2340287
+2 _APID 1,6224::87444147
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097522
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5442657
+1 OBJE @O14@
+2 _PRIM Y
+1 OBJE @O491@
+1 OBJE @O445@
+1 OBJE @O88@
+1 OBJE @O129@
+1 OBJE @O441@
+1 OBJE @O152@
+1 OBJE @O269@
+1 OBJE @O275@
+1 OBJE @O254@
+1 OBJE @O121@
+1 OBJE @O173@
+1 OBJE @O388@
+1 OBJE @O11@
+1 OBJE @O229@
+1 OBJE @O167@
+1 OBJE @O158@
+1 OBJE @O272@
+1 OBJE @O471@
+1 OBJE @O3@
+1 OBJE @O379@
+1 OBJE @O245@
+1 OBJE @O185@
+1 OBJE @O45@
+1 OBJE @O346@
+1 OBJE @O7@
+1 OBJE @O421@
+1 OBJE @O188@
+1 OBJE @O225@
+1 OBJE @O216@
+1 OBJE @O195@
+1 OBJE @O252@
+1 OBJE @O290@
+1 OBJE @O431@
+1 OBJE @O420@
+1 OBJE @O135@
+1 OBJE @O81@
+1 OBJE @O282@
+1 OBJE @O46@
+1 OBJE @O369@
+0 @I13579259695@ INDI
+1 NAME Patricia Ann /Hofstetter/
+2 GIVN Patricia Ann
+2 SURN Hofstetter
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594194
+1 SEX F
+1 FAMC @F31@
+1 FAMS @F39@
+1 BIRT
+2 DATE abt 1931
+2 PLAC Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594194
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594194
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594194
+2 NOTE Age: 9; Marital Status: Single; Relation to Head of House: Daughter
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594194
+1 OBJE @O420@
+2 _PRIM Y
+1 OBJE @O45@
+1 OBJE @O346@
+1 OBJE @O448@
+1 OBJE @O421@
+1 OBJE @O188@
+1 OBJE @O270@
+1 OBJE @O354@
+1 OBJE @O324@
+0 @I13579259700@ INDI
+1 NAME Harold Wayne /Hofstetter/
+2 GIVN Harold Wayne
+2 SURN Hofstetter
+2 SOUR @S_1491350109@
+3 _APID 1,1732::359002766
+2 SOUR @S_1492437404@
+3 _APID 1,1788::321250663
+2 SOUR @S_972288423@
+3 _APID 1,2190::228460129
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594196
+2 SOUR @S_972288431@
+3 PAGE Publication Date: 22 Oct 2013; Publication Place: Beaver Dam, Wisconsin, USA
+3 _APID 1,7545::228477322
+2 SOUR @S_972288428@
+3 _APID 1,60525::64056643
+1 SEX M
+1 FAMC @F31@
+1 FAMS @F43@
+1 BIRT
+2 DATE 27 Feb 1935
+2 PLAC East Moline, Rock Island, Illinois, USA
+2 SOUR @S_1491350109@
+3 _APID 1,1732::359002766
+2 SOUR @S_1492437404@
+3 _APID 1,1788::321250663
+2 SOUR @S_972288423@
+3 _APID 1,2190::228460129
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594196
+2 SOUR @S_972288431@
+3 PAGE Publication Date: 22 Oct 2013; Publication Place: Beaver Dam, Wisconsin, USA
+3 _APID 1,7545::228477322
+2 SOUR @S_972288428@
+3 _APID 1,60525::64056643
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594196
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594196
+2 NOTE Age: 5; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1996
+2 PLAC Beaver Dam, WI
+2 SOUR @S_1492437404@
+3 _APID 1,1788::321250663
+1 _WLNK
+2 TITL Obituary
+2 NOTE https://qconline.com/obituaries/harold-ike-hofstetter/article_24ceb634-3602-5bda-b34b-3c5cb1e741cb.html
+1 DEAT
+2 DATE 18 Oct 2013
+2 PLAC Weston (Marathon County), Marathon County, Wisconsin, USA
+2 SOUR @S_972288423@
+3 _APID 1,2190::228460129
+2 SOUR @S_972288431@
+3 PAGE Publication Date: 22 Oct 2013; Publication Place: Beaver Dam, Wisconsin, USA
+3 _APID 1,7545::228477322
+2 SOUR @S_972288428@
+3 _APID 1,60525::64056643
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::64056643
+1 SOUR @S_1491350109@
+2 _APID 1,1732::359002766
+1 SOUR @S_1492437404@
+2 _APID 1,1788::321250663
+1 SOUR @S_972288423@
+2 _APID 1,2190::228460129
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594196
+1 SOUR @S_972288431@
+2 PAGE Publication Date: 22 Oct 2013; Publication Place: Beaver Dam, Wisconsin, USA
+2 _APID 1,7545::228477322
+1 SOUR @S_972288428@
+2 _APID 1,60525::64056643
+1 OBJE @O494@
+2 _PRIM Y
+1 OBJE @O45@
+1 OBJE @O421@
+1 OBJE @O270@
+1 OBJE @O324@
+1 OBJE @O420@
+0 @I13579269657@ INDI
+1 NAME Nettie May /Coder/
+2 GIVN Nettie May
+2 SURN Coder
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 3A; Enumeration District: 81-29
+3 _APID 1,2442::142594054
+2 SOUR @S_1490827297@
+3 _APID 1,2469::358869452
+2 SOUR @S_1492157692@
+3 PAGE Number: 318-24-5734; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28141995
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279776
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447521
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167537
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095409
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442619
+1 SEX F
+1 FAMC @F62@
+1 FAMS @F41@
+1 BIRT
+2 DATE 18 Nov 1886
+2 PLAC Ohio
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 3A; Enumeration District: 81-29
+3 _APID 1,2442::142594054
+2 SOUR @S_1492157692@
+3 PAGE Number: 318-24-5734; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28141995
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279776
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447521
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167537
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095409
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442619
+1 RESI
+2 DATE 1900
+2 PLAC Zuma, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167537
+2 NOTE Age: 13; Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1910
+2 PLAC Watertown, Rock Island, Illinois
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115095409
+2 NOTE Age in 1910: 22; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1920
+2 PLAC Moline Ward 7, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279776
+2 NOTE Age: 32; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1930
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447521
+2 NOTE Age in 1930: 43; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1934
+2 PLAC Moline, Illinois, USA
+2 SOUR @S_1490827297@
+3 _APID 1,2469::358869452
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 3A; Enumeration District: 81-29
+3 _APID 1,2442::142594054
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 3A; Enumeration District: 81-29
+3 _APID 1,2442::142594054
+2 NOTE Age: 51; Marital Status: Widowed; Relation to Head of House: Daughter
+1 DEAT
+2 DATE 10 Jun 1979
+2 PLAC Toulon, Stark, Illinois, USA
+2 SOUR @S_1492157692@
+3 PAGE Number: 318-24-5734; Issue State: Illinois; Issue Date: Before 1951
+3 _APID 1,3693::28141995
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442619
+2 OBJE @O181@
+2 NOTE Age at Death: 92
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442619
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 6469898595:1030:1735628
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 3A; Enumeration District: 81-29
+2 _APID 1,2442::142594054
+1 SOUR @S_1490827297@
+2 _APID 1,2469::358869452
+1 SOUR @S_1492157692@
+2 PAGE Number: 318-24-5734; Issue State: Illinois; Issue Date: Before 1951
+2 _APID 1,3693::28141995
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+2 _APID 1,6061::96279776
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+2 _APID 1,6224::87447521
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+2 _APID 1,7602::1167537
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115095409
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5442619
+1 OBJE @O369@
+2 _PRIM Y
+1 OBJE @O208@
+1 OBJE @O159@
+1 OBJE @O181@
+1 OBJE @O421@
+1 OBJE @O477@
+0 @I13579272596@ INDI
+1 NAME Carl Johan Henry /Hanewacker/
+2 GIVN Carl Johan Henry
+2 SURN Hanewacker
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594197
+2 SOUR @S_1492397246@
+3 _APID 1,2542::360184
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283416
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25109558
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870420
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705636
+1 SEX M
+1 FAMC @F131@
+1 FAMS @F102@
+1 BIRT
+2 DATE 25 Mar 1873
+2 PLAC Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594197
+2 SOUR @S_1492397246@
+3 _APID 1,2542::360184
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283416
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25109558
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870420
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705636
+2 OBJE @O49@
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870420
+2 NOTE Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283416
+2 NOTE Age: 46; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594197
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594197
+2 NOTE Age: 67; Marital Status: Married; Relation to Head of House: Father-in-law
+1 RESI
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::360184
+2 NOTE Marital Status: M
+1 DEAT
+2 DATE 30 Oct 1946
+2 PLAC East Moline, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::360184
+2 NOTE Death Age: 73
+1 BURI
+2 DATE 4 Nov 1946
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::360184
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594197
+1 SOUR @S_1492397246@
+2 _APID 1,2542::360184
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283416
+1 SOUR @S_1492434614@
+2 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+2 _APID 1,6482::25109558
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::5870420
+1 SOUR @S_972288310@
+2 _APID 1,60284::4705636
+1 OBJE @O457@
+2 _PRIM Y
+1 OBJE @O410@
+1 OBJE @O308@
+1 OBJE @O37@
+1 OBJE @O502@
+1 OBJE @O29@
+1 OBJE @O122@
+1 OBJE @O413@
+1 OBJE @O382@
+1 OBJE @O36@
+1 OBJE @O482@
+1 OBJE @O415@
+1 OBJE @O90@
+1 OBJE @O387@
+1 OBJE @O299@
+1 OBJE @O49@
+0 @I13579555636@ INDI
+1 NAME Alfred F. /Hofstetter/
+2 GIVN Alfred F.
+2 SURN Hofstetter
+2 SOUR @S_1492397246@
+3 _APID 1,2542::2042140
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279775
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447512
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25110088
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 23B; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12695935
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870187
+1 SEX M
+1 FAMC @F2@
+1 FAMS @F41@
+1 BIRT
+2 DATE 25 May 1886
+2 PLAC Hampton Twhip, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::2042140
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279775
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447512
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25110088
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 23B; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12695935
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870187
+1 RESI
+2 DATE 1900
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 23B; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12695935
+2 NOTE Age: 14; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1910
+2 PLAC Watertown, Rock Island, Illinois
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::5870187
+2 NOTE Age in 1910: 23; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1917-1918
+2 PLAC Rock Island, Illinois
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25110088
+1 RESI
+2 DATE 1920
+2 PLAC Moline Ward 7, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+3 _APID 1,6061::96279775
+2 NOTE Age: 33; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1930
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+3 _APID 1,6224::87447512
+2 NOTE Age in 1930: 43; Marital Status: Married; Relation to Head of House: Head
+1 DEAT
+2 DATE 1 Jul 1935
+2 PLAC East Moline, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::2042140
+2 NOTE Death Age: 48
+1 BURI
+2 DATE 3 Jul 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::2042140
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 6309731410:1030:1735628
+1 SOUR @S_1492397246@
+2 _APID 1,2542::2042140
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Moline Ward 7, Rock Island, Illinois; Roll: T625_402; Page: 4B; Enumeration District: 121; Image: 498
+2 _APID 1,6061::96279775
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: Hampton, Rock Island, Illinois; Roll: 552; Page: 4A; Enumeration District: 27; Image: 534.0; FHL microfilm: 2340287
+2 _APID 1,6224::87447512
+1 SOUR @S_1492434614@
+2 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+2 _APID 1,6482::25110088
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 23B; Enumeration District: 0093; FHL microfilm: 1240338
+2 _APID 1,7602::12695935
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Watertown, Rock Island, Illinois; Roll: T624_320; Page: 5A; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::5870187
+1 OBJE @O142@
+2 _PRIM Y
+1 OBJE @O234@
+1 OBJE @O357@
+0 @I13579558954@ INDI
+1 NAME Jeri Lee /Hofstetter/
+2 GIVN Jeri Lee
+2 SURN Hofstetter
+2 SOUR @S_1492437404@
+3 _APID 1,1788::352294751
+1 SEX F
+1 FAMC @F103@
+1 FAMS @F70@
+1 FAMS @F129@
+1 FAMS @F158@
+1 BIRT
+2 DATE 18 March 1957
+2 PLAC Lake Charles, Calcasieu, Louisiana, USA
+2 SOUR @S_1492437404@
+3 _APID 1,1788::352294751
+1 RESI
+2 DATE 1978
+2 PLAC Milan, IL
+2 SOUR @S_1492437404@
+3 _APID 1,1788::352294751
+1 SOUR @S_1492437404@
+2 _APID 1,1788::352294751
+1 OBJE @O87@
+2 _PRIM Y
+1 OBJE @O368@
+1 OBJE @O365@
+1 OBJE @O199@
+1 OBJE @O141@
+1 OBJE @O406@
+1 OBJE @O2@
+1 OBJE @O471@
+1 OBJE @O477@
+1 OBJE @O216@
+1 OBJE @O369@
+0 @I13579664795@ INDI
+1 NAME Clara Martha /Ferman/
+2 GIVN Clara Martha
+2 SURN Ferman
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283417
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740933
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693737
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097512
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705256
+3 _APID 1,60284::4705646
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156068
+1 SEX F
+1 FAMC @F132@
+1 FAMS @F94@
+1 FAMS @F102@
+1 BIRT
+2 DATE 22 Oct 1876
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283417
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740933
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693737
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097512
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705256
+3 _APID 1,60284::4705646
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156068
+1 RESI
+2 DATE 1880
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740933
+2 NOTE Age: 3; Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1900
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693737
+2 NOTE Age: 24; Marital Status: Widowed; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097512
+2 NOTE Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283417
+2 NOTE Age: 43; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+2 NOTE Age: 63; Marital Status: Married; Relation To Head: Mother-in-law
+1 EDUC Attended School: No; Grade Completed: Elementary school, 8th grade
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+1 _EMPLOY
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594198
+2 NOTE Weeks Worked: 0; Income: 0; Other sources of income: No
+1 DEAT
+2 DATE 1 Jun 1960
+2 PLAC Coal Valley, Rock Island, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156068
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156068
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1897669397:1030:1733209
+2 _APID -1786157208:1030:3026795
+2 _APID -1594150211:1030:4497565
+2 _APID -972800990:1030:8271388
+2 _APID 730554902:1030:18903470
+2 _APID 984236600:1030:2449753
+2 _APID 12786324693:1030:23905545
+2 _APID 19131576297:1030:37562321
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594198
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283417
+1 SOUR @S_1492144842@
+2 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+2 _APID 1,6742::21740933
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+2 _APID 1,7602::12693737
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097512
+1 SOUR @S_972288310@
+2 _APID 1,60284::4705256
+2 _APID 1,60284::4705646
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5156068
+1 OBJE @O118@
+2 _PRIM Y
+1 OBJE @O443@
+1 OBJE @O351@
+1 OBJE @O196@
+1 OBJE @O124@
+1 OBJE @O211@
+1 OBJE @O44@
+1 OBJE @O392@
+1 OBJE @O433@
+1 OBJE @O348@
+1 OBJE @O60@
+1 OBJE @O34@
+1 OBJE @O4@
+1 OBJE @O386@
+1 OBJE @O164@
+1 OBJE @O36@
+1 OBJE @O186@
+1 OBJE @O482@
+1 OBJE @O415@
+1 OBJE @O120@
+1 OBJE @O463@
+1 OBJE @O54@
+1 OBJE @O451@
+1 OBJE @O45@
+1 OBJE @O346@
+1 OBJE @O480@
+1 OBJE @O448@
+1 OBJE @O485@
+1 OBJE @O372@
+1 OBJE @O355@
+1 OBJE @O7@
+1 OBJE @O170@
+1 OBJE @O65@
+1 OBJE @O499@
+1 OBJE @O387@
+1 OBJE @O421@
+1 OBJE @O195@
+1 OBJE @O290@
+1 OBJE @O135@
+0 @I13589316966@ INDI
+1 NAME Lance Norman /Fuhr/
+2 GIVN Lance Norman
+2 SURN Fuhr
+2 SOUR @S_1492437404@
+3 _APID 1,1788::348702776
+1 SEX M
+1 FAMC @F36@
+1 FAMS @F65@
+1 BIRT
+2 DATE 25 Jul 1958
+2 PLAC Moline, Rock Island, Illinois, USA
+2 OBJE @O497@
+1 RESI
+2 DATE 1993
+2 PLAC Crown Point, IN
+2 SOUR @S_1492437404@
+3 _APID 1,1788::348702776
+1 SOUR @S_1492437404@
+2 _APID 1,1788::348702776
+1 OBJE @O33@
+2 _PRIM Y
+1 OBJE @O497@
+1 OBJE @O172@
+0 @I13589325900@ INDI
+1 NAME Justin Tyler /Fuhr/
+2 GIVN Justin Tyler
+2 SURN Fuhr
+1 SEX M
+1 FAMC @F65@
+1 FAMS @F149@
+1 BIRT
+2 DATE 30 Nov 1980
+2 PLAC Silvis, Rock Island, Illinois, USA
+1 OBJE @O112@
+1 OBJE @O91@
+0 @I13589354477@ INDI
+1 NAME Benjamin Allen /Fuhr/
+2 GIVN Benjamin Allen
+2 SURN Fuhr
+1 SEX M
+1 FAMC @F65@
+1 FAMS @F7@
+1 BIRT
+2 DATE 12 May 1982
+0 @I13589358348@ INDI
+1 NAME Rachel Nicole /Miller/
+2 GIVN Rachel Nicole
+2 SURN Miller
+1 SEX F
+1 FAMC @F130@
+1 FAMS @F7@
+1 BIRT
+2 DATE 10 Aug 1982
+0 @I13589365355@ INDI
+1 NAME Stephanie /Crandall/
+2 GIVN Stephanie
+2 SURN Crandall
+1 SEX F
+1 FAMC @F163@
+1 FAMS @F149@
+1 BIRT
+2 DATE 14 Sep 1979
+1 OBJE @O112@
+0 @I13589373897@ INDI
+1 NAME Lilian Arlene /Fuhr/
+2 GIVN Lilian Arlene
+2 SURN Fuhr
+1 SEX F
+1 FAMC @F149@
+0 @I13589374725@ INDI
+1 NAME June Pamela /Fuhr/
+2 GIVN June Pamela
+2 SURN Fuhr
+1 SEX F
+1 FAMC @F149@
+0 @I13589397464@ INDI
+1 NAME Verda /Hanewacker/
+2 GIVN Verda
+2 SURN Hanewacker
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+1 SEX F
+1 FAMC @F102@
+1 BIRT
+2 DATE abt 1895
+2 PLAC Illinois
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+2 NOTE Marital Status: Single; Relation to Head of House: Step Daughter; Relation to Head of House: Stepdaughter
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097514
+1 OBJE @O290@
+2 _PRIM Y
+0 @I13589401505@ INDI
+1 NAME Esther /Hanewacker/
+2 GIVN Esther
+2 SURN Hanewacker
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Moline, Rock Island, Illinois; Roll: T627_875; Page: 9B; Enumeration District: 81-56
+3 _APID 1,2442::140012332
+2 SOUR @S_1490827297@
+3 _APID 1,2469::358036355
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283418
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097518
+1 SEX F
+1 FAMC @F102@
+1 FAMS @F46@
+1 BIRT
+2 DATE 9 Dec 1901
+2 PLAC Hampton, Rock Island, IL
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Moline, Rock Island, Illinois; Roll: T627_875; Page: 9B; Enumeration District: 81-56
+3 _APID 1,2442::140012332
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283418
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097518
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097518
+2 NOTE Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283418
+2 NOTE Age: 18; Marital Status: Single; Relation to Head of House: Daughter
+1 RESI
+2 DATE 1935
+2 PLAC Moline, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Moline, Rock Island, Illinois; Roll: T627_875; Page: 9B; Enumeration District: 81-56
+3 _APID 1,2442::140012332
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Moline, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Moline, Rock Island, Illinois; Roll: T627_875; Page: 9B; Enumeration District: 81-56
+3 _APID 1,2442::140012332
+2 NOTE Age: 38; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1954
+2 PLAC Rock Island, Illinois, USA
+2 SOUR @S_1490827297@
+3 _APID 1,2469::358036355
+1 DEAT
+2 DATE Oct 1978
+2 PLAC Moline, Rock Island, IL
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730555005:1030:18903470
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Moline, Rock Island, Illinois; Roll: T627_875; Page: 9B; Enumeration District: 81-56
+2 _APID 1,2442::140012332
+1 SOUR @S_1490827297@
+2 _APID 1,2469::358036355
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283418
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097518
+1 OBJE @O290@
+2 _PRIM Y
+1 OBJE @O104@
+1 OBJE @O68@
+1 OBJE @O259@
+1 OBJE @O482@
+1 OBJE @O364@
+1 OBJE @O185@
+1 OBJE @O483@
+1 OBJE @O288@
+1 OBJE @O318@
+1 OBJE @O75@
+1 OBJE @O7@
+1 OBJE @O204@
+1 OBJE @O367@
+1 OBJE @O375@
+0 @I13589407937@ INDI
+1 NAME Henry /Hanewacker/
+2 GIVN Henry
+2 SURN Hanewacker
+2 SOUR @S302923301@
+3 _APID 1,1265::381642059
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1560792
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283419
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097520
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156071
+1 SEX M
+1 FAMC @F102@
+1 BIRT
+2 DATE 1 Oct 1904
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S302923301@
+3 _APID 1,1265::381642059
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1560792
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283419
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097520
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097520
+2 NOTE Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283419
+2 NOTE Age: 15; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1922
+2 PLAC Moline, Illinois, USA
+2 SOUR @S302923301@
+3 _APID 1,1265::381642059
+1 RESI
+2 PLAC Hampton, Rock Island, Ill.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1560792
+2 NOTE Marital Status: S
+1 DEAT
+2 DATE 29 Jun 1939
+2 PLAC Moline, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1560792
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156071
+2 NOTE Death Age: 34
+1 BURI
+2 DATE 1 Jul 1939
+2 PLAC Hampton, Rock Island County, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1560792
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5156071
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -972717289:1030:8271388
+2 _APID -662694816:1030:4497565
+2 _APID 730555007:1030:18903470
+1 SOUR @S302923301@
+2 _APID 1,1265::381642059
+1 SOUR @S_1492397246@
+2 _APID 1,2542::1560792
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283419
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097520
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5156071
+1 OBJE @O290@
+2 _PRIM Y
+1 OBJE @O331@
+1 OBJE @O309@
+1 OBJE @O251@
+1 OBJE @O503@
+1 OBJE @O482@
+1 OBJE @O90@
+1 OBJE @O317@
+1 OBJE @O403@
+1 OBJE @O185@
+1 OBJE @O421@
+0 @I13596723916@ INDI
+1 NAME Perry Donald /Wolfe/
+2 GIVN Perry Donald
+2 SURN Wolfe
+2 SOUR @S_972288431@
+3 PAGE Newspaper: Moline Dispatch; Publication Place: Moline, Illinois, USA; Web edition: http://www.qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+3 _APID 1,7545::501613038
+1 SEX M
+1 FAMC @F124@
+1 FAMS @F70@
+1 FAMS @F71@
+1 BIRT
+2 DATE 24 Mar 1959
+2 SOUR @S_972288431@
+3 PAGE Newspaper: Moline Dispatch; Publication Place: Moline, Illinois, USA; Web edition: http://www.qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+3 _APID 1,7545::501613038
+1 RESI
+2 PLAC Mesa, Illinois, USA
+2 SOUR @S_972288431@
+3 PAGE Newspaper: Moline Dispatch; Publication Place: Moline, Illinois, USA; Web edition: http://www.qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+3 _APID 1,7545::501613038
+1 _WLNK
+2 TITL The Dispatch Argus
+2 NOTE https://qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+1 DEAT
+2 DATE 14 Dec 2015
+2 SOUR @S_972288431@
+3 PAGE Newspaper: Moline Dispatch; Publication Place: Moline, Illinois, USA; Web edition: http://www.qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+3 _APID 1,7545::501613038
+1 SOUR @S_972288431@
+2 PAGE Newspaper: Moline Dispatch; Publication Place: Moline, Illinois, USA; Web edition: http://www.qconline.com/obituaries/perry-wolfe/article_0f9fbfd6-c97c-52cd-90fa-4ca50dd4d90a.html
+2 _APID 1,7545::501613038
+1 OBJE @O458@
+2 _PRIM Y
+1 OBJE @O249@
+1 OBJE @O452@
+1 OBJE @O156@
+0 @I13596725324@ INDI
+1 NAME Jason Alan /Wolfe/
+2 GIVN Jason Alan
+2 SURN Wolfe
+1 SEX M
+1 FAMC @F70@
+1 FAMS @F14@
+1 BIRT
+2 DATE 06/08/1981
+2 PLAC Moline, Rock Island, Illinois, USA
+1 OBJE @O321@
+2 _PRIM Y
+1 OBJE @O143@
+1 OBJE @O151@
+1 OBJE @O249@
+0 @I13596725753@ INDI
+1 NAME Ryan Andrew /Wolfe/
+2 GIVN Ryan Andrew
+2 SURN Wolfe
+1 SEX M
+1 FAMC @F70@
+1 BIRT
+2 DATE 09/16/1983
+2 PLAC Moline, Rock Island, Illinois, USA
+1 OBJE @O32@
+0 @I13596726967@ INDI
+1 NAME Adam Michael /Wolfe/
+2 GIVN Adam Michael
+2 SURN Wolfe
+1 SEX M
+1 FAMC @F70@
+1 BIRT
+2 DATE 11/6/1984
+2 PLAC St. Joseph, MI
+0 @I13596727539@ INDI
+1 NAME Jennifer Lynn /Kellett/
+2 GIVN Jennifer Lynn
+2 SURN Kellett
+1 SEX F
+1 FAMC @F69@
+1 FAMS @F14@
+1 BIRT
+2 DATE 1-16-1981
+2 PLAC Iowa City, Johnson, Iowa, USA
+1 OBJE @O143@
+2 _PRIM Y
+1 OBJE @O151@
+0 @I13596728578@ INDI
+1 NAME Thomas H. /Hartman/
+2 GIVN Thomas H.
+2 SURN Hartman
+1 SEX M
+1 FAMC @F16@
+1 FAMS @F140@
+1 FAMS @F129@
+1 BIRT
+2 DATE 15 Jan 1949
+2 PLAC Moline, Rock Island, Illinois, USA
+1 RESI
+2 DATE Abt 1969
+2 PLAC Rock Island
+2 SOUR @S371180592@
+3 PAGE Quad-City Times; Publication Date: 28/ Jan/ 1969; Publication Place: Davenport, Iowa, USA; URL: https://www.newspapers.com/image/303730647/?article=eff79b85-c0a3-491f-b00d-9f35893ad20d&focus=0.5058284,0.553457,0.62158144,0.66814536&xid=3398
+3 DATA
+4 WWW https://www.newspapers.com/image/303730647/?article=eff79b85-c0a3-491f-b00d-9f35893ad20d&focus=0.5058284,0.553457,0.62158144,0.66814536&xid=3398
+3 _APID 1,62116::73008504
+1 SOUR @S371180592@
+2 PAGE Quad-City Times; Publication Date: 28/ Jan/ 1969; Publication Place: Davenport, Iowa, USA; URL: https://www.newspapers.com/image/303730647/?article=eff79b85-c0a3-491f-b00d-9f35893ad20d&focus=0.5058284,0.553457,0.62158144,0.66814536&xid=3398
+2 DATA
+3 WWW https://www.newspapers.com/image/303730647/?article=eff79b85-c0a3-491f-b00d-9f35893ad20d&focus=0.5058284,0.553457,0.62158144,0.66814536&xid=3398
+2 _APID 1,62116::73008504
+1 OBJE @O365@
+2 _PRIM Y
+0 @I13596732183@ INDI
+1 NAME Joan /Mills/
+2 GIVN Joan
+2 SURN Mills
+1 SEX F
+1 FAMC @F136@
+1 FAMS @F103@
+1 BIRT
+2 DATE 01Apr1935
+2 PLAC London, England
+2 NOTE Lived at 106 Drummond Street.
+3 CONT Born in the sub-district of South West St. Pancras in the Metropolitan Borough of St. Pancras.
+1 EVEN
+2 TYPE Arrival
+2 DATE 5 Jun 1955
+2 PLAC New York, New York, USA
+2 SOUR @S371180659@
+3 PAGE Year: 1955; Arrival: New York, New York, USA; Microfilm Serial: T715, 1897-1957; Line: 3; Page Number: 63
+3 _APID 1,7488::3033867460
+1 NATU
+2 DATE 19 Mar 1963
+2 PLAC Shawnee, Kansas, USA
+2 SOUR @S371180680@
+3 PAGE Kansas State Historical Society; Topeka, Kansas; Kansas Naturalization Records
+3 _APID 1,5175::7171
+1 EVEN
+2 TYPE Departure
+2 PLAC Southampton, England
+2 SOUR @S371180659@
+3 PAGE Year: 1955; Arrival: New York, New York, USA; Microfilm Serial: T715, 1897-1957; Line: 3; Page Number: 63
+3 _APID 1,7488::3033867460
+1 RESI
+2 PLAC England
+2 SOUR @S_972288423@
+3 PAGE Dignity Memorial; Publication Place: Morgan Hill, CA, USA; URL: http://obits.dignitymemorial.com/dignity-memorial/obituary.aspx?n=Joan-Potter&lc=2629&pid=183792317&mid=7271651
+3 DATA
+4 WWW http://obits.dignitymemorial.com/dignity-memorial/obituary.aspx?n=Joan-Potter&lc=2629&pid=183792317&mid=7271651
+3 _APID 1,2190::648913100
+1 DEAT
+2 DATE 17 Jan 2017
+1 SOUR @S_972288423@
+2 PAGE Dignity Memorial; Publication Place: Morgan Hill, CA, USA; URL: http://obits.dignitymemorial.com/dignity-memorial/obituary.aspx?n=Joan-Potter&lc=2629&pid=183792317&mid=7271651
+2 DATA
+3 WWW http://obits.dignitymemorial.com/dignity-memorial/obituary.aspx?n=Joan-Potter&lc=2629&pid=183792317&mid=7271651
+2 _APID 1,2190::648913100
+1 SOUR @S371180680@
+2 PAGE Kansas State Historical Society; Topeka, Kansas; Kansas Naturalization Records
+2 _APID 1,5175::7171
+1 SOUR @S371180659@
+2 PAGE Year: 1955; Arrival: New York, New York, USA; Microfilm Serial: T715, 1897-1957; Line: 3; Page Number: 63
+2 _APID 1,7488::3033867460
+1 OBJE @O370@
+0 @I13892256497@ INDI
+1 NAME Frederic E. /Holm/
+2 GIVN Frederic E.
+2 SURN Holm
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: South Moline, Rock Island, Illinois; Roll: 339; Page: 3A; Enumeration District: 0126; FHL microfilm: 1240339
+3 _APID 1,7602::1164190
+1 SEX M
+1 FAMS @F46@
+1 BIRT
+2 DATE 9 Nov 1899
+2 PLAC Moline, Rock Island, IL
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: South Moline, Rock Island, Illinois; Roll: 339; Page: 3A; Enumeration District: 0126; FHL microfilm: 1240339
+3 _APID 1,7602::1164190
+1 RESI
+2 DATE 1900
+2 PLAC South Moline, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: South Moline, Rock Island, Illinois; Roll: 339; Page: 3A; Enumeration District: 0126; FHL microfilm: 1240339
+3 _APID 1,7602::1164190
+2 NOTE Age: 7/12; Marital Status: Single; Relation to Head of House: Son
+1 DEAT
+2 DATE 20 Jul 1972
+2 PLAC Moline, Rock Island, IL
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730555014:1030:18903470
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: South Moline, Rock Island, Illinois; Roll: 339; Page: 3A; Enumeration District: 0126; FHL microfilm: 1240339
+2 _APID 1,7602::1164190
+1 OBJE @O367@
+2 _PRIM Y
+1 OBJE @O153@
+1 OBJE @O260@
+0 @I13892456059@ INDI
+1 NAME Raymond /Hanewacker/
+2 GIVN Raymond
+2 SURN Hanewacker
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594199
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283421
+2 SOUR @S_972288358@
+3 _APID 1,9093::1657547
+2 SOUR @S_972288428@
+3 _APID 1,60525::68214640
+1 SEX M
+1 FAMC @F102@
+1 FAMS @F54@
+1 BIRT
+2 DATE 2 May 1919
+2 PLAC Hampton, Rock Island County, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594199
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283421
+2 SOUR @S_972288358@
+3 _APID 1,9093::1657547
+2 SOUR @S_972288428@
+3 _APID 1,60525::68214640
+1 MARR
+2 DATE ABT. 1942
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283421
+2 NOTE Age: 0; Age: 8/12; Marital Status: Single; Relation to Head of House: Son
+1 RESI
+2 DATE 1935
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594199
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+3 _APID 1,2442::142594199
+2 NOTE Age: 20; Marital Status: Single; Relation to Head of House: Brother-in-law
+1 RESI
+2 PLAC Pontiac, Michigan
+2 SOUR @S_972288358@
+3 _APID 1,9093::1657547
+1 DEAT
+2 DATE 10 May 1976
+2 PLAC Pontiac, Oakland, Michigan, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::68214640
+1 BURI
+2 PLAC Clarkston, Oakland County, Michigan, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::68214640
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -662694812:1030:4497565
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Hampton, Rock Island, Illinois; Roll: T627_874; Page: 4B; Enumeration District: 81-29
+2 _APID 1,2442::142594199
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283421
+1 SOUR @S_972288358@
+2 _APID 1,9093::1657547
+1 SOUR @S_972288428@
+2 _APID 1,60525::68214640
+1 OBJE @O290@
+2 _PRIM Y
+1 OBJE @O54@
+1 OBJE @O45@
+1 OBJE @O480@
+1 OBJE @O421@
+0 @I13892459678@ INDI
+1 NAME Milton Henry /Coder/
+2 GIVN Milton Henry
+2 SURN Coder
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1058523
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167534
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442469
+1 SEX M
+1 FAMS @F62@
+1 BIRT
+2 DATE 8 Mar 1858
+2 PLAC  Coshocton, Ohio, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1058523
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167534
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442469
+1 RESI
+2 DATE 1900
+2 PLAC Zuma, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+3 _APID 1,7602::1167534
+2 NOTE Age: 42; Marital Status: Married; Relation to Head of House: Head
+1 DEAT
+2 DATE 28 Jan 1917
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1058523
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442469
+2 NOTE Death Age: 59
+1 BURI
+2 DATE 30 Jan 1917
+2 PLAC Hampton, Ill.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1058523
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442469
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -888069784:1030:8791740
+1 SOUR @S_1492397246@
+2 _APID 1,2542::1058523
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Zuma, Rock Island, Illinois; Roll: 339; Page: 6B; Enumeration District: 0128; FHL microfilm: 1240339
+2 _APID 1,7602::1167534
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5442469
+0 @I13892461054@ INDI
+1 NAME Elma J /Donahoo/
+2 GIVN Elma J
+2 SURN Donahoo
+1 SEX F
+1 FAMC @F67@
+1 FAMS @F62@
+1 BIRT
+2 DATE April 13, 1865
+2 PLAC Zuma Township
+1 DEAT
+2 DATE June 18, 1944
+2 PLAC Moline, Rock Island, Illinois, USA
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 1081278072:1030:11652436
+2 _APID 1199181029:1030:10495400
+2 _APID 1606890194:1030:24601337
+2 _APID 1878992276:1030:26462155
+2 _APID 18181241046:1030:32091995
+0 @I13892838302@ INDI
+1 NAME George C. /Hanewacker/
+2 GIVN George C.
+2 SURN Hanewacker
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 306A; Enumeration District: 244; Image: 0615
+3 _APID 1,6742::31076898
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478171
+1 SEX M
+1 FAMS @F131@
+1 BIRT
+2 DATE Aug. 25, 1837
+2 PLAC Hanover, Germany
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 306A; Enumeration District: 244; Image: 0615
+3 _APID 1,6742::31076898
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478171
+1 RESI
+2 DATE 1880
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 306A; Enumeration District: 244; Image: 0615
+3 _APID 1,6742::31076898
+2 NOTE Age: 42; Marital Status: Married; Relation to Head of House: Self
+1 DEAT
+2 DATE Jan 30, 1904
+2 PLAC Hampton, Rock Island, IL
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478171
+2 OBJE @O313@
+2 NOTE Age at Death: 66
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478171
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730555009:1030:18903470
+1 SOUR @S_1492144842@
+2 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 306A; Enumeration District: 244; Image: 0615
+2 _APID 1,6742::31076898
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5478171
+1 OBJE @O49@
+2 _PRIM Y
+1 OBJE @O432@
+1 OBJE @O313@
+1 OBJE @O387@
+0 @I13892838720@ INDI
+1 NAME Emma Matilda /Peterson/
+2 GIVN Emma Matilda
+2 SURN Peterson
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1062203
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478175
+1 SEX F
+1 FAMC @F162@
+1 FAMS @F131@
+1 BIRT
+2 DATE July 27, 1851
+2 PLAC Sweden
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1062203
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478175
+1 DEAT
+2 DATE Nov. 30, 1917
+2 PLAC Zuma township, Rock Island, IL
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1062203
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478175
+2 OBJE @O436@
+2 NOTE Age: 66
+1 BURI
+2 DATE 3 Dec 1917
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1062203
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5478175
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 730555010:1030:18903470
+1 SOUR @S_1492397246@
+2 _APID 1,2542::1062203
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5478175
+1 OBJE @O49@
+2 _PRIM Y
+1 OBJE @O436@
+0 @I13892840277@ INDI
+1 NAME Dale Milton /Bennett/
+2 GIVN Dale Milton
+2 SURN Bennett
+2 SOUR @S_1490827297@
+3 _APID 1,2469::353073809
+1 SEX M
+1 FAMC @F64@
+1 FAMS @F39@
+1 BIRT
+2 DATE 11/17/1932
+1 RESI
+2 DATE 1958
+2 PLAC Champaign; Urbana, Illinois, USA
+2 SOUR @S_1490827297@
+3 _APID 1,2469::353073809
+1 _EMPLOY
+2 PLAC Wyoming, Lee, Illinois, USA
+2 NOTE Dale was a Doctor of Veterinary Medicine and worked at the Wyoming Veterinary Clinic until his retirement in 2005.  He served on the Board of Directors for the Illinois Veterinary Association.
+1 DEAT
+2 DATE 07/18/2021
+2 PLAC Wyoming, Lee, Illinois, USA
+2 NOTE Dale passed away at his residence at 5:45 p.m.  He was 88 years old.
+1 SOUR @S_1490827297@
+2 _APID 1,2469::353073809
+1 OBJE @O354@
+2 _PRIM Y
+0 @I13893405619@ INDI
+1 NAME William E. /Ferman/
+2 GIVN William E.
+2 SURN Ferman
+2 SOUR @S_1491354856@
+3 _APID 1,1138::4642881
+2 SOUR @S_1491688147@
+3 _APID 1,1555::3413149
+2 SOUR @S_1491736047@
+3 PAGE Side served: Union; State served: Illinois; Enlistment date: 25 Aug 1862
+3 _APID 1,3737::4062772
+2 SOUR @S_1491345428@
+3 _APID 1,3866::3066
+2 SOUR @S_1490217724@
+3 _APID 1,4654::1918560
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740899
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693730
+2 SOUR @S_1532449733@
+3 _APID 1,70509::941308
+1 SEX M
+1 FAMC @F126@
+1 FAMS @F132@
+1 BIRT
+2 DATE 3 Sep 1843
+2 PLAC Lancaster, Lancaster, Pennsylvania, USA
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740899
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693730
+2 SOUR @S_1532449733@
+3 _APID 1,70509::941308
+1 MARR
+2 DATE 1869
+2 PLAC Henry, IL
+1 _MILT
+2 DATE 25 Aug 1862
+2 PLAC Illinois
+2 SOUR @S_1491688147@
+3 _APID 1,1555::3413149
+2 SOUR @S_1491736047@
+3 PAGE Side served: Union; State served: Illinois; Enlistment date: 25 Aug 1862
+3 _APID 1,3737::4062772
+1 _MILT
+2 DATE 10 Jun 1865
+2 PLAC Illinois
+2 SOUR @S_1491345428@
+3 _APID 1,3866::3066
+1 RESI
+2 DATE 1880
+2 PLAC Hampton, Rock Island, Illinois, United States
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+3 _APID 1,6742::21740899
+2 NOTE Age: 37; Marital Status: Married; Relation to Head of House: Self
+1 EVEN
+2 TYPE Fire
+2 DATE Aug 21, 1896
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 NOTE Port Byron Globe reported that the Wm. Ferman home burned to the ground.  No insurance, family lost all belongings.   A defective flue was thought to be the cause.
+1 RESI
+2 DATE 1900
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693730
+2 NOTE Age: 56; Marital Status: Married; Relation to Head of House: Head
+1 EVEN
+2 TYPE State Filed
+2 PLAC Illinois
+2 SOUR @S_1490217724@
+3 _APID 1,4654::1918560
+1 _MILT
+2 PLAC Illinois
+2 SOUR @S_1491354856@
+3 _APID 1,1138::4642881
+1 RESI
+2 PLAC Clover, Illinois
+2 SOUR @S_1491736047@
+3 PAGE Side served: Union; State served: Illinois; Enlistment date: 25 Aug 1862
+3 _APID 1,3737::4062772
+1 RESI
+2 PLAC Illinois
+2 SOUR @S_1491688147@
+3 _APID 1,1555::3413149
+1 DEAT
+2 DATE July 16, 1908
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491688147@
+3 _APID 1,1555::3413149
+2 SOUR @S_1491736047@
+3 PAGE Side served: Union; State served: Illinois; Enlistment date: 25 Aug 1862
+3 _APID 1,3737::4062772
+2 SOUR @S_1532449733@
+3 _APID 1,70509::941308
+2 OBJE @O493@
+2 NOTE Age: 64
+1 DEAT
+2 DATE 16 Jul 1908
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 NOTE Died following amputation of foot as a result of gangrine in his toe.
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::941308
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1897669392:1030:1733209
+2 _APID -1786157205:1030:3026795
+2 _APID -1594150756:1030:4497565
+2 _APID -972688284:1030:8271388
+2 _APID 730554907:1030:18903470
+2 _APID 778921488:1030:28351
+2 _APID 984236592:1030:2449753
+2 _APID 1756107397:1030:25983878
+2 _APID 1910414447:1030:26725700
+2 _APID 12786277852:1030:23905545
+2 _APID 19115366654:1030:37562321
+1 SOUR @S_1491354856@
+2 _APID 1,1138::4642881
+1 SOUR @S_1491688147@
+2 _APID 1,1555::3413149
+1 SOUR @S_1491736047@
+2 PAGE Side served: Union; State served: Illinois; Enlistment date: 25 Aug 1862
+2 _APID 1,3737::4062772
+1 SOUR @S_1491345428@
+2 _APID 1,3866::3066
+1 SOUR @S_1490217724@
+2 _APID 1,4654::1918560
+1 SOUR @S_1492144842@
+2 PAGE Year: 1880; Census Place: Hampton, Rock Island, Illinois; Roll: 245; Family History Film: 1254245; Page: 305C; Enumeration District: 244; Image: 0613
+2 _APID 1,6742::21740899
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+2 _APID 1,7602::12693730
+1 SOUR @S_972288310@
+2 DATA
+3 WWW https://familysearch.org/ark:/61903/1:1:XJYG-R92
+2 _APID 1,60284::4705644
+1 SOUR @S_972288428@
+2 DATA
+3 WWW https://www.findagrave.com/memorial/75063430/william-ferman
+2 _APID 1,60525::29422021
+1 SOUR @S_1532449733@
+2 _APID 1,70509::941308
+1 OBJE @O361@
+2 _PRIM Y
+1 OBJE @O182@
+1 OBJE @O473@
+1 OBJE @O177@
+1 OBJE @O95@
+1 OBJE @O366@
+1 OBJE @O56@
+1 OBJE @O131@
+1 OBJE @O335@
+1 OBJE @O73@
+1 OBJE @O453@
+1 OBJE @O329@
+1 OBJE @O493@
+1 OBJE @O207@
+0 @I13893407053@ INDI
+1 NAME Harriet Delilah "Maxwell" /Littlefield/
+2 GIVN Harriet Delilah "Maxwell"
+2 SURN Littlefield
+2 SOUR @S_1492397246@
+3 _APID 1,2542::656012
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: East Moline Ward 3, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 161; Image: 903
+3 _APID 1,6061::96298693
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Oxford, Henry, Illinois; Roll: M653_182; Page: 1074; Image: 528; Family History Library Film: 803182
+3 _APID 1,7667::36959464
+2 SOUR @S_1532449733@
+3 _APID 1,70509::1046291
+1 SEX F
+1 FAMC @F116@
+1 FAMS @F132@
+1 FAMS @F133@
+1 BIRT
+2 DATE 14 Apr 1851
+2 PLAC Henderson, Knox, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::656012
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: East Moline Ward 3, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 161; Image: 903
+3 _APID 1,6061::96298693
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Oxford, Henry, Illinois; Roll: M653_182; Page: 1074; Image: 528; Family History Library Film: 803182
+3 _APID 1,7667::36959464
+2 SOUR @S_1532449733@
+3 _APID 1,70509::1046291
+1 RESI
+2 DATE 1860
+2 PLAC Oxford, Henry, Illinois, United States
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Oxford, Henry, Illinois; Roll: M653_182; Page: 1074; Image: 528; Family History Library Film: 803182
+3 _APID 1,7667::36959464
+2 NOTE Age in 1860: 10
+1 RESI
+2 DATE 1920
+2 PLAC East Moline Ward 3, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: East Moline Ward 3, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 161; Image: 903
+3 _APID 1,6061::96298693
+2 NOTE Age: 68; Marital Status: Married; Relation to Head of House: Mother
+1 RESI
+2 PLAC East Moline
+2 SOUR @S_1492397246@
+3 _APID 1,2542::656012
+2 NOTE Marital Status: W
+1 DEAT
+2 DATE 8 Jul 1931
+2 PLAC East Moline, Rock Island, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::656012
+2 SOUR @S_1532449733@
+3 _APID 1,70509::1046291
+2 NOTE Death Age: 80
+1 BURI
+2 DATE 10 Jul 1931
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::656012
+2 SOUR @S_1532449733@
+3 _APID 1,70509::1046291
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1897669393:1030:1733209
+2 _APID -1786157206:1030:3026795
+2 _APID -1594150214:1030:4497565
+2 _APID -972688282:1030:8271388
+2 _APID 730554908:1030:18903470
+2 _APID 778871439:1030:28351
+2 _APID 980316305:1030:2449753
+2 _APID 1395582051:1030:23485959
+2 _APID 1756107424:1030:25983878
+2 _APID 12786075544:1030:23905545
+2 _APID 19115366657:1030:37562321
+1 SOUR @S_1492397246@
+2 _APID 1,2542::656012
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: East Moline Ward 3, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 161; Image: 903
+2 _APID 1,6061::96298693
+1 SOUR @S_1490190033@
+2 PAGE Year: 1860; Census Place: Oxford, Henry, Illinois; Roll: M653_182; Page: 1074; Image: 528; Family History Library Film: 803182
+2 _APID 1,7667::36959464
+1 SOUR @S_1532449733@
+2 _APID 1,70509::1046291
+1 OBJE @O120@
+2 _PRIM Y
+1 OBJE @O57@
+1 OBJE @O123@
+1 OBJE @O222@
+0 @I13893409993@ INDI
+1 NAME John Porter /Eicher/
+2 GIVN John Porter
+2 SURN Eicher
+2 SOUR @S_1490798327@
+3 _APID 1,4711::617876
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Penn, Sullivan, Missouri; Roll: M593_823; Page: 247B; Image: 504; Family History Library Film: 552322
+3 _APID 1,7163::1368275
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705250
+2 SOUR @S_1490798511@
+3 _APID 1,70511::535471
+1 SEX M
+1 FAMC @F8@
+1 FAMS @F94@
+1 BIRT
+2 DATE 09 Nov 1869
+2 PLAC Woodhull, Henderson, Illinois, USA
+2 SOUR @S_1490798327@
+3 _APID 1,4711::617876
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Penn, Sullivan, Missouri; Roll: M593_823; Page: 247B; Image: 504; Family History Library Film: 552322
+3 _APID 1,7163::1368275
+2 SOUR @S_972288310@
+3 _APID 1,60284::4705250
+1 RESI
+2 DATE 1870
+2 PLAC Penn, Sullivan, Missouri, United States
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Penn, Sullivan, Missouri; Roll: M593_823; Page: 247B; Image: 504; Family History Library Film: 552322
+3 _APID 1,7163::1368275
+2 NOTE Age in 1870: 9/12
+1 RESI
+2 PLAC Scottsville, Sullivan, Missouri
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Penn, Sullivan, Missouri; Roll: M593_823; Page: 247B; Image: 504; Family History Library Film: 552322
+3 _APID 1,7163::1368275
+1 DEAT
+2 DATE 11 May 1898
+2 PLAC Logan, Allen, Kansas, United States
+2 SOUR @S_1490798327@
+3 _APID 1,4711::617876
+2 SOUR @S_1490798511@
+3 _APID 1,70511::535471
+2 NOTE Age: 28
+1 BURI
+2 PLAC Conway, Taylor County, Iowa, USA
+2 SOUR @S_1490798327@
+3 _APID 1,4711::617876
+2 SOUR @S_1490798511@
+3 _APID 1,70511::535471
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -662678391:1030:4497565
+1 SOUR @S_1490798327@
+2 _APID 1,4711::617876
+1 SOUR @S_1491737056@
+2 PAGE Year: 1870; Census Place: Penn, Sullivan, Missouri; Roll: M593_823; Page: 247B; Image: 504; Family History Library Film: 552322
+2 _APID 1,7163::1368275
+1 SOUR @S_972288310@
+2 _APID 1,60284::4705250
+1 SOUR @S_1490798511@
+2 _APID 1,70511::535471
+1 OBJE @O42@
+2 _PRIM Y
+1 OBJE @O340@
+1 OBJE @O462@
+1 OBJE @O338@
+1 OBJE @O45@
+1 OBJE @O438@
+1 OBJE @O76@
+1 OBJE @O499@
+0 @I13893411410@ INDI
+1 NAME Verda Deliah /Eicher/
+2 GIVN Verda Deliah
+2 SURN Eicher
+2 SOUR @S_1490827297@
+3 _APID 1,2469::360450297
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283429
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Rock Island, Rock Island, Illinois; Roll: 553; Page: 2B; Enumeration District: 76; Image: 499.0; FHL microfilm: 2340288
+3 _APID 1,6224::87497953
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693735
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+2 SOUR @S_972288428@
+3 _APID 1,60525::67358870
+1 SEX F
+1 FAMC @F94@
+1 FAMS @F37@
+1 BIRT
+2 DATE 6 Aug 1894
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283429
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Rock Island, Rock Island, Illinois; Roll: 553; Page: 2B; Enumeration District: 76; Image: 499.0; FHL microfilm: 2340288
+3 _APID 1,6224::87497953
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693735
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+2 SOUR @S_972288428@
+3 _APID 1,60525::67358870
+1 RESI
+2 DATE 1900
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693735
+2 NOTE Marital Status: Single; Relation to Head of House: Granddaughter
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097514
+2 NOTE Marital Status: Single; Relation to Head of House: Step Daughter; Relation to Head of House: Stepdaughter
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283429
+2 NOTE Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1930
+2 PLAC Rock Island, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Rock Island, Rock Island, Illinois; Roll: 553; Page: 2B; Enumeration District: 76; Image: 499.0; FHL microfilm: 2340288
+3 _APID 1,6224::87497953
+2 NOTE Age in 1930: 35; Marital Status: Married; Relation to Head of House: Wife
+1 RESI
+2 DATE 1932
+2 PLAC Rock Island, Illinois, USA
+2 SOUR @S_1490827297@
+3 _APID 1,2469::360450297
+1 DEAT
+2 DATE 30 Jan 1966
+2 PLAC Moline, Rock Island, Illinois, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::67358870
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::67358870
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -662675326:1030:4497565
+1 SOUR @S_1490827297@
+2 _APID 1,2469::360450297
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283429
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: Rock Island, Rock Island, Illinois; Roll: 553; Page: 2B; Enumeration District: 76; Image: 499.0; FHL microfilm: 2340288
+2 _APID 1,6224::87497953
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+2 _APID 1,7602::12693735
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097514
+1 SOUR @S_972288428@
+2 _APID 1,60525::67358870
+1 OBJE @O149@
+2 _PRIM Y
+1 OBJE @O246@
+1 OBJE @O82@
+1 OBJE @O296@
+1 OBJE @O390@
+1 OBJE @O114@
+1 OBJE @O303@
+1 OBJE @O362@
+1 OBJE @O349@
+1 OBJE @O320@
+1 OBJE @O263@
+1 OBJE @O77@
+1 OBJE @O504@
+1 OBJE @O233@
+1 OBJE @O418@
+1 OBJE @O85@
+1 OBJE @O281@
+1 OBJE @O224@
+1 OBJE @O412@
+1 OBJE @O31@
+1 OBJE @O108@
+1 OBJE @O69@
+1 OBJE @O139@
+1 OBJE @O17@
+1 OBJE @O162@
+1 OBJE @O378@
+1 OBJE @O79@
+1 OBJE @O241@
+1 OBJE @O242@
+1 OBJE @O360@
+1 OBJE @O150@
+1 OBJE @O55@
+1 OBJE @O71@
+1 OBJE @O297@
+1 OBJE @O487@
+1 OBJE @O128@
+1 OBJE @O271@
+1 OBJE @O20@
+1 OBJE @O470@
+1 OBJE @O61@
+1 OBJE @O9@
+1 OBJE @O417@
+1 OBJE @O51@
+1 OBJE @O174@
+1 OBJE @O450@
+1 OBJE @O336@
+1 OBJE @O391@
+1 OBJE @O430@
+1 OBJE @O465@
+1 OBJE @O120@
+1 OBJE @O106@
+1 OBJE @O355@
+1 OBJE @O7@
+1 OBJE @O170@
+1 OBJE @O65@
+1 OBJE @O499@
+1 OBJE @O204@
+1 OBJE @O10@
+1 OBJE @O460@
+1 OBJE @O498@
+1 OBJE @O399@
+0 @I13893412054@ INDI
+1 NAME John W. /Eicher/
+2 GIVN John W.
+2 SURN Eicher
+2 SOUR @S_972288281@
+3 PAGE The National Archives at St. Louis; St. Louis, Missouri; World War II Draft Cards (4th Registration) for the State of Michigan; State Headquarters: Michigan
+3 _APID 1,1002::11762538
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Pontiac, Oakland, Michigan; Roll: T627_1801; Page: 62A; Enumeration District: 63-95
+3 _APID 1,2442::85021995
+2 SOUR @S_1490827297@
+3 _APID 1,2469::418988033
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283422
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Moline, Rock Island, Illinois; Roll: 553; Page: 15B; Enumeration District: 59; Image: 121.0; FHL microfilm: 2340288
+3 _APID 1,6224::87479340
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693736
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097516
+1 SEX M
+1 FAMC @F94@
+1 FAMS @F89@
+1 BIRT
+2 DATE 12 Aug 1896
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_972288281@
+3 PAGE The National Archives at St. Louis; St. Louis, Missouri; World War II Draft Cards (4th Registration) for the State of Michigan; State Headquarters: Michigan
+3 _APID 1,1002::11762538
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Pontiac, Oakland, Michigan; Roll: T627_1801; Page: 62A; Enumeration District: 63-95
+3 _APID 1,2442::85021995
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283422
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Moline, Rock Island, Illinois; Roll: 553; Page: 15B; Enumeration District: 59; Image: 121.0; FHL microfilm: 2340288
+3 _APID 1,6224::87479340
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693736
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097516
+1 RESI
+2 DATE 1900
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1491359094@
+3 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+3 _APID 1,7602::12693736
+2 NOTE Age: 4; Marital Status: Single; Relation to Head of House: Grand Son; Relation to Head of House: Grandson
+1 RESI
+2 DATE 1910
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1490828646@
+3 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+3 _APID 1,7884::115097516
+2 NOTE Age in 1910: 13; Marital Status: Single; Relation to Head of House: Step Son; Relation to Head of House: Stepson
+1 RESI
+2 DATE 1920
+2 PLAC Hampton, Rock Island, Illinois
+2 SOUR @S_1492434525@
+3 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+3 _APID 1,6061::96283422
+2 NOTE Age: 23; Marital Status: Single; Relation to Head of House: Step Son; Relation to Head of House: Stepson
+1 RESI
+2 DATE 1930
+2 PLAC Moline, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Moline, Rock Island, Illinois; Roll: 553; Page: 15B; Enumeration District: 59; Image: 121.0; FHL microfilm: 2340288
+3 _APID 1,6224::87479340
+2 NOTE Age in 1930: 38; Marital Status: Single; Relation to Head of House: Head
+1 RESI
+2 DATE 1935
+2 PLAC Pontiac, Oakland, Michigan
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Pontiac, Oakland, Michigan; Roll: T627_1801; Page: 62A; Enumeration District: 63-95
+3 _APID 1,2442::85021995
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Pontiac, Oakland, Michigan, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Pontiac, Oakland, Michigan; Roll: T627_1801; Page: 62A; Enumeration District: 63-95
+3 _APID 1,2442::85021995
+2 NOTE Age: 44; Marital Status: Married; Relation to Head of House: Head
+1 RESI
+2 DATE 1942
+2 PLAC Pontiac, Michigan, USA
+2 SOUR @S_972288281@
+3 PAGE The National Archives at St. Louis; St. Louis, Missouri; World War II Draft Cards (4th Registration) for the State of Michigan; State Headquarters: Michigan
+3 _APID 1,1002::11762538
+1 RESI
+2 DATE 1950
+2 PLAC Pontiac, Michigan, USA
+2 SOUR @S_1490827297@
+3 _APID 1,2469::418988033
+1 DEAT
+2 DATE 10 FEB 1960
+2 PLAC Pontaic, Michigan, USA
+1 SOUR @S_972288281@
+2 PAGE The National Archives at St. Louis; St. Louis, Missouri; World War II Draft Cards (4th Registration) for the State of Michigan; State Headquarters: Michigan
+2 _APID 1,1002::11762538
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -972700475:1030:8271388
+2 _APID -662694820:1030:4497565
+2 _APID 730554944:1030:18903470
+2 _APID 768787820:1030:4241181
+2 _APID 779221578:1030:28351
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Pontiac, Oakland, Michigan; Roll: T627_1801; Page: 62A; Enumeration District: 63-95
+2 _APID 1,2442::85021995
+1 SOUR @S_1490827297@
+2 _APID 1,2469::418988033
+1 SOUR @S_1492434525@
+2 PAGE Year: 1920; Census Place: Hampton, Rock Island, Illinois; Roll: T625_402; Page: 2B; Enumeration District: 95; Image: 580
+2 _APID 1,6061::96283422
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: Moline, Rock Island, Illinois; Roll: 553; Page: 15B; Enumeration District: 59; Image: 121.0; FHL microfilm: 2340288
+2 _APID 1,6224::87479340
+1 SOUR @S_1491359094@
+2 PAGE Year: 1900; Census Place: Hampton, Rock Island, Illinois; Roll: 338; Page: 1A; Enumeration District: 0093; FHL microfilm: 1240338
+2 _APID 1,7602::12693736
+1 SOUR @S_1490828646@
+2 PAGE Year: 1910; Census Place: Hampton, Rock Island, Illinois; Roll: T624_320; Page: 14B; Enumeration District: 0092; FHL microfilm: 1374333
+2 _APID 1,7884::115097516
+1 OBJE @O290@
+2 _PRIM Y
+1 OBJE @O396@
+1 OBJE @O147@
+1 OBJE @O472@
+1 OBJE @O214@
+1 OBJE @O130@
+1 OBJE @O257@
+1 OBJE @O482@
+1 OBJE @O315@
+1 OBJE @O86@
+1 OBJE @O23@
+1 OBJE @O219@
+1 OBJE @O391@
+1 OBJE @O430@
+1 OBJE @O465@
+1 OBJE @O54@
+1 OBJE @O45@
+1 OBJE @O372@
+1 OBJE @O170@
+1 OBJE @O204@
+0 @I13893423998@ INDI
+1 NAME James /Ferman/
+2 GIVN James
+2 SURN Ferman
+2 SOUR @S_1490189548@
+3 PAGE Source number: 1194.000; Source type: Electronic Database; Number of Pages: 1; Submitter Code: NJH
+3 _APID 1,7836::404764
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167878
+1 SEX M
+1 FAMS @F126@
+1 BIRT
+2 DATE 1790
+2 PLAC Tyrone, Ireland
+2 SOUR @S_1490189548@
+3 PAGE Source number: 1194.000; Source type: Electronic Database; Number of Pages: 1; Submitter Code: NJH
+3 _APID 1,7836::404764
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167878
+1 DEAT
+2 DATE 19 May 1871
+2 PLAC Weller, Henry, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167878
+2 NOTE Age at Death: 82
+1 BURI
+2 PLAC Woodhull, Henry County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167878
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1897669382:1030:1733209
+2 _APID -1786157199:1030:3026795
+2 _APID -1594150762:1030:4497565
+2 _APID -972655974:1030:8271388
+2 _APID 730554917:1030:18903470
+2 _APID 779235165:1030:28351
+2 _APID 984252971:1030:2449753
+2 _APID 1756308542:1030:25983878
+2 _APID 1907640597:1030:26725700
+2 _APID 12786324680:1030:23905545
+2 _APID 18052960472:1030:31486857
+2 _APID 19131576275:1030:37562321
+1 SOUR @S_1490189548@
+2 PAGE Source number: 1194.000; Source type: Electronic Database; Number of Pages: 1; Submitter Code: NJH
+2 _APID 1,7836::404764
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5167878
+1 OBJE @O453@
+2 _PRIM Y
+1 OBJE @O277@
+1 OBJE @O334@
+1 OBJE @O371@
+1 OBJE @O446@
+1 OBJE @O284@
+1 OBJE @O289@
+1 OBJE @O89@
+1 OBJE @O319@
+0 @I13893424932@ INDI
+1 NAME Catherine /Albright/
+2 GIVN Catherine
+2 SURN Albright
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Smithfield, De Kalb, Indiana; Roll: 273; Family History Film: 1254273; Page: 22D; Enumeration District: 080; Image: 0045
+3 _APID 1,6742::27222277
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Weller, Henry, Illinois; Roll: M593_230; Page: 135A; Image: 274; Family History Library Film: 545729
+3 _APID 1,7163::15607719
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Weller, Henry, Illinois; Roll: M653_182; Page: 861; Image: 315; Family History Library Film: 803182
+3 _APID 1,7667::36806702
+2 SOUR @S_1492210809@
+3 PAGE Year: 1850; Census Place: Monroe, Guernsey, Ohio; Roll: M432_684; Page: 424A; Image: 605
+3 _APID 1,8054::13696837
+2 SOUR @S_1491737008@
+3 PAGE Year: 1840; Census Place: Lancaster, Lancaster, Pennsylvania; Roll: 465; Page: 35; Image: 75; Family History Library Film: 0020547
+3 _APID 1,8057::2814606
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167876
+1 SEX F
+1 FAMS @F126@
+1 BIRT
+2 DATE April 29, 1803
+2 PLAC Lancaster, Lancaster, Pennsylvania, United States
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Smithfield, De Kalb, Indiana; Roll: 273; Family History Film: 1254273; Page: 22D; Enumeration District: 080; Image: 0045
+3 _APID 1,6742::27222277
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Weller, Henry, Illinois; Roll: M593_230; Page: 135A; Image: 274; Family History Library Film: 545729
+3 _APID 1,7163::15607719
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Weller, Henry, Illinois; Roll: M653_182; Page: 861; Image: 315; Family History Library Film: 803182
+3 _APID 1,7667::36806702
+2 SOUR @S_1492210809@
+3 PAGE Year: 1850; Census Place: Monroe, Guernsey, Ohio; Roll: M432_684; Page: 424A; Image: 605
+3 _APID 1,8054::13696837
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167876
+1 RESI
+2 DATE 1840
+2 PLAC Lancaster, Lancaster, Pennsylvania, United States
+2 SOUR @S_1491737008@
+3 PAGE Year: 1840; Census Place: Lancaster, Lancaster, Pennsylvania; Roll: 465; Page: 35; Image: 75; Family History Library Film: 0020547
+3 _APID 1,8057::2814606
+1 RESI
+2 DATE 1850
+2 PLAC Monroe, Guernsey, Ohio
+2 SOUR @S_1492210809@
+3 PAGE Year: 1850; Census Place: Monroe, Guernsey, Ohio; Roll: M432_684; Page: 424A; Image: 605
+3 _APID 1,8054::13696837
+2 NOTE Age: 46
+1 RESI
+2 DATE 1860
+2 PLAC Weller, Henry, Illinois, United States
+2 SOUR @S_1490190033@
+3 PAGE Year: 1860; Census Place: Weller, Henry, Illinois; Roll: M653_182; Page: 861; Image: 315; Family History Library Film: 803182
+3 _APID 1,7667::36806702
+2 NOTE Age in 1860: 60
+1 RESI
+2 DATE 1870
+2 PLAC Weller, Henry, Illinois, United States
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Weller, Henry, Illinois; Roll: M593_230; Page: 135A; Image: 274; Family History Library Film: 545729
+3 _APID 1,7163::15607719
+2 NOTE Age in 1870: 65
+1 RESI
+2 DATE 1880
+2 PLAC Smithfield, De Kalb, Indiana, United States
+2 SOUR @S_1492144842@
+3 PAGE Year: 1880; Census Place: Smithfield, De Kalb, Indiana; Roll: 273; Family History Film: 1254273; Page: 22D; Enumeration District: 080; Image: 0045
+3 _APID 1,6742::27222277
+2 NOTE Age: 78; Marital Status: Widowed; Relation to Head of House: Mother
+1 RESI
+2 PLAC Cambridge, Henry, Illinois
+2 SOUR @S_1491737056@
+3 PAGE Year: 1870; Census Place: Weller, Henry, Illinois; Roll: M593_230; Page: 135A; Image: 274; Family History Library Film: 545729
+3 _APID 1,7163::15607719
+1 DEAT
+2 DATE March 18, 1879
+2 PLAC Highland Center, Wapello, Iowa
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167876
+2 NOTE Age: 75
+1 BURI
+2 PLAC Woodhull, Henry County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5167876
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1897669383:1030:1733209
+2 _APID -1786157200:1030:3026795
+2 _APID -1594150753:1030:4497565
+2 _APID -972655971:1030:8271388
+2 _APID 730554918:1030:18903470
+2 _APID 779235461:1030:28351
+2 _APID 984253348:1030:2449753
+2 _APID 1756316593:1030:25983878
+2 _APID 1907640611:1030:26725700
+2 _APID 12786324685:1030:23905545
+2 _APID 18052959792:1030:31486857
+2 _APID 19131576279:1030:37562321
+1 SOUR @S_1492144842@
+2 PAGE Year: 1880; Census Place: Smithfield, De Kalb, Indiana; Roll: 273; Family History Film: 1254273; Page: 22D; Enumeration District: 080; Image: 0045
+2 _APID 1,6742::27222277
+1 SOUR @S_1491737056@
+2 PAGE Year: 1870; Census Place: Weller, Henry, Illinois; Roll: M593_230; Page: 135A; Image: 274; Family History Library Film: 545729
+2 _APID 1,7163::15607719
+1 SOUR @S_1490190033@
+2 PAGE Year: 1860; Census Place: Weller, Henry, Illinois; Roll: M653_182; Page: 861; Image: 315; Family History Library Film: 803182
+2 _APID 1,7667::36806702
+1 SOUR @S_1492210809@
+2 PAGE Year: 1850; Census Place: Monroe, Guernsey, Ohio; Roll: M432_684; Page: 424A; Image: 605
+2 _APID 1,8054::13696837
+1 SOUR @S_1491737008@
+2 PAGE Year: 1840; Census Place: Lancaster, Lancaster, Pennsylvania; Roll: 465; Page: 35; Image: 75; Family History Library Film: 0020547
+2 _APID 1,8057::2814606
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5167876
+1 OBJE @O132@
+2 _PRIM Y
+0 @I13893431151@ INDI
+1 NAME Andrew Jackson /Ferman/
+2 GIVN Andrew Jackson
+2 SURN Ferman
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: East Moline, Rock Island, Illinois; Roll: T627_874; Page: 7B; Enumeration District: 81-26
+3 _APID 1,2442::142589972
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Silvis, Rock Island, Illinois; Roll: 552; Page: 6A; Enumeration District: 31; Image: 623.0; FHL microfilm: 2340287
+3 _APID 1,6224::87533013
+1 SEX M
+1 FAMC @F132@
+1 FAMS @F114@
+1 FAMS @F115@
+1 BIRT
+2 DATE 1869
+2 PLAC Weller, Henderson, Illinois, USA
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: East Moline, Rock Island, Illinois; Roll: T627_874; Page: 7B; Enumeration District: 81-26
+3 _APID 1,2442::142589972
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Silvis, Rock Island, Illinois; Roll: 552; Page: 6A; Enumeration District: 31; Image: 623.0; FHL microfilm: 2340287
+3 _APID 1,6224::87533013
+1 RESI
+2 DATE 1930
+2 PLAC Silvis, Rock Island, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Silvis, Rock Island, Illinois; Roll: 552; Page: 6A; Enumeration District: 31; Image: 623.0; FHL microfilm: 2340287
+3 _APID 1,6224::87533013
+2 NOTE Age in 1930: 60; Marital Status: Widowed; Relation to Head of House: Boarder
+1 RESI
+2 DATE 1935
+2 PLAC Silvis, Rock Island, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: East Moline, Rock Island, Illinois; Roll: T627_874; Page: 7B; Enumeration District: 81-26
+3 _APID 1,2442::142589972
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC East Moline, Rock Island, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: East Moline, Rock Island, Illinois; Roll: T627_874; Page: 7B; Enumeration District: 81-26
+3 _APID 1,2442::142589972
+2 NOTE Age: 70; Marital Status: Married; Relation to Head of House: Head
+1 DEAT
+2 DATE 1947
+2 PLAC Sterling, Whiteside, Illinois, USA
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150210:1030:4497565
+2 _APID -972688280:1030:8271388
+2 _APID 730554909:1030:18903470
+2 _APID 779107372:1030:28351
+2 _APID 984243690:1030:2449753
+2 _APID 12786324688:1030:23905545
+2 _APID 19131576286:1030:37562321
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: East Moline, Rock Island, Illinois; Roll: T627_874; Page: 7B; Enumeration District: 81-26
+2 _APID 1,2442::142589972
+1 SOUR @S_1492157840@
+2 PAGE Year: 1930; Census Place: Silvis, Rock Island, Illinois; Roll: 552; Page: 6A; Enumeration District: 31; Image: 623.0; FHL microfilm: 2340287
+2 _APID 1,6224::87533013
+1 OBJE @O165@
+2 _PRIM Y
+1 OBJE @O351@
+1 OBJE @O496@
+1 OBJE @O140@
+1 OBJE @O486@
+1 OBJE @O202@
+1 OBJE @O25@
+0 @I13893431915@ INDI
+1 NAME Carrie /Ferman/
+2 GIVN Carrie
+2 SURN Ferman
+1 SEX F
+1 FAMC @F132@
+1 BIRT
+2 DATE 1873
+2 PLAC Weller township, Henry, IL
+1 DEAT
+2 DATE 1888
+2 PLAC Hampton, Rock Island, IL
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150205:1030:4497565
+2 _APID -972688277:1030:8271388
+2 _APID 730554910:1030:18903470
+2 _APID 779108024:1030:28351
+2 _APID 984236597:1030:2449753
+2 _APID 12786324690:1030:23905545
+2 _APID 19131576290:1030:37562321
+0 @I13893432303@ INDI
+1 NAME Frankie /Ferman/
+2 GIVN Frankie
+2 SURN Ferman
+1 SEX M
+1 FAMC @F132@
+1 BIRT
+2 DATE 1875
+2 PLAC Weller, Henderson, Illinois, USA
+1 DEAT
+2 DATE 1876
+2 PLAC Hampton, Rock Island, Illinois, USA
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150207:1030:4497565
+2 _APID -972655961:1030:8271388
+2 _APID 730554911:1030:18903470
+2 _APID 779317749:1030:28351
+2 _APID 984236599:1030:2449753
+2 _APID 12786324692:1030:23905545
+2 _APID 19131576293:1030:37562321
+0 @I13893433161@ INDI
+1 NAME Dorothy Louise /Ferman/
+2 GIVN Dorothy Louise
+2 SURN Ferman
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1072012
+1 SEX F
+1 FAMC @F132@
+1 FAMS @F138@
+1 FAMS @F137@
+1 BIRT
+2 DATE 16 May 1878
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1072012
+1 RESI
+2 PLAC East Moline, Ill.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1072012
+2 NOTE Marital Status: M
+1 DEAT
+2 DATE 14 Oct 1930
+2 PLAC East Moline, Rock Island, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1072012
+2 NOTE Death Age: 52
+1 BURI
+2 DATE 16 Oct 1930
+2 PLAC Hampton, Rock Island, Ill.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1072012
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150209:1030:4497565
+2 _APID 730554912:1030:18903470
+2 _APID 778887726:1030:28351
+2 _APID 984236601:1030:2449753
+2 _APID 12786279584:1030:23905545
+2 _APID 19115403907:1030:37562321
+1 SOUR @S_1492397246@
+2 _APID 1,2542::1072012
+1 OBJE @O47@
+2 _PRIM Y
+1 OBJE @O125@
+1 OBJE @O461@
+1 OBJE @O111@
+1 OBJE @O28@
+1 OBJE @O356@
+1 OBJE @O428@
+1 OBJE @O500@
+1 OBJE @O351@
+1 OBJE @O191@
+0 @I13893433802@ INDI
+1 NAME Wilhelmina /Ferman/
+2 GIVN Wilhelmina
+2 SURN Ferman
+1 SEX F
+1 FAMC @F132@
+1 FAMS @F121@
+1 BIRT
+2 DATE 8 Nov 1882
+2 PLAC Hampton Twp, Hampton Village, Rock Island, Illinois
+1 DEAT
+2 DATE 21 April 1909
+2 PLAC Moline, Rock Island, Illinois, USA
+2 NOTE fell off a run away horse buggy.  she was pitched against a telephone pole, crushing her skull.
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150208:1030:4497565
+1 OBJE @O469@
+2 _PRIM Y
+1 OBJE @O351@
+1 OBJE @O50@
+1 OBJE @O84@
+1 OBJE @O161@
+1 OBJE @O476@
+1 OBJE @O474@
+0 @I13893434330@ INDI
+1 NAME Henry James /Ferman/
+2 GIVN Henry James
+2 SURN Ferman
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1712323
+1 SEX M
+1 FAMC @F132@
+1 BIRT
+2 DATE 29 Jan 1884
+2 PLAC Hampton Twp, Hampton Village, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1712323
+1 RESI
+2 PLAC Hampton, R. I.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1712323
+2 NOTE Marital Status: S
+1 DEAT
+2 DATE 4 Feb 1933
+2 PLAC Hampton Twp, Hampton Village, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1712323
+2 NOTE found beaten in his camp in Hampton.
+1 BURI
+2 DATE 8 Feb 1933
+2 PLAC Hampton Township, Rock Island, Ill.
+2 SOUR @S_1492397246@
+3 _APID 1,2542::1712323
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 19871863831:1030:33430538
+1 SOUR @S_1492397246@
+2 _APID 1,2542::1712323
+1 OBJE @O236@
+2 _PRIM Y
+1 OBJE @O190@
+1 OBJE @O221@
+1 OBJE @O351@
+1 OBJE @O1@
+1 OBJE @O339@
+1 OBJE @O145@
+1 OBJE @O155@
+1 OBJE @O21@
+1 OBJE @O333@
+1 OBJE @O48@
+0 @I13893435081@ INDI
+1 NAME Grover Cleveland /Ferman/
+2 GIVN Grover Cleveland
+2 SURN Ferman
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25108456
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5151334
+1 SEX M
+1 FAMC @F132@
+1 FAMS @F25@
+1 BIRT
+2 DATE 19 Aug 1885
+2 PLAC Hampton, Rock Island, Illinois, USA
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25108456
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5151334
+1 RESI
+2 PLAC Rock Island, Illinois
+2 SOUR @S_1492434614@
+3 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+3 _APID 1,6482::25108456
+1 DEAT
+2 DATE 9 Mar 1953
+2 PLAC East Moline, Rock Island, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5151334
+2 NOTE Age at Death: 68
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5151334
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150213:1030:4497565
+1 SOUR @S_1492434614@
+2 PAGE Registration State: Illinois; Registration County: Rock Island; Roll: 1614551; Draft Board: 2
+2 _APID 1,6482::25108456
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5151334
+1 OBJE @O351@
+2 _PRIM Y
+1 OBJE @O96@
+0 @I13893435530@ INDI
+1 NAME Amelia May /Ferman/
+2 GIVN Amelia May
+2 SURN Ferman
+1 SEX F
+1 FAMC @F132@
+1 FAMS @F63@
+1 BIRT
+2 DATE 1890
+2 PLAC Hampton, Rock Island, IL
+1 DEAT
+2 DATE 5 Aug 1986
+2 PLAC Coal Valley, Rock Island, Illinois, United States
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1594150212:1030:4497565
+2 _APID 6364887590:1030:44096078
+2 _APID 12786077638:1030:23905545
+1 OBJE @O248@
+2 _PRIM Y
+1 OBJE @O351@
+1 OBJE @O191@
+1 OBJE @O154@
+1 OBJE @O456@
+1 OBJE @O484@
+1 OBJE @O59@
+0 @I13893627683@ INDI
+1 NAME Velma Lorrain /Hofstetter/
+2 GIVN Velma Lorrain
+2 SURN Hofstetter
+2 SOUR @S_1492397246@
+3 _APID 1,2542::452337
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442607
+1 SEX F
+1 FAMC @F41@
+1 BIRT
+2 DATE 11 Mar 1917
+2 PLAC Hampton, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::452337
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442607
+1 DEAT
+2 DATE 11 Mar 1918
+2 PLAC Hampton Twp, Hampton Village, Rock Island, Illinois
+2 SOUR @S_1492397246@
+3 _APID 1,2542::452337
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442607
+2 NOTE Age: 1
+1 BURI
+2 DATE 13 Mar 1918
+2 PLAC Hampton, Rock Island County, Illinois, USA
+2 SOUR @S_1492397246@
+3 _APID 1,2542::452337
+2 SOUR @S_1532449733@
+3 _APID 1,70509::5442607
+2 NOTE Age: 1
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 6471070606:1030:1735628
+1 SOUR @S_1492397246@
+2 _APID 1,2542::452337
+1 SOUR @S_1532449733@
+2 _APID 1,70509::5442607
+0 @I13893630876@ INDI
+1 NAME John Alexander /Donahoo/
+2 GIVN John Alexander
+2 SURN Donahoo
+2 SOUR @S_1532449733@
+3 _APID 1,70509::480958
+1 SEX M
+1 FAMC @F110@
+1 FAMS @F67@
+1 BIRT
+2 DATE 3 May 1823
+2 PLAC Fairview, Belmont City, Ohio
+2 SOUR @S_1532449733@
+3 _APID 1,70509::480958
+1 DEAT
+2 DATE 4 June 1906
+2 PLAC Rock Island City, IL
+2 SOUR @S_1532449733@
+3 _APID 1,70509::480958
+2 NOTE Age at Death: 83
+1 BURI
+2 PLAC Hillsdale, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::480958
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1313319682:1030:6310892
+2 _APID -1313319680:1030:6310892
+2 _APID -985200221:1030:5828280
+2 _APID -985200216:1030:5828280
+2 _APID -888044925:1030:8791740
+2 _APID 256798631:1030:10495400
+2 _APID 1081265081:1030:11652436
+2 _APID 1606890065:1030:24601337
+2 _APID 1878986425:1030:26462155
+2 _APID 1958670568:1030:26960519
+2 _APID 12756281059:1030:43652376
+2 _APID 18181241033:1030:32091995
+1 SOUR @S_1532449733@
+2 _APID 1,70509::480958
+1 OBJE @O389@
+2 _PRIM Y
+0 @I13893631623@ INDI
+1 NAME Elizabeth E. /Sheppard/
+2 GIVN Elizabeth E.
+2 SURN Sheppard
+2 SOUR @S_1532449733@
+3 _APID 1,70509::460675
+1 SEX F
+1 FAMC @F19@
+1 FAMS @F67@
+1 BIRT
+2 DATE 29 Sept 1827
+2 PLAC Hendrysburg, Ohio
+2 SOUR @S_1532449733@
+3 _APID 1,70509::460675
+1 DEAT
+2 DATE 4 Mar 1905
+2 PLAC Moline, Rock Island, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::460675
+2 NOTE Age at Death: 77
+1 BURI
+2 PLAC Hillsdale, Rock Island County, Illinois, USA
+2 SOUR @S_1532449733@
+3 _APID 1,70509::460675
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID -1313319686:1030:6310892
+2 _APID -1313319681:1030:6310892
+2 _APID -888044924:1030:8791740
+2 _APID 238338767:1030:10495400
+2 _APID 1081265084:1030:11652436
+2 _APID 1593200838:1030:24601337
+2 _APID 1878986447:1030:26462155
+2 _APID 1958670569:1030:26960519
+2 _APID 12756279889:1030:43652376
+2 _APID 18181240944:1030:32091995
+1 SOUR @S_1532449733@
+2 _APID 1,70509::460675
+1 OBJE @O479@
+2 _PRIM Y
+0 @I13893906404@ INDI
+1 NAME Mamie Lou /Brown/
+2 GIVN Mamie Lou
+2 SURN Brown
+2 SOUR @S_1492437404@
+3 _APID 1,1788::273416424
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220988
+2 SOUR @S_972288428@
+3 _APID 1,60525::76512403
+1 SEX F
+1 FAMC @F105@
+1 FAMS @F104@
+1 FAMS @F120@
+1 BIRT
+2 DATE 22 Feb 1936
+2 PLAC Davenport, Scott, Iowa, United States
+2 SOUR @S_1492437404@
+3 _APID 1,1788::273416424
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220988
+2 SOUR @S_972288428@
+3 _APID 1,60525::76512403
+1 BAPM
+2 DATE 12 April 1936
+2 PLAC Burgess Presbyterian Church
+2 OBJE @O267@
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Ohio Grove, Mercer, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220988
+2 NOTE Age: 4; Marital Status: Single; Relation to Head of House: Daughter
+1 GRAD
+2 DATE 1954
+2 PLAC Aledo High School
+2 OBJE @O27@
+1 RESI
+2 DATE 1994
+2 PLAC East Moline, IL
+2 SOUR @S_1492437404@
+3 _APID 1,1788::273416424
+2 NOTE Age: 58
+1 DEAT
+2 DATE 26 feb 2016
+2 PLAC Milan, Rock Island, Illinois, USA
+2 SOUR @S_972288428@
+3 _APID 1,60525::76512403
+1 BURI
+2 PLAC Hampton, Rock Island County, Illinois, United States of America
+2 SOUR @S_972288428@
+3 _APID 1,60525::76512403
+1 SOUR @S_1492437404@
+2 _APID 1,1788::273416424
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+2 _APID 1,2442::141220988
+1 SOUR @S_972288428@
+2 _APID 1,60525::76512403
+1 OBJE @O440@
+2 _PRIM Y
+1 OBJE @O151@
+1 OBJE @O70@
+1 OBJE @O238@
+1 OBJE @O276@
+1 OBJE @O235@
+1 OBJE @O359@
+1 OBJE @O301@
+1 OBJE @O27@
+1 OBJE @O494@
+1 OBJE @O267@
+1 OBJE @O144@
+0 @I13895258816@ INDI
+1 NAME Herman /Brown/
+2 GIVN Herman
+2 SURN Brown
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220984
+1 SEX M
+1 FAMC @F57@
+1 FAMS @F105@
+1 BIRT
+2 DATE 21 Jan 1894
+2 PLAC Allerton, Vermilion, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220984
+1 RESI
+2 DATE 1935
+2 PLAC Ohio Grove, Mercer, Illinois
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220984
+1 RESI
+2 DATE 1 Apr 1940
+2 PLAC Ohio Grove, Mercer, Illinois, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220984
+2 NOTE Age: 45; Marital Status: Married; Relation to Head of House: Head
+1 DEAT
+2 DATE 1 Aug 1967
+2 PLAC Illinois, United States
+1 SOUR @S_1492432532@
+2 PAGE Ancestry Family Tree
+2 _APID 1053273666:1030:21248348
+2 _APID 1053403975:1030:21249375
+2 _APID 19987544602:1030:21335581
+1 SOUR @S_1532451054@
+2 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+2 _APID 1,2442::141220984
+0 @I13895258818@ INDI
+1 NAME Mamie /Riel/
+2 GIVN Mamie
+2 SURN Riel
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220986
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Ohio Grove, Mercer, Illinois; Roll: 539; Page: 3A; Enumeration District: 17; Image: 443.0; FHL microfilm: 2340274
+3 _APID 1,6224::47678101
+1 SEX F
+1 FAMC @F151@
+1 FAMS @F105@
+1 BIRT
+2 DATE 31 Jan 1896
+2 PLAC Fairfax, Polk, Minnesota, United States
+2 SOUR @S_1532451054@
+3 PAGE Year: 1940; Census Place: Ohio Grove, Mercer, Illinois; Roll: T627_858; Page: 8A; Enumeration District: 66-18
+3 _APID 1,2442::141220986
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Ohio Grove, Mercer, Illinois; Roll: 539; Page: 3A; Enumeration District: 17; Image: 443.0; FHL microfilm: 2340274
+3 _APID 1,6224::47678101
+1 RESI
+2 DATE 1930
+2 PLAC Ohio Grove, Mercer, Illinois
+2 SOUR @S_1492157840@
+3 PAGE Year: 1930; Census Place: Ohio Grove, Mercer, Illinois; Roll: 539; Page: 3A; Enumeration District: 17; Image: 443.0; FHL microfilm: 2340274
