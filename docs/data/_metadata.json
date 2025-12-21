@@ -1,0 +1,21 @@
+{
+  "exported_at": "2025-12-21T04:22:51.707662Z",
+  "database_path": "/home/runner/work/Family_GenealogyTool_Lite/Family_GenealogyTool_Lite/data/family_tree.sqlite",
+  "tables": {
+    "data_quality_flags": 0,
+    "date_normalizations": 0,
+    "dq_action_log": 0,
+    "dq_issues": 0,
+    "events": 0,
+    "families": 0,
+    "family_children": 0,
+    "media_assets": 0,
+    "media_links": 0,
+    "notes": 0,
+    "persons": 56,
+    "place_variants": 0,
+    "places": 0,
+    "relationships": 0
+  },
+  "total_rows": 56
+}
