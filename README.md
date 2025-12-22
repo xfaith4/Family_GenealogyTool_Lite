@@ -10,11 +10,13 @@ Minimal, dependency-light genealogy app designed to run cleanly on Windows and A
 ## 🌐 GitHub Pages Static Version
 
 A read-only static version is available that can be hosted on GitHub Pages:
+
 - **No backend required** - All data loaded from JSON files
 - **Perfect for sharing** - Host your family tree online
 - **See it in action:** [View the static demo](docs/)
 
 To create your own static version:
+
 1. Import your genealogy data into the app
 2. Run `python3 scripts/export_to_json.py` to export to JSON
 3. Enable GitHub Pages in your repo settings (point to `/docs`)
@@ -26,7 +28,7 @@ See [docs/README.md](docs/README.md) for full instructions.
 
 ```powershell
 set-executionPolicy -Scope Process -ExecutionPolicy Bypass
-.\scripts\Setup.ps1 
+.\scripts\Setup.ps1
 .\scripts\Start.ps1
 ```
 
@@ -84,11 +86,13 @@ The importer focuses on populated tables so it extracts individuals, media locat
 - Icons: `/static/icons/icon-192.png` and `/static/icons/icon-512.png`.
 
 ## Analytics drilldown contract
+
 - Each chart/table defines a `chartId`, title, and a `getDrilldownPayload` (implemented in `static/analytics.js`) that returns `{ type, filters, label }`.
 - Drilldowns call `POST /api/analytics/drilldown` with that payload plus pagination, and render in the right-side drawer.
 - To add a new chart, extend `buildDrilldownPayload` with the new `chartId`, add the title to `data-chart-title` in `templates/analytics.html`, and return a `type/filters` pair the backend endpoint can understand.
 
 ### Install steps (Android Chrome)
+
 1. Start the app normally (http://127.0.0.1:3001).
 2. Open the browser menu → “Add to Home screen” / “Install app”.
 3. Launch from the home screen icon; it opens in standalone mode.
