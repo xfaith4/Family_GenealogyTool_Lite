@@ -34,18 +34,14 @@ function renderList(){
   for(const p of state.people){
     const div = document.createElement("div");
     div.className = "item";
-    // Build metadata string with birth/death info, minimize ID display
+    // Build metadata string with birth/death info
     let meta = [];
     if(p.birth_date) meta.push(`b. ${escapeHtml(p.birth_date)}`);
     if(p.death_date) meta.push(`d. ${escapeHtml(p.death_date)}`);
     if(p.sex) meta.push(escapeHtml(p.sex));
-    // Only show ID if no other metadata
-    if(meta.length === 0) {
-      meta.push(`ID ${p.id}`);
-    }
     div.innerHTML = `
       <div class="name">${escapeHtml(fullName(p))}</div>
-      <div class="meta">${meta.join(" • ")}</div>
+      ${meta.length ? `<div class="meta">${meta.join(" • ")}</div>` : ""}
     `;
     div.onclick = () => loadDetails(p.id);
     el.appendChild(div);
@@ -241,16 +237,6 @@ async function renderTree(id){
     text.setAttribute('font-weight', '600');
     text.textContent = fullName(person);
     group.appendChild(text);
-
-    const meta = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    meta.setAttribute('x', x);
-    meta.setAttribute('y', y + height / 2 + 14);
-    meta.setAttribute('text-anchor', 'middle');
-    meta.setAttribute('dominant-baseline', 'hanging');
-    meta.setAttribute('fill', 'var(--muted)');
-    meta.setAttribute('font-size', '10');
-    meta.textContent = `ID ${person.id}`;
-    group.appendChild(meta);
 
     svg.appendChild(group);
   };

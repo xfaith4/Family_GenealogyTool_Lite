@@ -5,7 +5,7 @@ import unittest
 from sqlalchemy.orm import sessionmaker
 
 from app import create_app
-from app.models import Person, Event, EventType, DateNormalization
+from app.models import Person, Event, EventType, DateNormalization, Family, MediaAsset, MediaLink, family_children
 from app.db import get_engine
 
 
@@ -50,6 +50,39 @@ class TestDataQuality(unittest.TestCase):
             s.commit()
             return ev.id
 
+    def _family(self, husband_id=None, wife_id=None, marriage_date=None, marriage_place=None, children=None):
+        with self._session() as s:
+            fam = Family(
+                husband_person_id=husband_id,
+                wife_person_id=wife_id,
+                marriage_date=marriage_date,
+                marriage_place=marriage_place,
+            )
+            s.add(fam)
+            s.commit()
+            if children:
+                for cid in children:
+                    s.execute(
+                        family_children.insert().values(family_id=fam.id, child_person_id=cid)
+                    )
+                s.commit()
+            return fam.id
+
+    def _media_link(self, person_id):
+        with self._session() as s:
+            asset = MediaAsset(
+                path="x.jpg",
+                sha256="a" * 64,
+                original_filename="x.jpg",
+            )
+            s.add(asset)
+            s.commit()
+            link1 = MediaLink(asset_id=asset.id, person_id=person_id)
+            link2 = MediaLink(asset_id=asset.id, person_id=person_id)
+            s.add_all([link1, link2])
+            s.commit()
+            return asset.id, [link1.id, link2.id]
+
     def test_scan_detects_duplicates(self):
         a = self._person("John", "Sample", "1980")
         b = self._person("Jon", "Sample", "1980")
@@ -57,6 +90,86 @@ class TestDataQuality(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         data = self.client.get("/api/dq/issues?type=duplicate_person").get_json()
         self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_scan_detects_similar_places(self):
+        pid = self._person("Mara", "Place", birth_place="Boston, Massachusett")
+        self._event(pid, raw_place="Boston, Massachusetts")
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=place_similarity").get_json()
+        self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_scan_detects_duplicate_families(self):
+        h = self._person("Henry", "Family")
+        w = self._person("Helen", "Family")
+        self._family(husband_id=h, wife_id=w, marriage_date="1900", marriage_place="Town")
+        self._family(husband_id=h, wife_id=w, marriage_date="1900", marriage_place="Town")
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=duplicate_family").get_json()
+        self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_merge_families_moves_children(self):
+        h = self._person("Gary", "Family")
+        w = self._person("Gina", "Family")
+        c = self._person("Greg", "Family")
+        primary = self._family(husband_id=h, wife_id=w, marriage_date="1905", children=[c])
+        secondary = self._family(husband_id=h, wife_id=w, marriage_date="1905")
+
+        resp = self.client.post(
+            "/api/dq/actions/mergeFamilies",
+            json={"fromId": secondary, "intoId": primary, "user": "tester"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        with self._session() as s:
+            rows = s.execute(
+                family_children.select().where(family_children.c.family_id == primary)
+            ).all()
+            self.assertTrue(any(row.child_person_id == c for row in rows))
+            self.assertIsNone(s.get(Family, secondary))
+
+    def test_scan_detects_duplicate_media_links(self):
+        pid = self._person("Mia", "Media")
+        self._media_link(pid)
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=duplicate_media_link").get_json()
+        self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_normalize_dates_preserves_qualifier(self):
+        pid = self._person("Ava", "About", birth_date="About 1900")
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        issues = self.client.get("/api/dq/issues?type=date_normalization").get_json()["items"]
+        target = next(
+            (i for i in issues if i["entity_type"] == "person" and pid in i["entity_ids"]),
+            None,
+        )
+        self.assertIsNotNone(target)
+        explanation = target["explanation"]
+        resp = self.client.post(
+            "/api/dq/actions/normalizeDates",
+            json={
+                "items": [
+                    {
+                        "entity_type": "person",
+                        "entity_id": pid,
+                        "normalized": explanation.get("normalized"),
+                        "precision": explanation.get("precision"),
+                        "qualifier": explanation.get("qualifier"),
+                        "raw": explanation.get("raw"),
+                        "confidence": target.get("confidence"),
+                        "ambiguous": explanation.get("ambiguous"),
+                        "field": explanation.get("field"),
+                    }
+                ],
+                "user": "tester",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        with self._session() as s:
+            person = s.get(Person, pid)
+            self.assertEqual(person.birth_date, "About 1900")
 
     def test_merge_people_moves_relationships(self):
         primary = self._person("Alice", "Merge", "1975")

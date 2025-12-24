@@ -25,6 +25,7 @@ from .models import (
     Event,
     Place,
     PlaceVariant,
+    MediaLink,
     DataQualityIssue,
     DataQualityActionLog,
     DateNormalization,
@@ -176,6 +177,8 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
 
     duplicate_count = _detect_duplicates(session)
     place_cluster_count = _detect_places(session)
+    family_duplicate_count = _detect_duplicate_families(session)
+    media_duplicate_count = _detect_duplicate_media_links(session)
     date_count = _detect_dates(session)
     integrity_count = _detect_integrity(session)
 
@@ -183,6 +186,8 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
     return {
         "duplicates": duplicate_count,
         "place_clusters": place_cluster_count,
+        "family_duplicates": family_duplicate_count,
+        "media_duplicates": media_duplicate_count,
         "dates": date_count,
         "integrity": integrity_count,
     }
@@ -247,11 +252,13 @@ def _detect_duplicates(session: Session) -> int:
 
 def _detect_places(session: Session) -> int:
     variants: dict[str, Counter] = defaultdict(Counter)
+    raw_counts: Counter = Counter()
     event_rows = session.execute(select(Event.place_raw)).all()
     for (place_raw,) in event_rows:
         if place_raw:
             key = _norm_place(place_raw)
             variants[key][place_raw] += 1
+            raw_counts[place_raw] += 1
 
     person_places = session.execute(select(Person.birth_place, Person.death_place)).all()
     for bplace, dplace in person_places:
@@ -259,6 +266,7 @@ def _detect_places(session: Session) -> int:
             if pl:
                 key = _norm_place(pl)
                 variants[key][pl] += 1
+                raw_counts[pl] += 1
 
     count = 0
     for key, counter in variants.items():
@@ -276,6 +284,136 @@ def _detect_places(session: Session) -> int:
             confidence=0.65,
             impact=float(total_refs),
             explanation={"canonical_suggestion": top, "variants": variants_list},
+        )
+        count += 1
+
+    raw_entries = [
+        {"value": value, "count": cnt, "norm": _norm_place(value)}
+        for value, cnt in raw_counts.items()
+        if value
+    ]
+    raw_entries.sort(key=lambda item: item["value"].lower())
+
+    def pick_canonical(a: dict, b: dict) -> dict:
+        if a["count"] != b["count"]:
+            return a if a["count"] > b["count"] else b
+        if len(a["value"]) != len(b["value"]):
+            return a if len(a["value"]) > len(b["value"]) else b
+        return a if a["value"].lower() <= b["value"].lower() else b
+
+    for i in range(len(raw_entries)):
+        for j in range(i + 1, len(raw_entries)):
+            a = raw_entries[i]
+            b = raw_entries[j]
+            if not a["norm"] or not b["norm"]:
+                continue
+            if a["norm"] == b["norm"]:
+                continue
+            sim = _name_similarity(a["norm"], b["norm"])
+            if sim < 0.8:
+                continue
+            canonical = pick_canonical(a, b)
+            variants_list = sorted(
+                [{"value": a["value"], "count": a["count"]}, {"value": b["value"], "count": b["count"]}],
+                key=lambda item: (-item["count"], item["value"].lower()),
+            )
+            _insert_issue(
+                session,
+                "place_similarity",
+                "info",
+                "place",
+                [],
+                confidence=round(sim, 2),
+                impact=float(a["count"] + b["count"]),
+                explanation={
+                    "canonical_suggestion": canonical["value"],
+                    "variants": variants_list,
+                    "similarity": round(sim, 2),
+                },
+            )
+            count += 1
+    return count
+
+
+def _detect_duplicate_families(session: Session) -> int:
+    families = session.execute(select(Family)).scalars().all()
+    buckets: dict[tuple[int, int], list[Family]] = defaultdict(list)
+    for fam in families:
+        if not fam.husband_person_id or not fam.wife_person_id:
+            continue
+        key = tuple(sorted([fam.husband_person_id, fam.wife_person_id]))
+        buckets[key].append(fam)
+
+    count = 0
+    for spouse_key, group in buckets.items():
+        if len(group) < 2:
+            continue
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                a = group[i]
+                b = group[j]
+                date_a = _parse_year(a.marriage_date)
+                date_b = _parse_year(b.marriage_date)
+                date_score = 0.15 if date_a and date_b and date_a == date_b else 0
+                place_score = 0.15 if _norm_place(a.marriage_place) and _norm_place(a.marriage_place) == _norm_place(b.marriage_place) else 0
+                score = 0.7 + date_score + place_score
+                if score < 0.75:
+                    continue
+                _insert_issue(
+                    session,
+                    "duplicate_family",
+                    "info",
+                    "family",
+                    [a.id, b.id],
+                    confidence=round(score, 2),
+                    impact=1.0,
+                    explanation={
+                        "spouses": list(spouse_key),
+                        "marriage_dates": [a.marriage_date, b.marriage_date],
+                        "marriage_places": [a.marriage_place, b.marriage_place],
+                    },
+                )
+                count += 1
+    return count
+
+
+def _detect_duplicate_media_links(session: Session) -> int:
+    rows = session.execute(
+        select(
+            MediaLink.asset_id,
+            MediaLink.person_id,
+            MediaLink.family_id,
+            func.count(MediaLink.id).label("link_count"),
+        )
+        .group_by(MediaLink.asset_id, MediaLink.person_id, MediaLink.family_id)
+        .having(func.count(MediaLink.id) > 1)
+    ).all()
+
+    count = 0
+    for asset_id, person_id, family_id, link_count in rows:
+        link_ids = session.execute(
+            select(MediaLink.id)
+            .where(
+                MediaLink.asset_id == asset_id,
+                MediaLink.person_id == person_id,
+                MediaLink.family_id == family_id,
+            )
+            .order_by(MediaLink.id)
+        ).scalars().all()
+        _insert_issue(
+            session,
+            "duplicate_media_link",
+            "info",
+            "media_link",
+            [int(lid) for lid in link_ids],
+            confidence=0.9,
+            impact=float(link_count),
+            explanation={
+                "asset_id": asset_id,
+                "person_id": person_id,
+                "family_id": family_id,
+                "link_ids": [int(lid) for lid in link_ids],
+            },
         )
         count += 1
     return count
@@ -424,12 +562,14 @@ def build_summary(session: Session) -> dict:
     ).scalar_one()
     unresolved_duplicates = session.execute(
         select(func.count(DataQualityIssue.id)).where(
-            DataQualityIssue.issue_type == "duplicate_person", DataQualityIssue.status == "open"
+            DataQualityIssue.issue_type.in_(["duplicate_person", "duplicate_family", "duplicate_media_link"]),
+            DataQualityIssue.status == "open",
         )
     ).scalar_one()
     place_clusters = session.execute(
         select(func.count(DataQualityIssue.id)).where(
-            DataQualityIssue.issue_type == "place_cluster", DataQualityIssue.status == "open"
+            DataQualityIssue.issue_type.in_(["place_cluster", "place_similarity"]),
+            DataQualityIssue.status == "open",
         )
     ).scalar_one()
     integrity_warnings = session.execute(

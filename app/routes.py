@@ -251,6 +251,17 @@ def _person_to_dict(p: Person) -> dict:
         "death_place": p.death_place,
     }
 
+
+def _family_to_dict(f: Family) -> dict:
+    return {
+        "id": f.id,
+        "xref": f.xref,
+        "husband_person_id": f.husband_person_id,
+        "wife_person_id": f.wife_person_id,
+        "marriage_date": f.marriage_date,
+        "marriage_place": f.marriage_place,
+    }
+
 @api_bp.get("/health")
 def health():
     session = get_session()
@@ -271,6 +282,18 @@ def list_people():
     
     people = session.execute(stmt).scalars().all()
     return jsonify([_person_to_dict(p) for p in people])
+
+
+@api_bp.post("/people/bulk")
+def people_bulk():
+    data = request.get_json(force=True, silent=False)
+    ids = data.get("ids") or []
+    ids = [int(i) for i in ids if str(i).isdigit()]
+    if not ids:
+        return jsonify({"items": []})
+    session = get_session()
+    people = session.execute(select(Person).where(Person.id.in_(ids))).scalars().all()
+    return jsonify({"items": [_person_to_dict(p) for p in people]})
 
 @api_bp.post("/people")
 def create_person():
@@ -395,6 +418,44 @@ def add_note(person_id: int):
     session.commit()
     session.refresh(note)
     return jsonify({"id": note.id}), 201
+
+
+@api_bp.get("/families/<int:family_id>")
+def get_family(family_id: int):
+    session = get_session()
+    family = session.get(Family, family_id)
+    if not family:
+        return jsonify({"error": "Not found"}), 404
+
+    husband = session.get(Person, family.husband_person_id) if family.husband_person_id else None
+    wife = session.get(Person, family.wife_person_id) if family.wife_person_id else None
+
+    children_ids = session.execute(
+        select(family_children.c.child_person_id).where(family_children.c.family_id == family_id)
+    ).scalars().all()
+    children = []
+    if children_ids:
+        children = session.execute(select(Person).where(Person.id.in_(children_ids))).scalars().all()
+
+    media_list = []
+    for link in family.media_links:
+        asset = link.media_asset
+        media_list.append({
+            "id": asset.id,
+            "path": asset.path,
+            "original_filename": asset.original_filename,
+            "mime_type": asset.mime_type,
+            "size_bytes": asset.size_bytes,
+            "created_at": asset.created_at.isoformat() if asset.created_at else None
+        })
+
+    out = _family_to_dict(family)
+    out["husband"] = _person_to_dict(husband) if husband else None
+    out["wife"] = _person_to_dict(wife) if wife else None
+    out["children"] = [_person_to_dict(c) for c in children]
+    out["notes"] = [{"id": n.id, "text": n.note_text, "created_at": n.created_at.isoformat() if n.created_at else None} for n in family.notes]
+    out["media"] = media_list
+    return jsonify(out)
 
 @api_bp.post("/import/gedcom")
 def import_gedcom():
@@ -1173,6 +1234,23 @@ def list_media_assets():
     ).all()
 
     return jsonify([_media_asset_dict(asset, include_id_key="id", link_count=link_count) for asset, link_count in rows])
+
+
+@api_bp.post("/media/assets/bulk")
+def media_assets_bulk():
+    data = request.get_json(force=True, silent=False)
+    ids = data.get("ids") or []
+    ids = [int(i) for i in ids if str(i).isdigit()]
+    if not ids:
+        return jsonify({"items": []})
+    session = get_session()
+    rows = session.execute(
+        select(MediaAsset, func.count(MediaLink.id).label("link_count"))
+        .outerjoin(MediaLink, MediaLink.asset_id == MediaAsset.id)
+        .where(MediaAsset.id.in_(ids))
+        .group_by(MediaAsset.id)
+    ).all()
+    return jsonify({"items": [_media_asset_dict(asset, include_id_key="id", link_count=link_count) for asset, link_count in rows]})
 
 @api_bp.get("/media/unassigned")
 def list_unassigned_media():
@@ -1988,6 +2066,7 @@ def dq_merge_people():
     from_id = data.get("fromId")
     into_id = data.get("intoId")
     user = data.get("user")
+    fill_missing = bool(data.get("fillMissing"))
     if not from_id or not into_id:
         return jsonify({"error": "fromId and intoId are required"}), 400
     if from_id == into_id:
@@ -2037,8 +2116,35 @@ def dq_merge_people():
     }
 
     try:
+        if fill_missing:
+            fields = ["given", "surname", "sex", "birth_date", "birth_place", "death_date", "death_place"]
+            primary_prev = {f: getattr(primary, f) for f in fields}
+            updated = False
+            for f in fields:
+                if not getattr(primary, f) and getattr(secondary, f):
+                    setattr(primary, f, getattr(secondary, f))
+                    updated = True
+            if updated:
+                primary.updated_at = datetime.utcnow()
+            undo_payload["primary_prev"] = primary_prev
+
         session.execute(update(Event).where(Event.person_id == from_id).values(person_id=into_id))
-        session.execute(update(MediaLink).where(MediaLink.person_id == from_id).values(person_id=into_id))
+        media_links = session.execute(
+            select(MediaLink).where(MediaLink.person_id == from_id)
+        ).scalars().all()
+        for link in media_links:
+            exists = session.execute(
+                select(MediaLink.id).where(
+                    MediaLink.asset_id == link.asset_id,
+                    MediaLink.person_id == into_id,
+                    MediaLink.family_id == link.family_id,
+                )
+            ).scalar_one_or_none()
+            if exists:
+                session.delete(link)
+            else:
+                link.person_id = into_id
+
         session.execute(
             update(Family)
             .where(Family.husband_person_id == from_id)
@@ -2049,21 +2155,74 @@ def dq_merge_people():
             .where(Family.wife_person_id == from_id)
             .values(wife_person_id=into_id)
         )
+
+        rel_rows = session.execute(
+            select(
+                relationships.c.parent_person_id,
+                relationships.c.child_person_id,
+                relationships.c.rel_type,
+            ).where(
+                or_(
+                    relationships.c.parent_person_id == from_id,
+                    relationships.c.child_person_id == from_id,
+                )
+            )
+        ).all()
         session.execute(
-            relationships.update()
-            .where(relationships.c.parent_person_id == from_id)
-            .values(parent_person_id=into_id)
+            relationships.delete().where(
+                or_(
+                    relationships.c.parent_person_id == from_id,
+                    relationships.c.child_person_id == from_id,
+                )
+            )
         )
-        session.execute(
-            relationships.update()
-            .where(relationships.c.child_person_id == from_id)
-            .values(child_person_id=into_id)
-        )
-        session.execute(
-            family_children.update()
-            .where(family_children.c.child_person_id == from_id)
-            .values(child_person_id=into_id)
-        )
+        for parent_id, child_id, rel_type in rel_rows:
+            new_parent = into_id if parent_id == from_id else parent_id
+            new_child = into_id if child_id == from_id else child_id
+            exists = session.execute(
+                select(relationships.c.parent_person_id).where(
+                    relationships.c.parent_person_id == new_parent,
+                    relationships.c.child_person_id == new_child,
+                    relationships.c.rel_type == rel_type,
+                )
+            ).first()
+            if not exists:
+                session.execute(
+                    relationships.insert().values(
+                        parent_person_id=new_parent,
+                        child_person_id=new_child,
+                        rel_type=rel_type,
+                    )
+                )
+
+        child_rows = session.execute(
+            select(family_children.c.family_id, family_children.c.child_person_id).where(
+                family_children.c.child_person_id == from_id
+            )
+        ).all()
+        for fid, cid in child_rows:
+            exists = session.execute(
+                select(family_children.c.family_id).where(
+                    family_children.c.family_id == fid,
+                    family_children.c.child_person_id == into_id,
+                )
+            ).first()
+            if exists:
+                session.execute(
+                    family_children.delete().where(
+                        family_children.c.family_id == fid,
+                        family_children.c.child_person_id == from_id,
+                    )
+                )
+            else:
+                session.execute(
+                    family_children.update()
+                    .where(
+                        family_children.c.family_id == fid,
+                        family_children.c.child_person_id == from_id,
+                    )
+                    .values(child_person_id=into_id)
+                )
         session.delete(secondary)
 
         action_entry = log_action(
@@ -2094,6 +2253,242 @@ def dq_merge_people():
         raise
 
     return jsonify({"mergedInto": into_id, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+@api_bp.post("/dq/actions/mergeFamilies")
+def dq_merge_families():
+    data = request.get_json(force=True, silent=False)
+    from_id = data.get("fromId")
+    into_id = data.get("intoId")
+    user = data.get("user")
+    fill_missing = bool(data.get("fillMissing"))
+    if not from_id or not into_id:
+        return jsonify({"error": "fromId and intoId are required"}), 400
+    if from_id == into_id:
+        return jsonify({"error": "Cannot merge the same family"}), 400
+
+    session = get_session()
+    primary = session.get(Family, into_id)
+    secondary = session.get(Family, from_id)
+    if not primary or not secondary:
+        return jsonify({"error": "Family not found"}), 404
+
+    child_rows = session.execute(
+        select(family_children.c.family_id, family_children.c.child_person_id).where(
+            family_children.c.family_id == from_id
+        )
+    ).all()
+    event_rows = session.execute(
+        select(Event.id, Event.family_id).where(Event.family_id == from_id)
+    ).all()
+    note_rows = session.execute(
+        select(Note.id, Note.family_id).where(Note.family_id == from_id)
+    ).all()
+    media_rows = session.execute(
+        select(MediaLink.id, MediaLink.asset_id, MediaLink.person_id, MediaLink.family_id).where(
+            MediaLink.family_id == from_id
+        )
+    ).all()
+
+    undo_children = []
+    undo_media = []
+    inserted_relationships = []
+    undo_payload = {
+        "from_family": _family_to_dict(secondary),
+        "children": undo_children,
+        "events": [{"id": eid, "family_id": fid} for eid, fid in event_rows],
+        "notes": [{"id": nid, "family_id": fid} for nid, fid in note_rows],
+        "media_links": [{"id": rid, "asset_id": aid, "person_id": pid, "family_id": fid} for rid, aid, pid, fid in media_rows],
+        "inserted_relationships": inserted_relationships,
+    }
+
+    try:
+        if fill_missing:
+            fields = ["husband_person_id", "wife_person_id", "marriage_date", "marriage_place"]
+            primary_prev = {f: getattr(primary, f) for f in fields}
+            updated = False
+            for f in fields:
+                if not getattr(primary, f) and getattr(secondary, f):
+                    setattr(primary, f, getattr(secondary, f))
+                    updated = True
+            if updated:
+                primary.updated_at = datetime.utcnow()
+            undo_payload["primary_prev"] = primary_prev
+
+        session.execute(update(Event).where(Event.family_id == from_id).values(family_id=into_id))
+        session.execute(update(Note).where(Note.family_id == from_id).values(family_id=into_id))
+
+        media_links = session.execute(
+            select(MediaLink).where(MediaLink.family_id == from_id)
+        ).scalars().all()
+        for link in media_links:
+            exists = session.execute(
+                select(MediaLink.id).where(
+                    MediaLink.asset_id == link.asset_id,
+                    MediaLink.family_id == into_id,
+                    MediaLink.person_id == link.person_id,
+                )
+            ).scalar_one_or_none()
+            if exists:
+                session.delete(link)
+                undo_media.append({"id": link.id, "deleted": True})
+            else:
+                undo_media.append({"id": link.id, "family_id": from_id})
+                link.family_id = into_id
+
+        for fid, cid in child_rows:
+            exists = session.execute(
+                select(family_children.c.family_id).where(
+                    family_children.c.family_id == into_id,
+                    family_children.c.child_person_id == cid,
+                )
+            ).first()
+            undo_children.append({"family_id": fid, "child_person_id": cid, "into_existed": bool(exists)})
+            if exists:
+                session.execute(
+                    family_children.delete().where(
+                        family_children.c.family_id == from_id,
+                        family_children.c.child_person_id == cid,
+                    )
+                )
+            else:
+                session.execute(
+                    family_children.update()
+                    .where(
+                        family_children.c.family_id == from_id,
+                        family_children.c.child_person_id == cid,
+                    )
+                    .values(family_id=into_id)
+                )
+
+            if primary.husband_person_id:
+                rel_exists = session.execute(
+                    select(relationships.c.parent_person_id).where(
+                        relationships.c.parent_person_id == primary.husband_person_id,
+                        relationships.c.child_person_id == cid,
+                        relationships.c.rel_type == RELATIONSHIP_PARENT_TYPE,
+                    )
+                ).first()
+                if not rel_exists:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=primary.husband_person_id,
+                            child_person_id=cid,
+                            rel_type=RELATIONSHIP_PARENT_TYPE,
+                        )
+                    )
+                    inserted_relationships.append([primary.husband_person_id, cid, RELATIONSHIP_PARENT_TYPE])
+
+            if primary.wife_person_id:
+                rel_exists = session.execute(
+                    select(relationships.c.parent_person_id).where(
+                        relationships.c.parent_person_id == primary.wife_person_id,
+                        relationships.c.child_person_id == cid,
+                        relationships.c.rel_type == RELATIONSHIP_PARENT_TYPE,
+                    )
+                ).first()
+                if not rel_exists:
+                    session.execute(
+                        relationships.insert().values(
+                            parent_person_id=primary.wife_person_id,
+                            child_person_id=cid,
+                            rel_type=RELATIONSHIP_PARENT_TYPE,
+                        )
+                    )
+                    inserted_relationships.append([primary.wife_person_id, cid, RELATIONSHIP_PARENT_TYPE])
+
+        session.delete(secondary)
+
+        action_entry = log_action(
+            session,
+            "merge_families",
+            {"fromId": from_id, "intoId": into_id},
+            undo_payload,
+            user,
+        )
+
+        family_issues = session.execute(
+            select(DataQualityIssue).where(
+                DataQualityIssue.issue_type == "duplicate_family",
+                DataQualityIssue.status == "open",
+            )
+        ).scalars().all()
+        for issue in family_issues:
+            try:
+                ids = json.loads(issue.entity_ids)
+            except Exception:
+                ids = []
+            if from_id in ids or into_id in ids:
+                issue.status = "resolved"
+                issue.resolved_at = datetime.utcnow()
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"mergedInto": into_id, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+@api_bp.post("/dq/actions/dedupeMediaLinks")
+def dq_dedupe_media_links():
+    data = request.get_json(force=True, silent=False)
+    link_ids = [int(i) for i in data.get("link_ids") or [] if str(i).isdigit()]
+    keep_id = data.get("keep_id")
+    user = data.get("user")
+    if not link_ids:
+        return jsonify({"error": "link_ids required"}), 400
+
+    if keep_id is not None and int(keep_id) in link_ids:
+        keep_id = int(keep_id)
+    else:
+        keep_id = min(link_ids)
+
+    session = get_session()
+    links = session.execute(select(MediaLink).where(MediaLink.id.in_(link_ids))).scalars().all()
+    if not links:
+        return jsonify({"error": "links not found"}), 404
+
+    undo_payload = {
+        "deleted_links": [
+            {"id": link.id, "asset_id": link.asset_id, "person_id": link.person_id, "family_id": link.family_id}
+            for link in links if link.id != keep_id
+        ]
+    }
+
+    try:
+        for link in links:
+            if link.id == keep_id:
+                continue
+            session.delete(link)
+
+        action_entry = log_action(
+            session,
+            "dedupe_media_links",
+            {"link_ids": link_ids, "keep_id": keep_id},
+            undo_payload,
+            user,
+        )
+
+        media_issues = session.execute(
+            select(DataQualityIssue).where(
+                DataQualityIssue.issue_type == "duplicate_media_link",
+                DataQualityIssue.status == "open",
+            )
+        ).scalars().all()
+        for issue in media_issues:
+            try:
+                ids = json.loads(issue.entity_ids)
+            except Exception:
+                ids = []
+            if any(i in ids for i in link_ids):
+                issue.status = "resolved"
+                issue.resolved_at = datetime.utcnow()
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"deduped": len(link_ids) - 1, "action_id": action_entry.id, "revertToken": action_entry.id})
 
 
 @api_bp.post("/dq/actions/normalizePlaces")
@@ -2156,7 +2551,10 @@ def dq_normalize_places():
 
         session.execute(
             update(DataQualityIssue)
-            .where(DataQualityIssue.issue_type == "place_cluster", DataQualityIssue.status == "open")
+            .where(
+                DataQualityIssue.issue_type.in_(["place_cluster", "place_similarity"]),
+                DataQualityIssue.status == "open",
+            )
             .values(status="resolved", resolved_at=datetime.utcnow())
         )
         session.commit()
@@ -2203,6 +2601,7 @@ def dq_normalize_dates():
             raw = item.get("raw")
             confidence = item.get("confidence")
             is_ambiguous = bool(item.get("ambiguous"))
+            field = item.get("field")
 
             existing = session.execute(
                 select(DateNormalization).where(
@@ -2259,6 +2658,15 @@ def dq_normalize_dates():
                 event = session.get(Event, entity_id)
                 if event:
                     _update_event_date_canonical(event, normalized)
+            if entity_type == "person" and field in ("birth_date", "death_date"):
+                person = session.get(Person, entity_id)
+                if person:
+                    prev_value = getattr(person, field)
+                    if normalized and not qualifier and not is_ambiguous:
+                        setattr(person, field, normalized)
+                        person.updated_at = datetime.utcnow()
+                    undo_payload[-1]["person_field"] = field
+                    undo_payload[-1]["person_prev"] = prev_value
 
         action_entry = log_action(
             session,
@@ -2305,6 +2713,14 @@ def dq_undo():
             )
             session.add(restored)
             session.flush()
+
+            primary_prev = undo_payload.get("primary_prev")
+            if primary_prev:
+                session.execute(
+                    update(Person)
+                    .where(Person.id == action_payload.get("intoId"))
+                    .values(**primary_prev)
+                )
 
             for rel in undo_payload.get("relationships", []):
                 parent_id, child_id, rel_type = rel
@@ -2358,16 +2774,101 @@ def dq_undo():
                 )
 
             for ml in undo_payload.get("media_links", []):
-                session.execute(
-                    update(MediaLink)
-                    .where(MediaLink.id == ml.get("id"))
-                    .values(person_id=ml.get("person_id"))
-                )
+                existing = session.get(MediaLink, ml.get("id"))
+                if existing:
+                    existing.person_id = ml.get("person_id")
+                    existing.family_id = ml.get("family_id")
+                else:
+                    session.add(MediaLink(
+                        id=ml.get("id"),
+                        asset_id=ml.get("asset_id"),
+                        person_id=ml.get("person_id"),
+                        family_id=ml.get("family_id"),
+                    ))
 
             for ev in undo_payload.get("events", []):
                 session.execute(
                     update(Event).where(Event.id == ev.get("id")).values(person_id=ev.get("person_id"))
                 )
+        elif action.action_type == "merge_families":
+            family_data = undo_payload.get("from_family") or {}
+            restored_family = Family(
+                id=family_data.get("id"),
+                xref=family_data.get("xref"),
+                husband_person_id=family_data.get("husband_person_id"),
+                wife_person_id=family_data.get("wife_person_id"),
+                marriage_date=family_data.get("marriage_date"),
+                marriage_place=family_data.get("marriage_place"),
+            )
+            session.add(restored_family)
+            session.flush()
+
+            primary_prev = undo_payload.get("primary_prev")
+            if primary_prev:
+                session.execute(
+                    update(Family)
+                    .where(Family.id == action_payload.get("intoId"))
+                    .values(**primary_prev)
+                )
+
+            for rel in undo_payload.get("inserted_relationships", []):
+                parent_id, child_id, rel_type = rel
+                session.execute(
+                    relationships.delete().where(
+                        and_(
+                            relationships.c.parent_person_id == parent_id,
+                            relationships.c.child_person_id == child_id,
+                            relationships.c.rel_type == rel_type,
+                        )
+                    )
+                )
+
+            for child in undo_payload.get("children", []):
+                fid = child.get("family_id")
+                cid = child.get("child_person_id")
+                into_existed = child.get("into_existed")
+                if not into_existed:
+                    session.execute(
+                        family_children.delete().where(
+                            and_(
+                                family_children.c.family_id == action_payload.get("intoId"),
+                                family_children.c.child_person_id == cid,
+                            )
+                        )
+                    )
+                session.execute(
+                    family_children.insert().values(family_id=fid, child_person_id=cid)
+                )
+
+            for ev in undo_payload.get("events", []):
+                session.execute(
+                    update(Event).where(Event.id == ev.get("id")).values(family_id=ev.get("family_id"))
+                )
+            for note in undo_payload.get("notes", []):
+                session.execute(
+                    update(Note).where(Note.id == note.get("id")).values(family_id=note.get("family_id"))
+                )
+
+            for ml in undo_payload.get("media_links", []):
+                existing = session.get(MediaLink, ml.get("id"))
+                if existing:
+                    existing.family_id = ml.get("family_id")
+                    existing.person_id = ml.get("person_id")
+                else:
+                    session.add(MediaLink(
+                        id=ml.get("id"),
+                        asset_id=ml.get("asset_id"),
+                        person_id=ml.get("person_id"),
+                        family_id=ml.get("family_id"),
+                    ))
+        elif action.action_type == "dedupe_media_links":
+            for link in undo_payload.get("deleted_links", []):
+                session.add(MediaLink(
+                    id=link.get("id"),
+                    asset_id=link.get("asset_id"),
+                    person_id=link.get("person_id"),
+                    family_id=link.get("family_id"),
+                ))
 
         elif action.action_type == "normalize_places":
             for ev in undo_payload.get("events", []):
@@ -2408,6 +2909,13 @@ def dq_undo():
                                     ev.date_canonical = None
                         else:
                             ev.date_canonical = None
+                if item.get("entity_type") == "person":
+                    field = item.get("person_field")
+                    prev = item.get("person_prev")
+                    if field in ("birth_date", "death_date"):
+                        session.execute(
+                            update(Person).where(Person.id == item.get("entity_id")).values(**{field: prev})
+                        )
 
         session.delete(action)
         session.commit()
