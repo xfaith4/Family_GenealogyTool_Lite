@@ -103,3 +103,62 @@ def ensure_media_links_asset_id(engine) -> None:
             else:
                 conn.execute(text("ALTER TABLE media_links ADD COLUMN asset_id INTEGER"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
+
+
+def ensure_data_quality_tables(engine) -> None:
+    """Recreate data-quality tables if legacy schemas are missing required columns."""
+    inspector = inspect(engine)
+
+    def _needs_rebuild(table_name: str, required_cols: set[str]) -> bool:
+        if table_name not in inspector.get_table_names():
+            return True
+        existing = {col["name"] for col in inspector.get_columns(table_name)}
+        return not required_cols.issubset(existing)
+
+    def _recreate(table):
+        with engine.begin() as conn:
+            conn.execute(text(f"DROP TABLE IF EXISTS {table.name}"))
+        table.metadata.create_all(engine, tables=[table], checkfirst=False)
+
+    from .models import DataQualityIssue, DataQualityActionLog, DateNormalization
+
+    dq_issue_cols = {
+        "id",
+        "issue_type",
+        "severity",
+        "entity_type",
+        "entity_ids",
+        "status",
+        "confidence",
+        "impact_score",
+        "explanation_json",
+        "detected_at",
+        "resolved_at",
+    }
+    action_log_cols = {
+        "id",
+        "action_type",
+        "payload_json",
+        "undo_payload_json",
+        "created_at",
+        "applied_by",
+    }
+    date_norm_cols = {
+        "id",
+        "entity_type",
+        "entity_id",
+        "raw_value",
+        "normalized",
+        "precision",
+        "qualifier",
+        "confidence",
+        "is_ambiguous",
+        "detected_at",
+    }
+
+    if _needs_rebuild("dq_issues", dq_issue_cols):
+        _recreate(DataQualityIssue.__table__)
+    if _needs_rebuild("dq_action_log", action_log_cols):
+        _recreate(DataQualityActionLog.__table__)
+    if _needs_rebuild("date_normalizations", date_norm_cols):
+        _recreate(DateNormalization.__table__)
