@@ -103,3 +103,72 @@ def ensure_media_links_asset_id(engine) -> None:
             else:
                 conn.execute(text("ALTER TABLE media_links ADD COLUMN asset_id INTEGER"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
+
+
+def ensure_data_quality_tables(engine) -> None:
+    """
+    Recreate data-quality tables if legacy schemas are missing required columns.
+    NOTE: This may drop and recreate the affected table when columns are missing.
+    """
+    inspector = inspect(engine)
+
+    def _needs_rebuild(table_name: str, required_cols: set[str]) -> bool:
+        if table_name not in inspector.get_table_names():
+            return True
+        existing = {col["name"] for col in inspector.get_columns(table_name)}
+        return not required_cols.issubset(existing)
+
+    def _recreate(table):
+        table.drop(engine, checkfirst=True)
+        table.create(engine, checkfirst=False)
+
+    from .models import DataQualityIssue, DataQualityActionLog, DateNormalization
+
+    schemas = {
+        "dq_issues": (
+            DataQualityIssue.__table__,
+            {
+                "id",
+                "issue_type",
+                "severity",
+                "entity_type",
+                "entity_ids",
+                "status",
+                "confidence",
+                "impact_score",
+                "explanation_json",
+                "detected_at",
+                "resolved_at",
+            },
+        ),
+        "dq_action_log": (
+            DataQualityActionLog.__table__,
+            {
+                "id",
+                "action_type",
+                "payload_json",
+                "undo_payload_json",
+                "created_at",
+                "applied_by",
+            },
+        ),
+        "date_normalizations": (
+            DateNormalization.__table__,
+            {
+                "id",
+                "entity_type",
+                "entity_id",
+                "raw_value",
+                "normalized",
+                "precision",
+                "qualifier",
+                "confidence",
+                "is_ambiguous",
+                "detected_at",
+            },
+        ),
+    }
+
+    for name, (table, cols) in schemas.items():
+        if _needs_rebuild(name, cols):
+            _recreate(table)

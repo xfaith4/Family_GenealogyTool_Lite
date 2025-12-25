@@ -18,7 +18,7 @@ from difflib import SequenceMatcher
 from typing import Iterable, List, Tuple, Dict, Any
 
 from sqlalchemy import select, func, and_, or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from .models import (
     Person,
@@ -206,7 +206,18 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
 
 
 def _detect_duplicates(session: Session) -> int:
-    people = session.execute(select(Person)).scalars().all()
+    people = session.execute(
+        select(Person).options(
+            load_only(
+                Person.id,
+                Person.given,
+                Person.surname,
+                Person.birth_date,
+                Person.birth_place,
+                Person.death_date,
+            )
+        )
+    ).scalars().all()
     buckets: dict[str, list[Person]] = defaultdict(list)
     for p in people:
         key = f"{_norm_name(p.surname)}|{_parse_year(p.birth_date) or ''}"
