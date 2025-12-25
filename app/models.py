@@ -126,6 +126,8 @@ class Place(Base):
     name_canonical: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
     latitude: Mapped[Optional[float]] = mapped_column(nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(nullable=True)
+    authority_source: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    authority_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     
     # Relationships

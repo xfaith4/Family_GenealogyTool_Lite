@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, render_template
 from typing import Any, Dict, List, Iterable, Tuple
 from werkzeug.utils import secure_filename
-from sqlalchemy import select, or_, and_, func, update
+from sqlalchemy import select, or_, and_, func, update, text
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 import os
@@ -2551,16 +2551,23 @@ def dq_merge_media_assets():
     return jsonify({"mergedInto": into_id, "action_id": action_entry.id, "revertToken": action_entry.id})
 
 
-@api_bp.post("/dq/actions/normalizePlaces")
-def dq_normalize_places():
-    data = request.get_json(force=True, silent=False)
-    canonical_value = (data.get("canonical") or "").strip()
-    variants = [v.strip() for v in data.get("variants") or [] if v]
-    applied_by = data.get("user")
-    if not canonical_value or not variants:
-        return jsonify({"error": "canonical and variants are required"}), 400
 
-    session = get_session()
+def _apply_place_normalization(
+    session,
+    canonical_value: str,
+    variants: list[str],
+    applied_by: str | None = None,
+    resolve_issues: bool = True,
+) -> tuple[int, int]:
+    """
+    Apply a place normalization (canonical + variants) and log the action.
+    Returns: (canonical_place_id, action_id)
+    """
+    canonical_value = (canonical_value or "").strip()
+    variants = [v.strip() for v in (variants or []) if v and v.strip()]
+    if not canonical_value or not variants:
+        raise ValueError("canonical and variants are required")
+
     place = session.execute(select(Place).where(Place.name_canonical == canonical_value)).scalar_one_or_none()
     if not place:
         place = Place(name_canonical=canonical_value)
@@ -2569,61 +2576,159 @@ def dq_normalize_places():
 
     undo_events: list[dict] = []
     undo_persons: list[dict] = []
+    undo_families: list[dict] = []
 
-    try:
-        for variant in variants:
-            existing_variant = session.execute(
-                select(PlaceVariant).where(PlaceVariant.name_variant == variant)
-            ).scalar_one_or_none()
-            if not existing_variant:
-                pv = PlaceVariant(place_id=place.id, name_variant=variant)
-                session.add(pv)
-            affected_events = session.execute(
-                select(Event.id, Event.place_id, Event.place_raw).where(Event.place_raw == variant)
-            ).all()
+    for variant in variants:
+        existing_variant = session.execute(
+            select(PlaceVariant).where(PlaceVariant.name_variant == variant)
+        ).scalar_one_or_none()
+        if not existing_variant:
+            session.add(PlaceVariant(place_id=place.id, name_variant=variant))
+
+        affected_events = session.execute(
+            select(Event.id, Event.place_id, Event.place_raw).where(Event.place_raw == variant)
+        ).all()
+        session.execute(update(Event).where(Event.place_raw == variant).values(place_id=place.id))
+        for eid, prev_pid, prev_raw in affected_events:
+            undo_events.append({"id": eid, "place_id": prev_pid, "place_raw": prev_raw})
+
+        people_rows = session.execute(
+            select(Person.id, Person.birth_place, Person.death_place).where(
+                or_(Person.birth_place == variant, Person.death_place == variant)
+            )
+        ).all()
+        for pid, bplace, dplace in people_rows:
+            undo_persons.append({"id": pid, "birth_place": bplace, "death_place": dplace})
+            if bplace == variant:
+                session.execute(update(Person).where(Person.id == pid).values(birth_place=canonical_value))
+            if dplace == variant:
+                session.execute(update(Person).where(Person.id == pid).values(death_place=canonical_value))
+
+        family_rows = session.execute(
+            select(Family.id, Family.marriage_place).where(Family.marriage_place == variant)
+        ).all()
+        for fid, mplace in family_rows:
+            undo_families.append({"id": fid, "marriage_place": mplace})
+            session.execute(update(Family).where(Family.id == fid).values(marriage_place=canonical_value))
+
+    action_entry = log_action(
+        session,
+        "normalize_places",
+        {"canonical": canonical_value, "variants": variants},
+        {"events": undo_events, "persons": undo_persons, "families": undo_families},
+        applied_by,
+    )
+
+    if resolve_issues:
+        like_conds = []
+        # Target only issues that mention any of these strings (best-effort, avoids resolving unrelated open issues)
+        for s in [canonical_value, *variants]:
+            if s:
+                like_conds.append(DataQualityIssue.explanation_json.like(f"%{s}%"))
+        if like_conds:
             session.execute(
-                update(Event)
-                .where(Event.place_raw == variant)
-                .values(place_id=place.id)
-            )
-            for eid, prev_pid, prev_raw in affected_events:
-                undo_events.append({"id": eid, "place_id": prev_pid, "place_raw": prev_raw})
-
-            people_rows = session.execute(
-                select(Person.id, Person.birth_place, Person.death_place).where(
-                    or_(Person.birth_place == variant, Person.death_place == variant)
+                update(DataQualityIssue)
+                .where(
+                    DataQualityIssue.issue_type.in_(["place_cluster", "place_similarity"]),
+                    DataQualityIssue.status == "open",
+                    or_(*like_conds),
                 )
-            ).all()
-            for pid, bplace, dplace in people_rows:
-                undo_persons.append({"id": pid, "birth_place": bplace, "death_place": dplace})
-                if bplace == variant:
-                    session.execute(update(Person).where(Person.id == pid).values(birth_place=canonical_value))
-                if dplace == variant:
-                    session.execute(update(Person).where(Person.id == pid).values(death_place=canonical_value))
-
-        action_entry = log_action(
-            session,
-            "normalize_places",
-            {"canonical": canonical_value, "variants": variants},
-            {"events": undo_events, "persons": undo_persons},
-            applied_by,
-        )
-
-        session.execute(
-            update(DataQualityIssue)
-            .where(
-                DataQualityIssue.issue_type.in_(["place_cluster", "place_similarity"]),
-                DataQualityIssue.status == "open",
+                .values(status="resolved", resolved_at=datetime.utcnow())
             )
-            .values(status="resolved", resolved_at=datetime.utcnow())
+
+    session.commit()
+    return int(place.id), int(action_entry.id)
+
+@api_bp.post("/dq/actions/normalizePlaces")
+def dq_normalize_places():
+
+    data = request.get_json(force=True, silent=False)
+    canonical_value = (data.get("canonical") or "").strip()
+    variants = [v.strip() for v in data.get("variants") or [] if v]
+    applied_by = data.get("user")
+    try:
+        session = get_session()
+        place_id, action_id = _apply_place_normalization(
+            session=session,
+            canonical_value=canonical_value,
+            variants=variants,
+            applied_by=applied_by,
+            resolve_issues=True,
         )
-        session.commit()
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
     except Exception:
-        session.rollback()
+        # Ensure the session is clean for the request lifecycle
+        try:
+            session.rollback()
+        except Exception:
+            pass
         raise
 
-    return jsonify({"canonical_place_id": place.id, "action_id": action_entry.id, "revertToken": action_entry.id})
+    return jsonify({"canonical_place_id": place_id, "action_id": action_id, "revertToken": action_id})
 
+
+
+@api_bp.post("/places/enrich")
+def enrich_place():
+    """Attach authority metadata to a canonical Place without changing name_canonical.
+
+    Payload:
+      - place_id (int) OR canonical (str)
+      - authority_source (str) [required]
+      - authority_id (str) [required]
+      - latitude (float) [optional]
+      - longitude (float) [optional]
+      - force (bool) overwrite existing authority/coords [optional, default false]
+    """
+    data = request.get_json(force=True, silent=False) or {}
+    place_id = data.get("place_id")
+    canonical = (data.get("canonical") or "").strip()
+    authority_source = (data.get("authority_source") or "").strip()
+    authority_id = (data.get("authority_id") or "").strip()
+    force = bool(data.get("force") or False)
+
+    if not authority_source or not authority_id:
+        return jsonify({"error": "authority_source and authority_id are required"}), 400
+    if not place_id and not canonical:
+        return jsonify({"error": "place_id or canonical is required"}), 400
+
+    session = get_session()
+    if place_id:
+        place = session.get(Place, place_id)
+    else:
+        place = session.execute(select(Place).where(Place.name_canonical == canonical)).scalar_one_or_none()
+
+    if not place:
+        return jsonify({"error": "Place not found"}), 404
+
+    # Only set if missing unless force=true
+    if force or not getattr(place, "authority_source", None):
+        place.authority_source = authority_source
+    if force or not getattr(place, "authority_id", None):
+        place.authority_id = authority_id
+
+    if (force or place.latitude is None) and data.get("latitude") is not None:
+        try:
+            place.latitude = float(data.get("latitude"))
+        except Exception:
+            return jsonify({"error": "latitude must be numeric"}), 400
+    if (force or place.longitude is None) and data.get("longitude") is not None:
+        try:
+            place.longitude = float(data.get("longitude"))
+        except Exception:
+            return jsonify({"error": "longitude must be numeric"}), 400
+
+    session.commit()
+
+    return jsonify({
+        "id": place.id,
+        "canonical": place.name_canonical,
+        "authority_source": getattr(place, "authority_source", None),
+        "authority_id": getattr(place, "authority_id", None),
+        "latitude": place.latitude,
+        "longitude": place.longitude,
+    })
 
 def _update_event_date_canonical(event: Event, normalized: str | None) -> None:
     if not normalized or len(normalized) < 4:
@@ -3018,3 +3123,381 @@ def dq_undo():
 @ui_bp.get("/data-quality")
 def data_quality_page():
     return render_template("data-quality.html")
+
+# ---- Place normalization plan (save approvals, export/import, bulk apply) ----
+
+def _row_to_rule(row) -> dict:
+    return {
+        "id": row[0],
+        "canonical": row[1],
+        "variants": json.loads(row[2] or "[]"),
+        "approved": bool(row[3]),
+        "source_issue_id": row[4],
+        "authority_source": row[5],
+        "authority_id": row[6],
+        "latitude": row[7],
+        "longitude": row[8],
+        "notes": row[9],
+        "created_at": row[10],
+        "updated_at": row[11],
+    }
+
+
+@api_bp.get("/places/normalization/rules")
+def place_norm_rules_list():
+    approved = request.args.get("approved")
+    session = get_session()
+    where = ""
+    params = {}
+    if approved is not None:
+        where = "WHERE approved = :approved"
+        params["approved"] = 1 if str(approved).lower() in ("1", "true", "yes") else 0
+
+    rows = session.execute(
+        text(
+            f"""
+            SELECT id, canonical, variants_json, approved, source_issue_id,
+                   authority_source, authority_id, latitude, longitude, notes,
+                   created_at, updated_at
+            FROM place_normalization_rules
+            {where}
+            ORDER BY canonical
+            """
+        ),
+        params,
+    ).all()
+    return jsonify({"items": [_row_to_rule(r) for r in rows]})
+
+
+@api_bp.post("/places/normalization/rules/upsert")
+def place_norm_rules_upsert():
+    data = request.get_json(force=True, silent=False) or {}
+    rules = data.get("rules")
+    if rules is None:
+        # allow single rule payload
+        rules = [data]
+
+    session = get_session()
+    out = []
+    try:
+        for rule in rules:
+            canonical = (rule.get("canonical") or "").strip()
+            variants = [v.strip() for v in (rule.get("variants") or []) if v and v.strip()]
+            approved = 1 if rule.get("approved") else 0
+            source_issue_id = rule.get("source_issue_id")
+            authority_source = (rule.get("authority_source") or None)
+            authority_id = (rule.get("authority_id") or None)
+            latitude = rule.get("latitude")
+            longitude = rule.get("longitude")
+            notes = rule.get("notes")
+
+            if not canonical or not variants:
+                continue
+
+            existing = session.execute(
+                text(
+                    """
+                    SELECT id, variants_json, approved, authority_source, authority_id, latitude, longitude, notes
+                    FROM place_normalization_rules
+                    WHERE canonical = :canonical
+                    """
+                ),
+                {"canonical": canonical},
+            ).first()
+
+            merged_variants = set(variants)
+            ex_id = None
+            ex_approved = 0
+            ex_auth_source = None
+            ex_auth_id = None
+            ex_lat = None
+            ex_lon = None
+            ex_notes = None
+            if existing:
+                ex_id = existing[0]
+                merged_variants |= set(json.loads(existing[1] or "[]"))
+                ex_approved = int(existing[2] or 0)
+                ex_auth_source = existing[3]
+                ex_auth_id = existing[4]
+                ex_lat = existing[5]
+                ex_lon = existing[6]
+                ex_notes = existing[7]
+
+            merged_list = sorted(merged_variants, key=lambda s: s.lower())
+            # Prefer explicit approved; otherwise keep existing
+            final_approved = approved if (rule.get("approved") is not None) else ex_approved
+            final_auth_source = authority_source if authority_source is not None else ex_auth_source
+            final_auth_id = authority_id if authority_id is not None else ex_auth_id
+            final_lat = float(latitude) if latitude is not None else ex_lat
+            final_lon = float(longitude) if longitude is not None else ex_lon
+            final_notes = notes if notes is not None else ex_notes
+
+            if existing:
+                session.execute(
+                    text(
+                        """
+                        UPDATE place_normalization_rules
+                        SET variants_json = :variants_json,
+                            approved = :approved,
+                            source_issue_id = COALESCE(:source_issue_id, source_issue_id),
+                            authority_source = :authority_source,
+                            authority_id = :authority_id,
+                            latitude = :latitude,
+                            longitude = :longitude,
+                            notes = :notes,
+                            updated_at = datetime('now')
+                        WHERE id = :id
+                        """
+                    ),
+                    {
+                        "id": ex_id,
+                        "variants_json": json.dumps(merged_list),
+                        "approved": final_approved,
+                        "source_issue_id": source_issue_id,
+                        "authority_source": final_auth_source,
+                        "authority_id": final_auth_id,
+                        "latitude": final_lat,
+                        "longitude": final_lon,
+                        "notes": final_notes,
+                    },
+                )
+            else:
+                session.execute(
+                    text(
+                        """
+                        INSERT INTO place_normalization_rules
+                            (canonical, variants_json, approved, source_issue_id,
+                             authority_source, authority_id, latitude, longitude, notes)
+                        VALUES
+                            (:canonical, :variants_json, :approved, :source_issue_id,
+                             :authority_source, :authority_id, :latitude, :longitude, :notes)
+                        """
+                    ),
+                    {
+                        "canonical": canonical,
+                        "variants_json": json.dumps(merged_list),
+                        "approved": final_approved,
+                        "source_issue_id": source_issue_id,
+                        "authority_source": final_auth_source,
+                        "authority_id": final_auth_id,
+                        "latitude": final_lat,
+                        "longitude": final_lon,
+                        "notes": final_notes,
+                    },
+                )
+
+            out.append({"canonical": canonical, "approved": bool(final_approved), "variants": merged_list})
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"saved": out})
+
+
+@api_bp.get("/places/normalization/export")
+def place_norm_export():
+    session = get_session()
+    rows = session.execute(
+        text(
+            """
+            SELECT canonical, variants_json, authority_source, authority_id, latitude, longitude, notes
+            FROM place_normalization_rules
+            WHERE approved = 1
+            ORDER BY canonical
+            """
+        )
+    ).all()
+
+    rules = []
+    for canonical, variants_json, a_src, a_id, lat, lon, notes in rows:
+        rules.append({
+            "approved": True,
+            "canonical": canonical,
+            "variants": json.loads(variants_json or "[]"),
+            "authority": {
+                "source": a_src,
+                "id": a_id,
+                "latitude": lat,
+                "longitude": lon,
+            } if (a_src or a_id or lat is not None or lon is not None) else None,
+            "notes": notes,
+        })
+
+    payload = {
+        "version": 1,
+        "exportedAt": datetime.utcnow().isoformat() + "Z",
+        "rules": rules,
+    }
+    return jsonify(payload)
+
+
+@api_bp.post("/places/normalization/import")
+def place_norm_import():
+    data = request.get_json(force=True, silent=False) or {}
+    rules = data.get("rules") or []
+    if not isinstance(rules, list):
+        return jsonify({"error": "rules must be a list"}), 400
+
+    session = get_session()
+    saved = []
+    try:
+        for r in rules:
+            canonical = (r.get("canonical") or "").strip()
+            variants = [v.strip() for v in (r.get("variants") or []) if v and v.strip()]
+            approved = 1 if (r.get("approved") is None or bool(r.get("approved"))) else 0
+
+            auth = r.get("authority") or {}
+            authority_source = auth.get("source")
+            authority_id = auth.get("id")
+            latitude = auth.get("latitude")
+            longitude = auth.get("longitude")
+            notes = r.get("notes")
+
+            if not canonical or not variants:
+                continue
+
+            existing = session.execute(
+                text("SELECT id, variants_json FROM place_normalization_rules WHERE canonical = :canonical"),
+                {"canonical": canonical},
+            ).first()
+
+            merged = set(variants)
+            ex_id = None
+            if existing:
+                ex_id = existing[0]
+                merged |= set(json.loads(existing[1] or "[]"))
+
+            merged_list = sorted(merged, key=lambda s: s.lower())
+
+            if ex_id:
+                session.execute(
+                    text(
+                        """
+                        UPDATE place_normalization_rules
+                        SET variants_json = :variants_json,
+                            approved = :approved,
+                            authority_source = COALESCE(:authority_source, authority_source),
+                            authority_id = COALESCE(:authority_id, authority_id),
+                            latitude = COALESCE(:latitude, latitude),
+                            longitude = COALESCE(:longitude, longitude),
+                            notes = COALESCE(:notes, notes),
+                            updated_at = datetime('now')
+                        WHERE id = :id
+                        """
+                    ),
+                    {
+                        "id": ex_id,
+                        "variants_json": json.dumps(merged_list),
+                        "approved": approved,
+                        "authority_source": authority_source,
+                        "authority_id": authority_id,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "notes": notes,
+                    },
+                )
+            else:
+                session.execute(
+                    text(
+                        """
+                        INSERT INTO place_normalization_rules
+                          (canonical, variants_json, approved, authority_source, authority_id, latitude, longitude, notes)
+                        VALUES
+                          (:canonical, :variants_json, :approved, :authority_source, :authority_id, :latitude, :longitude, :notes)
+                        """
+                    ),
+                    {
+                        "canonical": canonical,
+                        "variants_json": json.dumps(merged_list),
+                        "approved": approved,
+                        "authority_source": authority_source,
+                        "authority_id": authority_id,
+                        "latitude": latitude,
+                        "longitude": longitude,
+                        "notes": notes,
+                    },
+                )
+
+            saved.append({"canonical": canonical, "variants": merged_list, "approved": bool(approved)})
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"imported": len(saved), "items": saved})
+
+@api_bp.post("/places/normalization/apply")
+def place_norm_apply():
+    data = request.get_json(force=True, silent=False) or {}
+    dry_run = bool(data.get("dry_run") or False)
+    limit = data.get("limit")
+    applied_by = data.get("user") or "place-norm-bulk"
+    only_ids = data.get("ids")  # optional list of rule ids
+
+    session = get_session()
+    params = {}
+    where = "WHERE approved = 1"
+    if only_ids:
+        where += " AND id IN (" + ",".join([str(int(x)) for x in only_ids]) + ")"
+    stmt = f"""
+        SELECT id, canonical, variants_json, authority_source, authority_id, latitude, longitude
+        FROM place_normalization_rules
+        {where}
+        ORDER BY canonical
+    """
+    rows = session.execute(text(stmt), params).all()
+    if limit is not None:
+        rows = rows[: int(limit)]
+
+    if dry_run:
+        preview = []
+        for rid, canonical, variants_json, a_src, a_id, lat, lon in rows:
+            preview.append({
+                "id": rid,
+                "canonical": canonical,
+                "variants": json.loads(variants_json or "[]"),
+                "authority_source": a_src,
+                "authority_id": a_id,
+                "latitude": lat,
+                "longitude": lon,
+            })
+        return jsonify({"dry_run": True, "count": len(preview), "items": preview})
+
+    results = {"applied": [], "failed": []}
+    for rid, canonical, variants_json, a_src, a_id, lat, lon in rows:
+        try:
+            variants = json.loads(variants_json or "[]")
+            place_id, action_id = _apply_place_normalization(
+                session=session,
+                canonical_value=canonical,
+                variants=variants,
+                applied_by=applied_by,
+                resolve_issues=False,  # we'll re-scan anyway
+            )
+
+            # Optional enrichment: attach authority if provided and not already present
+            if (a_src or a_id or lat is not None or lon is not None):
+                place = session.get(Place, place_id)
+                if place:
+                    if a_src and (getattr(place, "authority_source", None) is None):
+                        setattr(place, "authority_source", a_src)
+                    if a_id and (getattr(place, "authority_id", None) is None):
+                        setattr(place, "authority_id", a_id)
+                    if lat is not None and getattr(place, "latitude", None) is None:
+                        setattr(place, "latitude", float(lat))
+                    if lon is not None and getattr(place, "longitude", None) is None:
+                        setattr(place, "longitude", float(lon))
+                    session.commit()
+
+            results["applied"].append({"rule_id": rid, "canonical_place_id": place_id, "action_id": action_id})
+        except Exception as e:
+            try:
+                session.rollback()
+            except Exception:
+                pass
+            results["failed"].append({"rule_id": rid, "canonical": canonical, "error": str(e)})
+
+    return jsonify(results)

@@ -16,6 +16,13 @@ def init_engine(database_url: str) -> None:
     )
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
+    # Non-breaking startup migrations / legacy compatibility
+    ensure_places_authority_columns(_engine)
+    ensure_place_normalization_rules(_engine)
+    ensure_media_links_asset_id(_engine)
+    ensure_media_assets_status(_engine)
+    ensure_data_quality_tables(_engine)
+
 def get_engine():
     """Get the SQLAlchemy engine."""
     return _engine
@@ -41,10 +48,59 @@ def init_app(app) -> None:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     database_url = f"sqlite:///{db_path}"
     init_engine(database_url)
-    
+
+    # Non-breaking migration: add optional place authority fields
+    ensure_places_authority_columns(get_engine())
+
     # Register teardown
     app.teardown_appcontext(close_session)
 
+
+def ensure_places_authority_columns(engine) -> None:
+    """Add places.authority_source and places.authority_id for legacy DBs (idempotent)."""
+    inspector = inspect(engine)
+    if "places" not in inspector.get_table_names():
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("places")}
+    with engine.begin() as conn:
+        if "authority_source" not in columns:
+            conn.execute(text("ALTER TABLE places ADD COLUMN authority_source TEXT"))
+        if "authority_id" not in columns:
+            conn.execute(text("ALTER TABLE places ADD COLUMN authority_id TEXT"))
+
+        # Helpful indexes for lookups / joins
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_places_authority_source ON places(authority_source)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_places_authority_id ON places(authority_id)"))
+
+
+
+def ensure_place_normalization_rules(engine) -> None:
+    """Create place_normalization_rules table if it does not exist (non-breaking)."""
+    inspector = inspect(engine)
+    if "place_normalization_rules" in inspector.get_table_names():
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            """
+            CREATE TABLE IF NOT EXISTS place_normalization_rules (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              canonical TEXT NOT NULL UNIQUE,
+              variants_json TEXT NOT NULL,
+              approved INTEGER NOT NULL DEFAULT 0,
+              source_issue_id INTEGER,
+              authority_source TEXT,
+              authority_id TEXT,
+              latitude REAL,
+              longitude REAL,
+              notes TEXT,
+              created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+              updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+            )
+            """
+        ))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_place_norm_rules_approved ON place_normalization_rules(approved)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_place_norm_rules_source_issue ON place_normalization_rules(source_issue_id)"))
 
 def ensure_media_links_asset_id(engine) -> None:
     """Backfill asset_id column for legacy databases missing it."""

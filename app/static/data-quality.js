@@ -709,124 +709,281 @@
     }
   }
 
-  async function loadPlaces() {
-    const container = document.getElementById("placeList");
-    const btnApplyPlaces = document.getElementById("btnApplyPlaces");
-    const placeBulkStatus = document.getElementById("placeBulkStatus");
-    container.innerHTML = "<div class='muted'>Loading…</div>";
-    try {
-      const [clusters, similarities] = await Promise.all([
-        fetchJson("/api/dq/issues?type=place_cluster&status=open&perPage=200"),
-        fetchJson("/api/dq/issues?type=place_similarity&status=open&perPage=200"),
-      ]);
-      const items = [...(clusters.items || []), ...(similarities.items || [])];
-      if (!items.length) {
-        container.innerHTML = "<div class='muted'>No open items.</div>";
-        if (btnApplyPlaces) btnApplyPlaces.disabled = true;
-        if (placeBulkStatus) placeBulkStatus.textContent = "";
-        return;
-      }
-      items.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
-      const applyCandidates = [];
-      container.innerHTML = "";
-      items.forEach((item) => {
-        const explanation = item.explanation || {};
-        const variants = explanation.variants || [];
-        const canonicalSuggestion = explanation.canonical_suggestion || (variants[0]?.value || "");
-        if (canonicalSuggestion && variants.length) {
-          applyCandidates.push({ canonical: canonicalSuggestion, variants, issue_id: item.id });
-        }
-        const similarity = explanation.similarity ?? item.confidence;
-        const variantList = variants
-          .map((v) => `${escapeHtml(v.value)} (${v.count})`)
-          .join(", ");
-        const div = document.createElement("div");
-        div.className = "listItem";
-        div.innerHTML = `
-          <div class="row">
-            <div><strong>${item.issue_type === "place_similarity" ? "Similar place names" : "Place variants"}</strong>${similarity ? ` • ${Math.round(similarity * 100)}%` : ""}</div>
-            <div class="dqBadge ${confidenceClass(item.confidence)}">${confidenceLabel(item.confidence)} • ${asConfidence(item.confidence)}</div>
-          </div>
-          <div class="muted small">${item.detected_at}</div>
-          <div class="muted small">Variants: ${variantList || "None listed"}</div>
-          <div class="row" style="margin-top:10px; flex-wrap:wrap;">
-            <input class="input inputSmall" value="${escapeHtml(canonicalSuggestion)}" />
-            <button class="btn btnSecondary">Standardize</button>
-          </div>
-          <div class="muted small" style="margin-top:6px;">Suggested canonical: ${escapeHtml(canonicalSuggestion || "")}</div>
-        `;
-        const input = div.querySelector("input");
-        const button = div.querySelector("button");
-        button.addEventListener("click", async () => {
-          const canonical = (input.value || "").trim();
-          if (!canonical) return;
-          const variantValues = variants.map((v) => v.value).filter((v) => v && v !== canonical);
-          if (!variantValues.length) {
-            alert("No variants to standardize.");
-            return;
-          }
-          if (!confirm(`Standardize ${variantValues.length} variant(s) to "${canonical}"?`)) return;
-          button.disabled = true;
-          const prevText = button.textContent;
-          button.textContent = "Applying…";
-          try {
-            await fetchJson("/api/dq/actions/normalizePlaces", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ canonical, variants: variantValues, user: "data-quality" }),
-            });
-            await runScan();
-          } catch (err) {
-            console.error("normalize places failed", err);
-            alert("Failed to standardize places.");
-          } finally {
-            button.disabled = false;
-            button.textContent = prevText;
-          }
-        });
-        container.appendChild(div);
-      });
-      if (btnApplyPlaces) {
-        btnApplyPlaces.disabled = applyCandidates.length === 0;
-        btnApplyPlaces.onclick = async () => {
-          if (!applyCandidates.length) return;
-          if (!confirm(`Apply ${applyCandidates.length} suggested place standardization(s)?`)) return;
-          btnApplyPlaces.disabled = true;
-          const prev = btnApplyPlaces.textContent;
-          btnApplyPlaces.textContent = "Applying…";
-          if (placeBulkStatus) placeBulkStatus.textContent = `Starting 0/${applyCandidates.length}…`;
-          try {
-            for (let i = 0; i < applyCandidates.length; i += 1) {
-              const candidate = applyCandidates[i];
-              if (placeBulkStatus) placeBulkStatus.textContent = `Applying ${i + 1}/${applyCandidates.length}…`;
-              const variantValues = candidate.variants
-                .map((v) => v.value)
-                .filter((v) => v && v !== candidate.canonical);
-              if (!variantValues.length) continue;
-              await fetchJson("/api/dq/actions/normalizePlaces", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ canonical: candidate.canonical, variants: variantValues, user: "data-quality" }),
-              });
-            }
-            if (placeBulkStatus) placeBulkStatus.textContent = "Done.";
-            await runScan();
-          } catch (err) {
-            console.error("bulk place normalization failed", err);
-            if (placeBulkStatus) placeBulkStatus.textContent = `Failed: ${errMsg(err)}`;
-            alert("Bulk place standardization failed.");
-          } finally {
-            btnApplyPlaces.disabled = false;
-            btnApplyPlaces.textContent = prev;
-          }
-        };
-      }
-    } catch (err) {
-      container.innerHTML = `<div class='muted'>${escapeHtml(errMsg(err))}</div>`;
+
+async function loadPlaces() {
+  const container = document.getElementById("placeList");
+  const btnApplyPlaces = document.getElementById("btnApplyPlaces");
+  const btnSavePlacesPlan = document.getElementById("btnSavePlacesPlan");
+  const btnExportPlacesPlan = document.getElementById("btnExportPlacesPlan");
+  const btnImportPlacesPlan = document.getElementById("btnImportPlacesPlan");
+  const fileImportPlacesPlan = document.getElementById("fileImportPlacesPlan");
+  const placeBulkStatus = document.getElementById("placeBulkStatus");
+
+  const downloadJson = (filename, obj) => {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  container.innerHTML = "<div class='muted'>Loading…</div>";
+  if (placeBulkStatus) placeBulkStatus.textContent = "";
+
+  try {
+    const [clusters, similarities, rulesResp] = await Promise.all([
+      fetchJson("/api/dq/issues?type=place_cluster&status=open&perPage=200"),
+      fetchJson("/api/dq/issues?type=place_similarity&status=open&perPage=200"),
+      fetchJson("/api/places/normalization/rules"),
+    ]);
+
+    const rulesMap = new Map();
+    (rulesResp.items || []).forEach((r) => rulesMap.set(r.canonical, r));
+
+    const items = [...(clusters.items || []), ...(similarities.items || [])];
+    if (!items.length) {
+      container.innerHTML = "<div class='muted'>No open items.</div>";
       if (btnApplyPlaces) btnApplyPlaces.disabled = true;
+      if (btnSavePlacesPlan) btnSavePlacesPlan.disabled = true;
+      if (btnExportPlacesPlan) btnExportPlacesPlan.disabled = true;
       if (placeBulkStatus) placeBulkStatus.textContent = "";
+      return;
     }
+
+    // Track current approval state (canonical -> rule payload)
+    const approvalState = new Map();
+
+    container.innerHTML = "";
+    items.forEach((item) => {
+      const expl = item.explanation || {};
+      const canonical = (expl.canonical_suggestion || "").trim();
+      const variants = (expl.variants || []).slice().sort((a, b) => (b.count || 0) - (a.count || 0));
+      const variantValues = variants.map((v) => v.value).filter((v) => v && v !== canonical);
+
+      // Default approval: existing rule wins; otherwise only auto-approve place_cluster (not place_similarity)
+      const existingRule = rulesMap.get(canonical);
+      const defaultApproved = existingRule ? !!existingRule.approved : item.issue_type === "place_cluster";
+
+      approvalState.set(canonical, {
+        canonical,
+        variants: [canonical, ...variantValues],
+        approved: defaultApproved,
+        source_issue_id: item.id,
+      });
+
+      const div = document.createElement("div");
+      div.className = "listItem";
+
+      const badge = badgeForConfidence(item.confidence);
+      const simNote = expl.similarity ? `<span class="muted small">Similarity: ${(expl.similarity * 100).toFixed(0)}%</span>` : "";
+      const countsNote = `<span class="muted small">Refs: ${Math.round(item.impact_score || 0)}</span>`;
+
+      const variantsHtml = variants
+        .map((v) => {
+          const isCanon = v.value === canonical;
+          const pill = isCanon ? "<span class='pill'>canonical</span>" : "";
+          return `<div class="row small"><span>${escapeHtml(v.value)}</span><span class="muted">${v.count || 0}×</span>${pill}</div>`;
+        })
+        .join("");
+
+      div.innerHTML = `
+        <div class="row">
+          <div class="row" style="gap:10px;">
+            <label class="row small" style="gap:8px;">
+              <input type="checkbox" class="placeApprove"/>
+              <span class="muted">Approved</span>
+            </label>
+            <strong>${escapeHtml(canonical || "(missing canonical)")}</strong>
+          </div>
+          <div class="row" style="gap:8px;">
+            <span class="dqBadge ${badge.cls}">${badge.label}</span>
+            ${countsNote}
+            ${simNote}
+          </div>
+        </div>
+        <div class="muted small">${escapeHtml(item.issue_type)}</div>
+        <div class="variantsBox">${variantsHtml}</div>
+        <div class="dqActions">
+          <button class="btn btnSecondary btnApplyOne">Apply now</button>
+        </div>
+      `;
+
+      const approveCb = div.querySelector(".placeApprove");
+      approveCb.checked = defaultApproved;
+      approveCb.addEventListener("change", () => {
+        const st = approvalState.get(canonical);
+        if (st) st.approved = approveCb.checked;
+      });
+
+      const btnApplyOne = div.querySelector(".btnApplyOne");
+      btnApplyOne.disabled = !canonical || variantValues.length === 0;
+      btnApplyOne.addEventListener("click", async () => {
+        if (!canonical) return;
+        if (!variantValues.length) {
+          alert("No variants to standardize.");
+          return;
+        }
+        if (!confirm(`Standardize ${variantValues.length} variant(s) to "${canonical}"?`)) return;
+
+        btnApplyOne.disabled = true;
+        const prevText = btnApplyOne.textContent;
+        btnApplyOne.textContent = "Applying…";
+        try {
+          await fetchJson("/api/dq/actions/normalizePlaces", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ canonical, variants: variantValues, user: "data-quality" }),
+          });
+
+          // Persist approval as a rule (so it can be replayed after a rebuild)
+          await fetchJson("/api/places/normalization/rules/upsert", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              canonical,
+              variants: [canonical, ...variantValues],
+              approved: true,
+              source_issue_id: item.id,
+            }),
+          });
+
+          await runScan();
+        } catch (err) {
+          console.error("normalize places failed", err);
+          alert(errMsg(err));
+        } finally {
+          btnApplyOne.textContent = prevText;
+          btnApplyOne.disabled = false;
+        }
+      });
+
+      container.appendChild(div);
+    });
+
+    // Save approvals (writes place_normalization_rules)
+    if (btnSavePlacesPlan) {
+      btnSavePlacesPlan.disabled = false;
+      btnSavePlacesPlan.onclick = async () => {
+        const payload = [];
+        approvalState.forEach((st) => {
+          if (!st.canonical || !st.variants || st.variants.length < 2) return;
+          payload.push({
+            canonical: st.canonical,
+            variants: st.variants,
+            approved: !!st.approved,
+            source_issue_id: st.source_issue_id,
+          });
+        });
+        if (!payload.length) {
+          alert("Nothing to save.");
+          return;
+        }
+        btnSavePlacesPlan.disabled = true;
+        const prev = btnSavePlacesPlan.textContent;
+        btnSavePlacesPlan.textContent = "Saving…";
+        try {
+          await fetchJson("/api/places/normalization/rules/upsert", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rules: payload }),
+          });
+          alert("Saved.");
+        } catch (err) {
+          console.error("save approvals failed", err);
+          alert(errMsg(err));
+        } finally {
+          btnSavePlacesPlan.textContent = prev;
+          btnSavePlacesPlan.disabled = false;
+        }
+      };
+    }
+
+    // Export plan (downloads JSON)
+    if (btnExportPlacesPlan) {
+      btnExportPlacesPlan.disabled = false;
+      btnExportPlacesPlan.onclick = async () => {
+        btnExportPlacesPlan.disabled = true;
+        const prev = btnExportPlacesPlan.textContent;
+        btnExportPlacesPlan.textContent = "Exporting…";
+        try {
+          const data = await fetchJson("/api/places/normalization/export");
+          const ts = new Date().toISOString().replace(/[:.]/g, "-");
+          downloadJson(`place-normalization-plan_${ts}.json`, data);
+        } catch (err) {
+          console.error("export plan failed", err);
+          alert(errMsg(err));
+        } finally {
+          btnExportPlacesPlan.textContent = prev;
+          btnExportPlacesPlan.disabled = false;
+        }
+      };
+    }
+
+    // Import plan (uploads JSON)
+    if (btnImportPlacesPlan && fileImportPlacesPlan) {
+      btnImportPlacesPlan.disabled = false;
+      btnImportPlacesPlan.onclick = () => fileImportPlacesPlan.click();
+      fileImportPlacesPlan.onchange = async () => {
+        const file = fileImportPlacesPlan.files && fileImportPlacesPlan.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const obj = JSON.parse(text);
+          await fetchJson("/api/places/normalization/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(obj),
+          });
+          await loadPlaces();
+        } catch (err) {
+          console.error("import plan failed", err);
+          alert(errMsg(err));
+        } finally {
+          fileImportPlacesPlan.value = "";
+        }
+      };
+    }
+
+    // Apply approved rules in bulk (server-side)
+    if (btnApplyPlaces) {
+      btnApplyPlaces.disabled = false;
+      btnApplyPlaces.onclick = async () => {
+        if (!confirm("Apply all approved place normalization rules?")) return;
+        btnApplyPlaces.disabled = true;
+        const prev = btnApplyPlaces.textContent;
+        btnApplyPlaces.textContent = "Applying…";
+        if (placeBulkStatus) placeBulkStatus.textContent = "Applying approved rules…";
+        try {
+          const res = await fetchJson("/api/places/normalization/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user: "data-quality" }),
+          });
+          const ok = (res.applied || []).length;
+          const bad = (res.failed || []).length;
+          if (placeBulkStatus) placeBulkStatus.textContent = `Applied ${ok}. Failed ${bad}.`;
+          await runScan();
+        } catch (err) {
+          console.error("bulk apply failed", err);
+          alert(errMsg(err));
+        } finally {
+          btnApplyPlaces.textContent = prev;
+          btnApplyPlaces.disabled = false;
+        }
+      };
+    }
+  } catch (err) {
+    container.innerHTML = `<div class='muted'>${escapeHtml(errMsg(err))}</div>`;
+    if (btnApplyPlaces) btnApplyPlaces.disabled = true;
+    if (btnSavePlacesPlan) btnSavePlacesPlan.disabled = true;
+    if (btnExportPlacesPlan) btnExportPlacesPlan.disabled = true;
+    if (placeBulkStatus) placeBulkStatus.textContent = "";
   }
+}
 
   async function loadLog() {
     const container = document.getElementById("logList");

@@ -76,9 +76,15 @@
 
     <section id="tab-places" class="tabContent">
       <div class="panelHeader">
-        <h3>Place Clusters</h3>
-        <button id="btnApplyPlaces" class="btn btnSecondary">Apply suggested places</button>
-      </div>
+  <h3>Place Clusters</h3>
+  <div class="actions wrap">
+    <button id="btnSavePlacesPlan" class="btn btnSecondary">Save approvals</button>
+    <button id="btnExportPlacesPlan" class="btn btnSecondary">Export plan</button>
+    <input id="fileImportPlacesPlan" type="file" accept="application/json" style="display:none" />
+    <button id="btnImportPlacesPlan" class="btn btnSecondary">Import plan</button>
+    <button id="btnApplyPlaces" class="btn">Apply approved</button>
+  </div>
+</div>
       <div id="placeList" class="list"></div>
       <div class="muted small">Standardize variants to a canonical place name to keep reporting consistent.</div>
       <div id="placeBulkStatus" class="muted small"></div>

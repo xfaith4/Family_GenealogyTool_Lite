@@ -116,6 +116,24 @@ CREATE TABLE IF NOT EXISTS dq_action_log (
 );
 CREATE INDEX IF NOT EXISTS idx_dq_action_type ON dq_action_log(action_type);
 
+-- Place normalization plan (saved approvals for bulk apply + rebuild replay)
+CREATE TABLE IF NOT EXISTS place_normalization_rules (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  canonical TEXT NOT NULL UNIQUE,
+  variants_json TEXT NOT NULL,
+  approved INTEGER NOT NULL DEFAULT 0,
+  source_issue_id INTEGER,
+  authority_source TEXT,
+  authority_id TEXT,
+  latitude REAL,
+  longitude REAL,
+  notes TEXT,
+  created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+  updated_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_place_norm_rules_approved ON place_normalization_rules(approved);
+CREATE INDEX IF NOT EXISTS idx_place_norm_rules_source_issue ON place_normalization_rules(source_issue_id);
+
 CREATE TABLE IF NOT EXISTS date_normalizations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   entity_type TEXT NOT NULL,
@@ -130,3 +148,23 @@ CREATE TABLE IF NOT EXISTS date_normalizations (
 );
 CREATE INDEX IF NOT EXISTS idx_date_norm_entity ON date_normalizations(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_date_norm_confidence ON date_normalizations(confidence);
+-- Places (canonical + variants) with optional authority enrichment
+CREATE TABLE IF NOT EXISTS places (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name_canonical TEXT NOT NULL UNIQUE,
+  latitude REAL,
+  longitude REAL,
+  authority_source TEXT,
+  authority_id TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_places_authority_source ON places(authority_source);
+CREATE INDEX IF NOT EXISTS idx_places_authority_id ON places(authority_id);
+
+CREATE TABLE IF NOT EXISTS place_variants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  place_id INTEGER NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+  name_variant TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_place_variants_place_id ON place_variants(place_id);
