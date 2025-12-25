@@ -106,7 +106,10 @@ def ensure_media_links_asset_id(engine) -> None:
 
 
 def ensure_data_quality_tables(engine) -> None:
-    """Recreate data-quality tables if legacy schemas are missing required columns."""
+    """
+    Recreate data-quality tables if legacy schemas are missing required columns.
+    NOTE: This may drop and recreate the affected table when columns are missing.
+    """
     inspector = inspect(engine)
 
     def _needs_rebuild(table_name: str, required_cols: set[str]) -> bool:
@@ -116,49 +119,56 @@ def ensure_data_quality_tables(engine) -> None:
         return not required_cols.issubset(existing)
 
     def _recreate(table):
-        with engine.begin() as conn:
-            conn.execute(text(f"DROP TABLE IF EXISTS {table.name}"))
-        table.metadata.create_all(engine, tables=[table], checkfirst=False)
+        table.drop(engine, checkfirst=True)
+        table.create(engine, checkfirst=False)
 
     from .models import DataQualityIssue, DataQualityActionLog, DateNormalization
 
-    dq_issue_cols = {
-        "id",
-        "issue_type",
-        "severity",
-        "entity_type",
-        "entity_ids",
-        "status",
-        "confidence",
-        "impact_score",
-        "explanation_json",
-        "detected_at",
-        "resolved_at",
-    }
-    action_log_cols = {
-        "id",
-        "action_type",
-        "payload_json",
-        "undo_payload_json",
-        "created_at",
-        "applied_by",
-    }
-    date_norm_cols = {
-        "id",
-        "entity_type",
-        "entity_id",
-        "raw_value",
-        "normalized",
-        "precision",
-        "qualifier",
-        "confidence",
-        "is_ambiguous",
-        "detected_at",
+    schemas = {
+        "dq_issues": (
+            DataQualityIssue.__table__,
+            {
+                "id",
+                "issue_type",
+                "severity",
+                "entity_type",
+                "entity_ids",
+                "status",
+                "confidence",
+                "impact_score",
+                "explanation_json",
+                "detected_at",
+                "resolved_at",
+            },
+        ),
+        "dq_action_log": (
+            DataQualityActionLog.__table__,
+            {
+                "id",
+                "action_type",
+                "payload_json",
+                "undo_payload_json",
+                "created_at",
+                "applied_by",
+            },
+        ),
+        "date_normalizations": (
+            DateNormalization.__table__,
+            {
+                "id",
+                "entity_type",
+                "entity_id",
+                "raw_value",
+                "normalized",
+                "precision",
+                "qualifier",
+                "confidence",
+                "is_ambiguous",
+                "detected_at",
+            },
+        ),
     }
 
-    if _needs_rebuild("dq_issues", dq_issue_cols):
-        _recreate(DataQualityIssue.__table__)
-    if _needs_rebuild("dq_action_log", action_log_cols):
-        _recreate(DataQualityActionLog.__table__)
-    if _needs_rebuild("date_normalizations", date_norm_cols):
-        _recreate(DateNormalization.__table__)
+    for name, (table, cols) in schemas.items():
+        if _needs_rebuild(name, cols):
+            _recreate(table)
