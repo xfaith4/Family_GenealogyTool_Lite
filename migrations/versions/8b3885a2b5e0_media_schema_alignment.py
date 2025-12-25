@@ -53,6 +53,8 @@ def upgrade() -> None:
     )
     op.drop_table("media_assets_old")
 
+    op.drop_index("idx_media_links_person", table_name="media_links", if_exists=True)
+    op.drop_index("idx_media_links_family", table_name="media_links", if_exists=True)
     op.rename_table("media_links", "media_links_old")
     op.create_table(
         "media_links",
@@ -87,6 +89,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_index("idx_media_links_person", table_name="media_links", if_exists=True)
+    op.drop_index("idx_media_links_family", table_name="media_links", if_exists=True)
+    op.drop_index("idx_media_links_asset", table_name="media_links", if_exists=True)
     op.rename_table("media_links", "media_links_new")
     op.create_table(
         "media_links",
