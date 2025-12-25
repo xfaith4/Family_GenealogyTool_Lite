@@ -6,7 +6,7 @@
 let cy = null;  // Cytoscape instance (if available)
 let currentPersonId = null;
 let currentGraph = null;
-let currentLayoutName = 'elk';
+let currentLayoutName = 'tree-vertical';
 let lastFindQuery = '';
 
 function escapeHtml(s) {
@@ -33,10 +33,39 @@ function formatDates(data) {
 
 function getLayoutOptions(name) {
   const n = (name || 'elk').toLowerCase();
+  const rootNode = currentGraph?.rootPersonId ? `#person_${currentGraph.rootPersonId}` : undefined;
+
+  if (n === 'tree-vertical') {
+    return {
+      name: 'breadthfirst',
+      roots: rootNode,
+      directed: true,
+      padding: 40,
+      spacingFactor: 1.35,
+      animate: true,
+      animationDuration: 450,
+      circle: false,
+    };
+  }
+
+  if (n === 'tree-horizontal') {
+    return {
+      name: 'breadthfirst',
+      roots: rootNode,
+      directed: true,
+      padding: 40,
+      spacingFactor: 1.35,
+      animate: true,
+      animationDuration: 450,
+      circle: false,
+      transform: (node, pos) => ({ x: pos.y, y: pos.x }),
+    };
+  }
 
   if (n === 'breadthfirst') {
     return {
       name: 'breadthfirst',
+      roots: rootNode,
       directed: true,
       padding: 40,
       spacingFactor: 1.25,
@@ -263,7 +292,7 @@ function renderGraph(graphData) {
 }
 
 function setLayout(name){
-  currentLayoutName = (name || 'elk');
+  currentLayoutName = (name || 'tree-vertical');
   if (!cy) return;
   try {
     cy.layout(getLayoutOptions(currentLayoutName)).run();

@@ -171,6 +171,21 @@ function formatBytes(bytes){
   return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
+function shortLabel(value, max){
+  const v = (value || "").trim();
+  if(!v) return "";
+  if(v.length <= max) return v;
+  return v.slice(0, Math.max(1, max - 1)) + "…";
+}
+
+function nodeLabelLines(person){
+  const given = shortLabel(person?.given, 14);
+  const surname = shortLabel(person?.surname, 14);
+  if(given && surname) return [given, surname];
+  const single = shortLabel(fullName(person), 18);
+  return [single];
+}
+
 async function renderTree(id){
   const host = $("tree");
   host.classList.remove("muted");
@@ -199,22 +214,26 @@ async function renderTree(id){
   svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
   const parentNodes = (treeData.parents || []).slice(0, 4);
-  const childNodes = (treeData.children || []).slice(0, 6);
+  const childNodes = (treeData.children || []).slice(0, 5);
   const positions = new Map();
 
-  const parentY = 40;
+  const parentY = 30;
   const rootY = svgHeight / 2 - 10;
-  const childY = svgHeight - 60;
+  const childY = svgHeight - 70;
 
   const drawNode = (person, x, y, opts = {}) => {
-    const width = 120;
-    const height = 40;
+    const width = 130;
+    const height = 54;
     positions.set(person.id, { x, y: y + height / 2 });
 
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.setAttribute('cursor', 'pointer');
     group.setAttribute('data-person-id', person.id);
     group.addEventListener('click', () => loadDetails(person.id));
+
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = fullName(person);
+    group.appendChild(title);
 
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', x - width / 2);
@@ -227,15 +246,22 @@ async function renderTree(id){
     rect.setAttribute('stroke-width', opts.strokeWidth || '1.8');
     group.appendChild(rect);
 
+    const lines = nodeLabelLines(person);
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', x);
-    text.setAttribute('y', y + height / 2 - 2);
+    text.setAttribute('y', y + height / 2 - (lines.length > 1 ? 8 : 0));
     text.setAttribute('text-anchor', 'middle');
     text.setAttribute('dominant-baseline', 'middle');
     text.setAttribute('fill', '#fff');
-    text.setAttribute('font-size', '12');
+    text.setAttribute('font-size', lines.length > 1 ? '11' : '12');
     text.setAttribute('font-weight', '600');
-    text.textContent = fullName(person);
+    lines.forEach((line, idx) => {
+      const tspan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+      tspan.setAttribute('x', x);
+      tspan.setAttribute('dy', idx === 0 ? '0' : '14');
+      tspan.textContent = line;
+      text.appendChild(tspan);
+    });
     group.appendChild(text);
 
     svg.appendChild(group);

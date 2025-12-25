@@ -6,12 +6,35 @@
 const HelpContent = {
   // Tree visualization types
   visualizations: {
+    treeVertical: {
+      title: "Tree (Vertical)",
+      description: "Classic top-down family tree with parents above and children below.",
+      insights: [
+        "Best for traditional genealogy navigation",
+        "Clear parent-to-child flow",
+        "Easy to follow lineages across generations"
+      ],
+      bestFor: "Standard family tree exploration",
+      icon: "🌳"
+    },
+    treeHorizontal: {
+      title: "Tree (Horizontal)",
+      description: "Classic left-to-right tree layout with parents on the left and children on the right.",
+      insights: [
+        "Works well on wide screens",
+        "Keeps sibling rows readable",
+        "Great for scanning long lineages"
+      ],
+      bestFor: "Wide-screen browsing and lineage scanning",
+      icon: "🌲"
+    },
     miniTree: {
       title: "Mini Tree View",
       description: "A simple, fast visualization showing immediate family connections.",
       insights: [
         "View direct parent-child relationships at a glance",
-        "Quickly identify immediate family members",
+        "Names are shortened in the mini tree to avoid overlap",
+        "Hover a name to see the full person name",
         "See basic genealogical structure without overwhelming detail"
       ],
       bestFor: "Quick navigation and understanding immediate family connections",
@@ -75,8 +98,18 @@ const HelpContent = {
       steps: [
         "Select a person from the list on the left",
         "Details panel shows all known information",
-        "Parents and children are listed with their names (no IDs needed)",
+        "Parents and children are listed with their names",
         "Click 'Save' after making any edits"
+      ]
+    },
+    dataQualityCleanup: {
+      title: "Cleaning Data with Data Quality",
+      steps: [
+        "Open the Data Quality page and click 'Scan for issues'",
+        "Work through Duplicates and choose which record to keep",
+        "Standardize Places using suggested canonical values",
+        "Apply clean Dates (qualifiers like About/Abt are preserved)",
+        "Use Change Log to undo any cleanup if needed"
       ]
     },
     browseToMedia: {
@@ -117,7 +150,15 @@ const HelpContent = {
   tips: {
     noIds: {
       title: "Focus on Relationships, Not IDs",
-      content: "The interface emphasizes names and connections. Person IDs are shown minimally for technical reference only. Navigate using names and relationships."
+      content: "The interface emphasizes names and connections. Navigate using names and relationships."
+    },
+    confidence: {
+      title: "Confidence Badges",
+      content: "Data Quality flags are ranked by confidence. High confidence is safest to apply first, while low confidence should be reviewed carefully."
+    },
+    dateQualifiers: {
+      title: "Date Qualifiers",
+      content: "Qualifiers like About/Abt are preserved until you choose a standard. Only unambiguous dates are auto-applied."
     },
     marriages: {
       title: "Understanding Marriage Connections",

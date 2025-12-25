@@ -55,7 +55,9 @@
           </select>
           <label for="layoutSelect" title="Different layouts reveal different patterns">Layout:</label>
           <select id="layoutSelect" title="Choose a layout to discover different relationship patterns">
-            <option value="elk" selected>📊 Layered (generations)</option>
+            <option value="tree-vertical" selected>🌳 Tree (vertical)</option>
+            <option value="tree-horizontal">🌲 Tree (horizontal)</option>
+            <option value="elk">📊 Layered (generations)</option>
             <option value="breadthfirst">🎯 Breadthfirst (centered)</option>
             <option value="concentric">⭕ Concentric (distance)</option>
             <option value="cose">🔮 Force (convergences)</option>
@@ -209,7 +211,7 @@
       });
 
       $("layoutSelect").addEventListener("change", () => {
-        window.TreeV2.setLayout($('layoutSelect').value || 'elk');
+        window.TreeV2.setLayout($('layoutSelect').value || 'tree-vertical');
       });
       
       $("btnRefresh").addEventListener("click", async () => {

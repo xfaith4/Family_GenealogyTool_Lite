@@ -1,4 +1,4 @@
-const STATIC_CACHE = "fgtl-static-v1";
+const STATIC_CACHE = "fgtl-static-v2";
 const STATIC_ASSETS = [
   "/",
   "/static/styles.css",
