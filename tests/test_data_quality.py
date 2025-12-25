@@ -36,9 +36,16 @@ class TestDataQuality(unittest.TestCase):
     def _session(self):
         return self.Session()
 
-    def _person(self, given, surname, birth_date=None, birth_place=None):
+    def _person(self, given, surname, birth_date=None, birth_place=None, death_date=None, death_place=None):
         with self._session() as s:
-            p = Person(given=given, surname=surname, birth_date=birth_date, birth_place=birth_place)
+            p = Person(
+                given=given,
+                surname=surname,
+                birth_date=birth_date,
+                birth_place=birth_place,
+                death_date=death_date,
+                death_place=death_place,
+            )
             s.add(p)
             s.commit()
             return p.id
@@ -199,7 +206,7 @@ class TestDataQuality(unittest.TestCase):
         self.assertGreaterEqual(len(data["items"]), 1)
 
     def test_scan_detects_integrity_warnings(self):
-        parent = self._person("Paul", "Parent", birth_date="2000", death_date="2005")
+        parent = self._person("Paul", "Parent", birth_date="2000", death_date="2001")
         child = self._person("Chris", "Child", birth_date="2003")
         with self._session() as s:
             s.execute(relationships.insert().values(

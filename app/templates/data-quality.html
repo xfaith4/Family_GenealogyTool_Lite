@@ -38,6 +38,11 @@
       <span class="dqBadge dqBadgeMed">Medium ≥ 75%</span>
       <span class="dqBadge dqBadgeLow">Low &lt; 75%</span>
     </div>
+    <div class="dqStatusRow">
+      <div id="dqLastScan" class="muted small">Last scan: --</div>
+      <div id="dqScanHint" class="muted small"></div>
+    </div>
+    <div id="dqChips" class="dqChips"></div>
 
     <section id="tab-overview" class="tabContent active">
       <div class="scoreCard">
@@ -54,6 +59,10 @@
           <div class="panelHeader"><h3>Queues</h3></div>
           <ul class="list" id="dqQueues"></ul>
         </div>
+      </div>
+      <div class="panel">
+        <div class="panelHeader"><h3>Next best actions</h3></div>
+        <ul class="list" id="dqHighlights"></ul>
       </div>
     </section>
 

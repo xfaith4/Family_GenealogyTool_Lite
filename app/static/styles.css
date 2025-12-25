@@ -301,6 +301,41 @@ body{
   align-items: center;
   margin: 6px 0 12px;
 }
+.dqStatusRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.dqChips{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:10px;
+  margin-bottom:12px;
+}
+.dqChip{
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(0,0,0,0.12);
+  padding:10px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  cursor:pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.dqChip:hover{border-color:var(--btn); transform:translateY(-1px);}
+.dqChip .icon{font-size:18px;}
+.dqChip .value{font-weight:700;}
+.dqHighlightItem{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.dqHighlightItem .label{font-weight:600;}
 .small{font-size:12px;}
 .grid.cols2{grid-template-columns:1fr 1fr;}
 .gap16{gap:16px;}
