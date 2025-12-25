@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS media_assets (
   path TEXT NOT NULL UNIQUE,
   sha256 TEXT NOT NULL,
   original_filename TEXT,
+  status TEXT NOT NULL DEFAULT 'unassigned',
+  source_path TEXT,
   mime_type TEXT,
   size_bytes INTEGER,
   thumbnail_path TEXT,
@@ -82,6 +84,7 @@ CREATE TABLE IF NOT EXISTS media_links (
 CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(surname, given);
 CREATE INDEX IF NOT EXISTS idx_rel_child ON relationships(child_person_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_sha256 ON media_assets(sha256);
+CREATE INDEX IF NOT EXISTS idx_media_assets_original_filename ON media_assets(original_filename);
 CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id);

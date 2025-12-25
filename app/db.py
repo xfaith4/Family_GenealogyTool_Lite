@@ -105,6 +105,33 @@ def ensure_media_links_asset_id(engine) -> None:
                 conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
 
 
+def ensure_media_assets_status(engine) -> None:
+    """Add status/source_path columns for legacy media_assets tables and backfill values."""
+    inspector = inspect(engine)
+    if "media_assets" not in inspector.get_table_names():
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("media_assets")}
+    has_media_links = "media_links" in inspector.get_table_names()
+
+    with engine.begin() as conn:
+        if "status" not in columns:
+            conn.execute(text("ALTER TABLE media_assets ADD COLUMN status VARCHAR(50) NOT NULL DEFAULT 'unassigned'"))
+        if "source_path" not in columns:
+            conn.execute(text("ALTER TABLE media_assets ADD COLUMN source_path VARCHAR(500)"))
+
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_assets_original_filename ON media_assets(original_filename)"))
+        if has_media_links:
+            conn.execute(
+                text(
+                    "UPDATE media_assets "
+                    "SET status='assigned' "
+                    "WHERE id IN (SELECT DISTINCT asset_id FROM media_links WHERE asset_id IS NOT NULL)"
+                )
+            )
+        conn.execute(text("UPDATE media_assets SET status='unassigned' WHERE status IS NULL OR status=''"))
+
+
 def ensure_data_quality_tables(engine) -> None:
     """
     Recreate data-quality tables if legacy schemas are missing required columns.
