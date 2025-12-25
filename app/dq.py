@@ -12,6 +12,7 @@ from datetime import datetime
 import json
 import math
 import re
+import os
 from collections import defaultdict, Counter
 from difflib import SequenceMatcher
 from typing import Iterable, List, Tuple, Dict, Any
@@ -25,6 +26,7 @@ from .models import (
     Event,
     Place,
     PlaceVariant,
+    MediaAsset,
     MediaLink,
     DataQualityIssue,
     DataQualityActionLog,
@@ -58,6 +60,14 @@ def _name_similarity(a: str, b: str) -> float:
     if not a or not b:
         return 0.0
     return SequenceMatcher(None, a, b).ratio()
+
+
+def _norm_filename(value: str | None) -> str:
+    if not value:
+        return ""
+    base = os.path.splitext(value)[0].lower()
+    base = re.sub(r"[^a-z0-9]+", " ", base)
+    return " ".join(base.split())
 
 
 def _parse_year(value: str | None) -> int | None:
@@ -179,6 +189,7 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
     place_cluster_count = _detect_places(session)
     family_duplicate_count = _detect_duplicate_families(session)
     media_duplicate_count = _detect_duplicate_media_links(session)
+    media_asset_duplicate_count = _detect_duplicate_media_assets(session)
     date_count = _detect_dates(session)
     integrity_count = _detect_integrity(session)
 
@@ -188,6 +199,7 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
         "place_clusters": place_cluster_count,
         "family_duplicates": family_duplicate_count,
         "media_duplicates": media_duplicate_count,
+        "media_asset_duplicates": media_asset_duplicate_count,
         "dates": date_count,
         "integrity": integrity_count,
     }
@@ -336,6 +348,11 @@ def _detect_places(session: Session) -> int:
 
 
 def _detect_duplicate_families(session: Session) -> int:
+    people = session.execute(select(Person.id, Person.given, Person.surname)).all()
+    name_map = {
+        int(pid): f"{_norm_name(given)} {_norm_name(surname)}".strip()
+        for pid, given, surname in people
+    }
     families = session.execute(select(Family)).scalars().all()
     buckets: dict[tuple[int, int], list[Family]] = defaultdict(list)
     for fam in families:
@@ -369,6 +386,54 @@ def _detect_duplicate_families(session: Session) -> int:
                     impact=1.0,
                     explanation={
                         "spouses": list(spouse_key),
+                        "marriage_dates": [a.marriage_date, b.marriage_date],
+                        "marriage_places": [a.marriage_place, b.marriage_place],
+                    },
+                )
+                count += 1
+
+    name_buckets: dict[tuple[str, str], list[Family]] = defaultdict(list)
+    for fam in families:
+        if not fam.husband_person_id or not fam.wife_person_id:
+            continue
+        husband_name = name_map.get(fam.husband_person_id, "").strip()
+        wife_name = name_map.get(fam.wife_person_id, "").strip()
+        if not husband_name or not wife_name:
+            continue
+        key = tuple(sorted([husband_name, wife_name]))
+        name_buckets[key].append(fam)
+
+    for key, group in name_buckets.items():
+        if len(group) < 2:
+            continue
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                a = group[i]
+                b = group[j]
+                set_a = {a.husband_person_id, a.wife_person_id}
+                set_b = {b.husband_person_id, b.wife_person_id}
+                if set_a == set_b:
+                    continue
+                score = 0.6
+                date_a = _parse_year(a.marriage_date)
+                date_b = _parse_year(b.marriage_date)
+                if date_a and date_b and date_a == date_b:
+                    score += 0.15
+                if _norm_place(a.marriage_place) and _norm_place(a.marriage_place) == _norm_place(b.marriage_place):
+                    score += 0.15
+                if score < 0.7:
+                    continue
+                _insert_issue(
+                    session,
+                    "duplicate_family_spouse_swap",
+                    "info",
+                    "family",
+                    [a.id, b.id],
+                    confidence=round(score, 2),
+                    impact=1.0,
+                    explanation={
+                        "spouse_names": list(key),
+                        "family_ids": [a.id, b.id],
                         "marriage_dates": [a.marriage_date, b.marriage_date],
                         "marriage_places": [a.marriage_place, b.marriage_place],
                     },
@@ -416,6 +481,64 @@ def _detect_duplicate_media_links(session: Session) -> int:
             },
         )
         count += 1
+    return count
+
+
+def _detect_duplicate_media_assets(session: Session) -> int:
+    assets = session.execute(select(MediaAsset)).scalars().all()
+    entries = []
+    for asset in assets:
+        norm = _norm_filename(asset.original_filename)
+        if not norm:
+            continue
+        entries.append({
+            "id": asset.id,
+            "filename": asset.original_filename,
+            "norm": norm,
+            "size": asset.size_bytes,
+        })
+
+    buckets: dict[str, list[dict]] = defaultdict(list)
+    for entry in entries:
+        prefix = entry["norm"][:4] if entry["norm"] else ""
+        buckets[prefix].append(entry)
+
+    count = 0
+    for group in buckets.values():
+        if len(group) < 2:
+            continue
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                a = group[i]
+                b = group[j]
+                sim = _name_similarity(a["norm"], b["norm"])
+                if sim < 0.92:
+                    continue
+                size_a = a["size"]
+                size_b = b["size"]
+                size_score = 0.0
+                if size_a and size_b:
+                    delta = abs(size_a - size_b)
+                    max_size = max(size_a, size_b)
+                    if max_size and (delta / max_size) <= 0.02:
+                        size_score = 0.1
+                confidence = round(min(sim + size_score, 0.99), 2)
+                _insert_issue(
+                    session,
+                    "duplicate_media_asset",
+                    "info",
+                    "media_asset",
+                    [a["id"], b["id"]],
+                    confidence=confidence,
+                    impact=1.0,
+                    explanation={
+                        "asset_ids": [a["id"], b["id"]],
+                        "filenames": [a["filename"], b["filename"]],
+                        "sizes": [a["size"], b["size"]],
+                        "similarity": round(sim, 2),
+                    },
+                )
+                count += 1
     return count
 
 
@@ -517,6 +640,25 @@ def _detect_integrity(session: Session) -> int:
         )
         count += 1
 
+    # Orphaned families (no spouses, no children)
+    families = session.execute(select(Family.id, Family.husband_person_id, Family.wife_person_id)).all()
+    for fid, hid, wid in families:
+        child_count = session.execute(
+            select(func.count(family_children.c.child_person_id)).where(family_children.c.family_id == fid)
+        ).scalar_one()
+        if hid is None and wid is None and child_count == 0:
+            _insert_issue(
+                session,
+                "orphan_family",
+                "warning",
+                "family",
+                [int(fid)],
+                confidence=0.85,
+                impact=0.5,
+                explanation={"reason": "Family has no spouses and no children"},
+            )
+            count += 1
+
     # Impossible order: death before birth
     persons = session.execute(select(Person.id, Person.birth_date, Person.death_date)).all()
     for pid, b, d in persons:
@@ -534,6 +676,97 @@ def _detect_integrity(session: Session) -> int:
                 explanation={"birth_year": y_birth, "death_year": y_death},
             )
             count += 1
+
+    # Parent/child timeline checks
+    rel_rows = session.execute(
+        select(
+            relationships.c.parent_person_id,
+            relationships.c.child_person_id,
+            Person.birth_date,
+            Person.death_date,
+        )
+        .join(Person, Person.id == relationships.c.parent_person_id)
+    ).all()
+    child_rows = {
+        pid: (b, d)
+        for pid, b, d in session.execute(select(Person.id, Person.birth_date, Person.death_date)).all()
+    }
+    for parent_id, child_id, parent_birth, parent_death in rel_rows:
+        child_birth, _ = child_rows.get(child_id, (None, None))
+        y_parent = _parse_year(parent_birth)
+        y_child = _parse_year(child_birth)
+        y_parent_death = _parse_year(parent_death)
+        if y_parent is not None and y_child is not None:
+            if y_parent > y_child - 12:
+                _insert_issue(
+                    session,
+                    "parent_child_age",
+                    "warning",
+                    "relationship",
+                    [int(parent_id), int(child_id)],
+                    confidence=0.8,
+                    impact=0.8,
+                    explanation={"parent_birth_year": y_parent, "child_birth_year": y_child},
+                )
+                count += 1
+        if y_parent_death is not None and y_child is not None and y_parent_death < y_child:
+            _insert_issue(
+                session,
+                "parent_child_death",
+                "warning",
+                "relationship",
+                [int(parent_id), int(child_id)],
+                confidence=0.85,
+                impact=0.8,
+                explanation={"parent_death_year": y_parent_death, "child_birth_year": y_child},
+            )
+            count += 1
+
+    # Marriage timeline checks
+    family_rows = session.execute(
+        select(
+            Family.id,
+            Family.husband_person_id,
+            Family.wife_person_id,
+            Family.marriage_date,
+        )
+    ).all()
+    person_years = {
+        pid: (_parse_year(b), _parse_year(d))
+        for pid, b, d in session.execute(select(Person.id, Person.birth_date, Person.death_date)).all()
+    }
+    for fid, hid, wid, marriage_date in family_rows:
+        y_marriage = _parse_year(marriage_date)
+        if y_marriage is None:
+            continue
+        for spouse_id in (hid, wid):
+            if not spouse_id:
+                continue
+            y_birth, y_death = person_years.get(spouse_id, (None, None))
+            if y_birth is not None and y_marriage < y_birth + 12:
+                _insert_issue(
+                    session,
+                    "marriage_too_early",
+                    "warning",
+                    "family",
+                    [int(fid)],
+                    confidence=0.8,
+                    impact=0.7,
+                    explanation={"marriage_year": y_marriage, "spouse_birth_year": y_birth, "spouse_id": spouse_id},
+                )
+                count += 1
+            if y_death is not None and y_marriage > y_death:
+                _insert_issue(
+                    session,
+                    "marriage_after_death",
+                    "warning",
+                    "family",
+                    [int(fid)],
+                    confidence=0.85,
+                    impact=0.7,
+                    explanation={"marriage_year": y_marriage, "spouse_death_year": y_death, "spouse_id": spouse_id},
+                )
+                count += 1
 
     # Placeholder names
     placeholders = {"unknown", "n/a", "na", "none"}
@@ -562,7 +795,15 @@ def build_summary(session: Session) -> dict:
     ).scalar_one()
     unresolved_duplicates = session.execute(
         select(func.count(DataQualityIssue.id)).where(
-            DataQualityIssue.issue_type.in_(["duplicate_person", "duplicate_family", "duplicate_media_link"]),
+            DataQualityIssue.issue_type.in_(
+                [
+                    "duplicate_person",
+                    "duplicate_family",
+                    "duplicate_family_spouse_swap",
+                    "duplicate_media_link",
+                    "duplicate_media_asset",
+                ]
+            ),
             DataQualityIssue.status == "open",
         )
     ).scalar_one()
@@ -574,7 +815,18 @@ def build_summary(session: Session) -> dict:
     ).scalar_one()
     integrity_warnings = session.execute(
         select(func.count(DataQualityIssue.id)).where(
-            DataQualityIssue.issue_type.in_(["orphan_event", "impossible_timeline"]), DataQualityIssue.status == "open"
+            DataQualityIssue.issue_type.in_(
+                [
+                    "orphan_event",
+                    "orphan_family",
+                    "impossible_timeline",
+                    "parent_child_age",
+                    "parent_child_death",
+                    "marriage_too_early",
+                    "marriage_after_death",
+                ]
+            ),
+            DataQualityIssue.status == "open",
         )
     ).scalar_one()
 

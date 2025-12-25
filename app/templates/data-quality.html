@@ -33,6 +33,11 @@
       <button data-tab="integrity">Integrity</button>
       <button data-tab="changelog">Change Log</button>
     </div>
+    <div class="dqLegend muted small">
+      Confidence: <span class="dqBadge dqBadgeHigh">High ≥ 90%</span>
+      <span class="dqBadge dqBadgeMed">Medium ≥ 75%</span>
+      <span class="dqBadge dqBadgeLow">Low &lt; 75%</span>
+    </div>
 
     <section id="tab-overview" class="tabContent active">
       <div class="scoreCard">
@@ -57,14 +62,17 @@
         <h3>Duplicate Review Queue</h3>
       </div>
       <div id="dupList" class="list"></div>
-      <div class="muted small">Side-by-side merge controls appear after selecting a pair.</div>
+      <div class="muted small">Review a match, pick the record to keep, then merge. Undo is available from the Change Log.</div>
     </section>
 
     <section id="tab-places" class="tabContent">
       <div class="panelHeader">
         <h3>Place Clusters</h3>
+        <button id="btnApplyPlaces" class="btn btnSecondary">Apply suggested places</button>
       </div>
       <div id="placeList" class="list"></div>
+      <div class="muted small">Standardize variants to a canonical place name to keep reporting consistent.</div>
+      <div id="placeBulkStatus" class="muted small"></div>
     </section>
 
     <section id="tab-dates" class="tabContent">
@@ -73,6 +81,8 @@
         <button id="btnApplyDates" class="btn btnSecondary">Apply clean dates</button>
       </div>
       <div id="dateList" class="list"></div>
+      <div class="muted small">Dates with qualifiers like "About" are preserved until you choose a standard.</div>
+      <div id="dateBulkStatus" class="muted small"></div>
     </section>
 
     <section id="tab-integrity" class="tabContent">

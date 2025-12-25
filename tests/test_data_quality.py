@@ -5,7 +5,7 @@ import unittest
 from sqlalchemy.orm import sessionmaker
 
 from app import create_app
-from app.models import Person, Event, EventType, DateNormalization, Family, MediaAsset, MediaLink, family_children
+from app.models import Person, Event, EventType, DateNormalization, Family, MediaAsset, MediaLink, family_children, relationships
 from app.db import get_engine
 
 
@@ -83,6 +83,18 @@ class TestDataQuality(unittest.TestCase):
             s.commit()
             return asset.id, [link1.id, link2.id]
 
+    def _media_asset(self, filename, sha, size_bytes=1000):
+        with self._session() as s:
+            asset = MediaAsset(
+                path=filename,
+                sha256=sha,
+                original_filename=filename,
+                size_bytes=size_bytes,
+            )
+            s.add(asset)
+            s.commit()
+            return asset.id
+
     def test_scan_detects_duplicates(self):
         a = self._person("John", "Sample", "1980")
         b = self._person("Jon", "Sample", "1980")
@@ -135,6 +147,94 @@ class TestDataQuality(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         data = self.client.get("/api/dq/issues?type=duplicate_media_link").get_json()
         self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_scan_detects_duplicate_media_assets(self):
+        self._media_asset("family_photo.jpg", "b" * 64, size_bytes=2048)
+        self._media_asset("family photo.JPG", "c" * 64, size_bytes=2050)
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=duplicate_media_asset").get_json()
+        self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_merge_media_assets(self):
+        pid = self._person("Nina", "Media")
+        asset_keep = self._media_asset("scan1.jpg", "d" * 64, size_bytes=1111)
+        asset_drop = self._media_asset("scan 1.JPG", "e" * 64, size_bytes=1111)
+        with self._session() as s:
+            link = MediaLink(asset_id=asset_drop, person_id=pid)
+            s.add(link)
+            s.commit()
+            link_id = link.id
+
+        resp = self.client.post(
+            "/api/dq/actions/mergeMediaAssets",
+            json={"fromId": asset_drop, "intoId": asset_keep, "user": "tester"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        action_id = resp.get_json()["action_id"]
+
+        with self._session() as s:
+            self.assertIsNotNone(s.get(MediaAsset, asset_keep))
+            self.assertIsNone(s.get(MediaAsset, asset_drop))
+            link = s.get(MediaLink, link_id)
+            self.assertEqual(link.asset_id, asset_keep)
+
+        undo = self.client.post("/api/dq/actions/undo", json={"action_id": action_id})
+        self.assertEqual(undo.status_code, 200)
+        with self._session() as s:
+            self.assertIsNotNone(s.get(MediaAsset, asset_drop))
+            link = s.get(MediaLink, link_id)
+            self.assertEqual(link.asset_id, asset_drop)
+
+    def test_scan_detects_duplicate_family_spouse_swaps(self):
+        h1 = self._person("James", "Smith")
+        w1 = self._person("Julia", "Smith")
+        h2 = self._person("James", "Smith")
+        w2 = self._person("Julia", "Smith")
+        self._family(husband_id=h1, wife_id=w1, marriage_date="1920", marriage_place="Town")
+        self._family(husband_id=h2, wife_id=w2, marriage_date="1920", marriage_place="Town")
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=duplicate_family_spouse_swap").get_json()
+        self.assertGreaterEqual(len(data["items"]), 1)
+
+    def test_scan_detects_integrity_warnings(self):
+        parent = self._person("Paul", "Parent", birth_date="2000", death_date="2005")
+        child = self._person("Chris", "Child", birth_date="2003")
+        with self._session() as s:
+            s.execute(relationships.insert().values(
+                parent_person_id=parent,
+                child_person_id=child,
+                rel_type="parent",
+            ))
+            s.commit()
+        self._family(marriage_date="1990")
+
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        self.assertGreaterEqual(
+            len(self.client.get("/api/dq/issues?type=parent_child_age").get_json()["items"]), 1
+        )
+        self.assertGreaterEqual(
+            len(self.client.get("/api/dq/issues?type=parent_child_death").get_json()["items"]), 1
+        )
+        self.assertGreaterEqual(
+            len(self.client.get("/api/dq/issues?type=orphan_family").get_json()["items"]), 1
+        )
+
+    def test_scan_detects_marriage_timeline_issues(self):
+        spouse = self._person("Mona", "Married", birth_date="2000", death_date="2005")
+        self._family(husband_id=spouse, marriage_date="1995")
+        self._family(husband_id=spouse, marriage_date="2010")
+
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        self.assertGreaterEqual(
+            len(self.client.get("/api/dq/issues?type=marriage_too_early").get_json()["items"]), 1
+        )
+        self.assertGreaterEqual(
+            len(self.client.get("/api/dq/issues?type=marriage_after_death").get_json()["items"]), 1
+        )
 
     def test_normalize_dates_preserves_qualifier(self):
         pid = self._person("Ava", "About", birth_date="About 1900")

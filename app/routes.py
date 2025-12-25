@@ -2409,7 +2409,7 @@ def dq_merge_families():
 
         family_issues = session.execute(
             select(DataQualityIssue).where(
-                DataQualityIssue.issue_type == "duplicate_family",
+                DataQualityIssue.issue_type.in_(["duplicate_family", "duplicate_family_spouse_swap"]),
                 DataQualityIssue.status == "open",
             )
         ).scalars().all()
@@ -2489,6 +2489,66 @@ def dq_dedupe_media_links():
         raise
 
     return jsonify({"deduped": len(link_ids) - 1, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
+@api_bp.post("/dq/actions/mergeMediaAssets")
+def dq_merge_media_assets():
+    data = request.get_json(force=True, silent=False)
+    from_id = data.get("fromId")
+    into_id = data.get("intoId")
+    user = data.get("user")
+    if not from_id or not into_id:
+        return jsonify({"error": "fromId and intoId are required"}), 400
+    if from_id == into_id:
+        return jsonify({"error": "Cannot merge the same asset"}), 400
+
+    session = get_session()
+    primary = session.get(MediaAsset, into_id)
+    secondary = session.get(MediaAsset, from_id)
+    if not primary or not secondary:
+        return jsonify({"error": "Media asset not found"}), 404
+
+    link_rows = session.execute(
+        select(MediaLink.id, MediaLink.asset_id).where(MediaLink.asset_id == from_id)
+    ).all()
+    undo_payload = {
+        "from_asset": _media_asset_dict(secondary, include_id_key="id"),
+        "links": [{"id": lid, "asset_id": aid} for lid, aid in link_rows],
+    }
+
+    try:
+        session.execute(update(MediaLink).where(MediaLink.asset_id == from_id).values(asset_id=into_id))
+        session.delete(secondary)
+
+        action_entry = log_action(
+            session,
+            "merge_media_assets",
+            {"fromId": from_id, "intoId": into_id},
+            undo_payload,
+            user,
+        )
+
+        asset_issues = session.execute(
+            select(DataQualityIssue).where(
+                DataQualityIssue.issue_type == "duplicate_media_asset",
+                DataQualityIssue.status == "open",
+            )
+        ).scalars().all()
+        for issue in asset_issues:
+            try:
+                ids = json.loads(issue.entity_ids)
+            except Exception:
+                ids = []
+            if from_id in ids or into_id in ids:
+                issue.status = "resolved"
+                issue.resolved_at = datetime.utcnow()
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"mergedInto": into_id, "action_id": action_entry.id, "revertToken": action_entry.id})
 
 
 @api_bp.post("/dq/actions/normalizePlaces")
@@ -2869,6 +2929,35 @@ def dq_undo():
                     person_id=link.get("person_id"),
                     family_id=link.get("family_id"),
                 ))
+        elif action.action_type == "merge_media_assets":
+            asset_data = undo_payload.get("from_asset") or {}
+            created_at = asset_data.get("created_at")
+            created_at_value = None
+            if created_at:
+                try:
+                    created_at_value = datetime.fromisoformat(created_at)
+                except Exception:
+                    created_at_value = None
+            restored = MediaAsset(
+                id=asset_data.get("id"),
+                path=asset_data.get("path"),
+                sha256=asset_data.get("sha256"),
+                original_filename=asset_data.get("original_filename"),
+                mime_type=asset_data.get("mime_type"),
+                size_bytes=asset_data.get("size_bytes"),
+                thumbnail_path=asset_data.get("thumbnail_path"),
+                thumb_width=asset_data.get("thumb_width"),
+                thumb_height=asset_data.get("thumb_height"),
+                status=asset_data.get("status") or "unassigned",
+                source_path=asset_data.get("source_path"),
+                created_at=created_at_value,
+            )
+            session.add(restored)
+            session.flush()
+            for link in undo_payload.get("links", []):
+                session.execute(
+                    update(MediaLink).where(MediaLink.id == link.get("id")).values(asset_id=link.get("asset_id"))
+                )
 
         elif action.action_type == "normalize_places":
             for ev in undo_payload.get("events", []):

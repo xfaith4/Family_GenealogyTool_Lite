@@ -34,6 +34,17 @@ set-executionPolicy -Scope Process -ExecutionPolicy Bypass
 
 Open: <http://127.0.0.1:3001>
 
+## Local setup (venv recommended)
+
+If your system Python is externally managed (PEP 668), use a virtual environment:
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+python run.py
+```
+
 ## Run on Android (Termux)
 
 You can run this app natively on Android using Termux—no root or Docker required!
@@ -56,6 +67,40 @@ Open in your Android browser: <http://127.0.0.1:3001>
 
 Use the **Import RMTree** button in either view to load .rmtree, .sql, or .txt exports.
 The importer focuses on populated tables so it extracts individuals, media locations, and media relationships into the existing schema without trying to recreate the original database.
+
+## Data Quality workflow
+
+The Data Quality page (`/data-quality`) is the primary workflow for cleaning data safely. It detects issues, queues fixes, and provides reversible actions.
+
+### What it detects
+
+- **Duplicates:** People, families, duplicate media links, and similar media assets
+- **Places:** clusters and similar names with suggested canonical values
+- **Dates:** normalizations with confidence and qualifiers
+- **Integrity:** timeline warnings and relationship checks (death before birth, parent too young, marriage too early, orphan families/events)
+
+Integrity rules (current thresholds):
+- Death before birth (same person).
+- Parent too young: parent birth year within 12 years of child birth year.
+- Parent died before child birth.
+- Marriage too early: marriage year within 12 years of spouse birth year.
+- Marriage after death: marriage year later than spouse death year.
+- Orphaned family: no spouses and no children.
+- Orphaned event: no person and no family.
+
+### How to use it
+
+1. Open **Data Quality** and click **Scan for issues**.
+2. Work each queue:
+   - **Duplicates:** Review a match, choose the record to keep, and merge. Missing fields can be filled automatically.
+   - **Places:** Pick a canonical place name and standardize variants.
+   - **Dates:** Apply unambiguous normalizations (qualifiers like "About/Abt" are preserved until you choose a standard).
+3. Use **Change Log** to review actions and undo if needed.
+
+### Notes
+
+- All cleanup actions are logged with undo payloads.
+- Date normalization only updates stored dates when the value is unambiguous and has no qualifier.
 
 ## Reset to empty
 

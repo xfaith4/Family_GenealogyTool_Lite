@@ -270,6 +270,37 @@ body{
   font-size: 12px;
   color: var(--muted);
 }
+.dqBadge{
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,0.2);
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.dqBadgeHigh{
+  border-color: #2e6f3d;
+  color: #a5e7b8;
+}
+.dqBadgeMed{
+  border-color: #6c6426;
+  color: #f3e5a2;
+}
+.dqBadgeLow{
+  border-color: #6b2f2f;
+  color: #f3b0b0;
+}
+.dqLegend{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 6px 0 12px;
+}
 .small{font-size:12px;}
 .grid.cols2{grid-template-columns:1fr 1fr;}
 .gap16{gap:16px;}
