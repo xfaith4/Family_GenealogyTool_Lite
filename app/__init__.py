@@ -50,11 +50,17 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     # Ensure tables exist for tests and first-run scenarios
     with app.app_context():
-        from .db import get_engine, ensure_media_links_asset_id, ensure_data_quality_tables
+        from .db import (
+            get_engine,
+            ensure_media_links_asset_id,
+            ensure_media_assets_status,
+            ensure_data_quality_tables,
+        )
         from .models import Base
         engine = get_engine()
         Base.metadata.create_all(engine)
         ensure_media_links_asset_id(engine)
+        ensure_media_assets_status(engine)
         ensure_data_quality_tables(engine)
 
     return app
