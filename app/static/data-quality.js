@@ -2,6 +2,11 @@
   const tabs = document.querySelectorAll(".tabs button");
   const contents = document.querySelectorAll(".tabContent");
   const btnScan = document.getElementById("btnScan");
+  const lastScanEl = document.getElementById("dqLastScan");
+  const scanHintEl = document.getElementById("dqScanHint");
+  const chipContainer = document.getElementById("dqChips");
+  const highlightsContainer = document.getElementById("dqHighlights");
+  let lastScanAt = null;
 
   function setActive(tabName) {
     tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === tabName));
@@ -11,6 +16,26 @@
   tabs.forEach((btn) => {
     btn.addEventListener("click", () => setActive(btn.dataset.tab));
   });
+
+  function formatRelative(date) {
+    if (!date) return "--";
+    const diff = Date.now() - date.getTime();
+    const mins = Math.round(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins === 1) return "1 minute ago";
+    if (mins < 60) return `${mins} minutes ago`;
+    const hours = Math.round(mins / 60);
+    if (hours === 1) return "1 hour ago";
+    if (hours < 24) return `${hours} hours ago`;
+    const days = Math.round(hours / 24);
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  }
+
+  function updateLastScan() {
+    if (lastScanEl) {
+      lastScanEl.textContent = `Last scan: ${formatRelative(lastScanAt)}`;
+    }
+  }
 
   async function fetchJson(url, opts) {
     const res = await fetch(url, opts);
@@ -22,6 +47,101 @@
     if (!err) return "Unknown error";
     if (typeof err === "string") return err;
     return err.message || "Request failed";
+  }
+
+  function renderChips(summary) {
+    if (!chipContainer) return;
+    chipContainer.innerHTML = "";
+    const chips = [
+      { label: "Duplicates", icon: "👥", value: `${summary.unresolved_duplicates ?? 0} open`, target: "duplicates" },
+      { label: "Places", icon: "📍", value: `${summary.place_clusters ?? 0} clusters`, target: "places" },
+      { label: "Dates", icon: "📅", value: `${summary.standardized_dates_pct ?? 0}% standardized`, target: "dates" },
+      { label: "Integrity", icon: "⚠️", value: `${summary.integrity_warnings ?? 0} warnings`, target: "integrity" },
+    ];
+    chips.forEach((chip) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "dqChip";
+      btn.innerHTML = `
+        <span class="icon">${chip.icon}</span>
+        <div>
+          <div class="label">${chip.label}</div>
+          <div class="value">${chip.value}</div>
+        </div>
+      `;
+      btn.addEventListener("click", () => setActive(chip.target));
+      chipContainer.appendChild(btn);
+    });
+  }
+
+  function renderHighlights(summary) {
+    if (!highlightsContainer) return;
+    highlightsContainer.innerHTML = "";
+    const items = [];
+    if ((summary.unresolved_duplicates ?? 0) > 0) {
+      items.push({ icon: "👥", label: "Duplicates", text: `${summary.unresolved_duplicates} possible matches ready to merge`, target: "duplicates" });
+    }
+    if ((summary.place_clusters ?? 0) > 0) {
+      items.push({ icon: "📍", label: "Places", text: `${summary.place_clusters} variant set(s) to standardize`, target: "places" });
+    }
+    if ((summary.integrity_warnings ?? 0) > 0) {
+      items.push({ icon: "⚠️", label: "Integrity", text: `${summary.integrity_warnings} timeline/relationship warnings`, target: "integrity" });
+    }
+    if ((summary.standardized_dates_pct ?? 0) < 90) {
+      items.push({ icon: "📅", label: "Dates", text: `${summary.standardized_dates_pct}% standardized — apply clean dates to lift the score`, target: "dates" });
+    }
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "muted small";
+      li.textContent = "No open issues detected. Run a scan after imports to keep things clean.";
+      highlightsContainer.appendChild(li);
+      return;
+    }
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = "dqHighlightItem";
+      li.innerHTML = `
+        <div class="label">${item.icon || "✨"} ${escapeHtml(item.label)}</div>
+        <div class="muted small">${escapeHtml(item.text)}</div>
+      `;
+      if (item.target) {
+        li.style.cursor = "pointer";
+        li.addEventListener("click", () => setActive(item.target));
+      }
+      highlightsContainer.appendChild(li);
+    });
+  }
+
+  function updateScanHint(summary) {
+    if (!scanHintEl) return;
+    scanHintEl.textContent = `Score blends duplicates (${summary.unresolved_duplicates ?? 0}), places (${summary.place_clusters ?? 0}), dates (${summary.standardized_dates_pct ?? 0}% clean), and integrity (${summary.integrity_warnings ?? 0}).`;
+  }
+
+  function integrityDescription(issue) {
+    const ex = issue.explanation || {};
+    switch (issue.issue_type) {
+      case "impossible_timeline":
+        return `Birth ${ex.birth_year ?? "?"}, death ${ex.death_year ?? "?"} (death precedes birth).`;
+      case "orphan_event":
+      case "orphan_family":
+        return ex.reason || "Missing linked person/family.";
+      case "parent_child_age": {
+        const gap = ex.parent_birth_year !== undefined && ex.child_birth_year !== undefined
+          ? ex.child_birth_year - ex.parent_birth_year
+          : null;
+        return `Parent birth ${ex.parent_birth_year ?? "?"}, child birth ${ex.child_birth_year ?? "?"}${gap !== null ? ` (gap ${gap}y)` : ""}.`;
+      }
+      case "parent_child_death":
+        return `Parent died ${ex.parent_death_year ?? "?"} before child birth ${ex.child_birth_year ?? "?"}.`;
+      case "marriage_too_early":
+        return `Marriage ${ex.marriage_year ?? "?"} happens within 12y of spouse birth ${ex.spouse_birth_year ?? "?"}.`;
+      case "marriage_after_death":
+        return `Marriage ${ex.marriage_year ?? "?"} occurs after spouse death ${ex.spouse_death_year ?? "?"}.`;
+      case "placeholder_name":
+        return `Placeholder name detected: ${(ex.given || "").trim()} ${(ex.surname || "").trim()}`.trim() || "Unnamed placeholder record.";
+      default:
+        return JSON.stringify(ex);
+    }
   }
 
   function escapeHtml(s) {
@@ -92,6 +212,10 @@
         li.innerHTML = `<div>${label}</div><div class="muted">${value} open</div>`;
         queues.appendChild(li);
       });
+      renderChips(data);
+      renderHighlights(data);
+      updateScanHint(data);
+      updateLastScan();
     } catch (err) {
       console.error("summary", err);
     }
@@ -171,6 +295,21 @@
           if (ids.length < 2) return;
           const left = peopleMap.get(ids[0]);
           const right = peopleMap.get(ids[1]);
+          const explanation = item.explanation || {};
+          const reasonParts = [];
+          if (explanation.name_similarity !== undefined && explanation.name_similarity !== null) {
+            reasonParts.push(`Name match ${Math.round((explanation.name_similarity || 0) * 100)}%`);
+          }
+          if (explanation.birth_delta !== undefined && explanation.birth_delta !== null) {
+            reasonParts.push(`Birth Δ ${explanation.birth_delta}`);
+          }
+          if (explanation.death_delta !== undefined && explanation.death_delta !== null) {
+            reasonParts.push(`Death Δ ${explanation.death_delta}`);
+          }
+          if (explanation.birth_place_match) {
+            reasonParts.push("Birth place match");
+          }
+          const reasonText = reasonParts.join(" • ") || "Likely duplicate based on names and dates";
           const div = document.createElement("div");
           div.className = "listItem";
           div.innerHTML = `
@@ -178,6 +317,7 @@
               <div><strong>${escapeHtml(fullName(left))}</strong> + <strong>${escapeHtml(fullName(right))}</strong></div>
               <div class="dqBadge ${confidenceClass(item.confidence)}">${confidenceLabel(item.confidence)} • ${asConfidence(item.confidence)}</div>
             </div>
+            <div class="muted small">Why flagged: ${escapeHtml(reasonText)}</div>
             <div class="row" style="margin-top:8px;">
               <button class="btn btnSecondary" data-action="review">Review merge</button>
               <div class="muted small">${item.detected_at}</div>
@@ -914,6 +1054,7 @@
     btnScan.textContent = "Scanning…";
     try {
       await fetchJson("/api/dq/scan", { method: "POST" });
+      lastScanAt = new Date();
       await Promise.all([
         loadSummary(),
         loadDuplicates(),

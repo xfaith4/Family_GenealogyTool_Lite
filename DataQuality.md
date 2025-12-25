@@ -10,18 +10,27 @@ This app ships a deterministic “Data Quality” workflow for finding, reviewin
 ## Detectors & thresholds
 - **Duplicate people (`duplicate_person`):**
   - Normalized name similarity (SequenceMatcher) must be ≥ 0.68.
-  - Birth-year delta ≤ 1 adds score; same birth place adds score.
+  - Birth-year delta ≤ 1 adds 0.25; death-year delta ≤ 1 adds 0.1; matching birth place adds 0.15.
   - Overall confidence ≥ 0.55 creates an issue.
-- **Place clusters (`place_cluster`):**
+- **Duplicate families (`duplicate_family`, `duplicate_family_spouse_swap`):**
+  - Same spouse IDs with matching marriage date/place (score ≥ 0.75) or swapped spouse names with supporting date/place evidence (score ≥ 0.7).
+  - Tracks marriage dates/places and spouse names in the explanation payload.
+- **Duplicate media (`duplicate_media_link`, `duplicate_media_asset`):**
+  - Duplicate links share the same asset/person/family (count > 1, confidence 0.9).
+  - Media assets flagged when filename similarity ≥ 0.92 (size within 2% adds confidence).
+- **Place clusters and similarities (`place_cluster`, `place_similarity`):**
   - Token-normalized variants from event `place_raw` and person birth/death places.
   - Two+ distinct variants with a shared normalized key create a cluster; top variant suggested as canonical.
+  - Cross-variant similarity ≥ 0.8 suggests a canonical form even when normalized keys differ.
 - **Date normalization (`date_normalization`):**
-  - Parses ISO `YYYY-MM-DD`, `MM/DD/YYYY`, `DD/MM/YYYY`, `YYYY/MM/DD`, `Mon YYYY`, numeric month + year, ranges `BET yyyy AND yyyy`, and qualifiers `abt/bef/aft/est`.
+  - Parses ISO `YYYY-MM-DD`, `MM/DD/YYYY`, `DD/MM/YYYY`, `YYYY/MM/DD`, `Mon YYYY`, numeric month + year, ranges `BET yyyy AND yyyy`, and qualifiers `abt/about/bef/aft/est/calc/circa/ca`.
   - Stores normalized value, precision (day/month/year/range), qualifier, confidence, ambiguity flag.
-  - Original raw is preserved; ambiguous parses become errors.
+  - Original raw is preserved; ambiguous parses become errors (person rows as `error`, event rows as `info`).
 - **Integrity issues:**
-  - Orphan events (no person/family).
+  - Orphan events (no person/family) and orphan families (no spouses/children).
   - Impossible timelines (death year before birth year).
+  - Parent/child age checks (parent birth within 12 years of child birth) and death-before-child checks.
+  - Marriage too early (within 12 years of spouse birth) or after spouse death.
   - Placeholder names (`unknown`, `n/a`, etc.).
 
 ## API contract
@@ -29,9 +38,12 @@ This app ships a deterministic “Data Quality” workflow for finding, reviewin
 - `GET /api/dq/summary` — scoreboard with quality score, duplicate and place queues, integrity warnings, and % standardized dates.
 - `GET /api/dq/issues?type=&status=&page=&perPage=` — paged issues list with explanations.
 - `GET /api/dq/actions/log` — paged change log.
-- `POST /api/dq/actions/mergePeople` — body `{fromId, intoId, user?}` merges people, preserves relationships/events/media, logs undo.
+- `POST /api/dq/actions/mergePeople` — body `{fromId, intoId, fillMissing?, user?}` merges people, preserves relationships/events/media, logs undo.
+- `POST /api/dq/actions/mergeFamilies` — body `{fromId, intoId, fillMissing?, user?}` merges families, consolidating children/media; logs undo.
+- `POST /api/dq/actions/dedupeMediaLinks` — body `{link_ids[], keep_id, user?}` keeps one media link and removes the rest.
+- `POST /api/dq/actions/mergeMediaAssets` — body `{fromId, intoId, user?}` merges media assets and moves links to the kept asset.
 - `POST /api/dq/actions/normalizePlaces` — body `{canonical, variants[], user?}` maps variants to a canonical place, updates events/people, logs undo.
-- `POST /api/dq/actions/normalizeDates` — body `{items:[{entity_type,entity_id,normalized,precision,qualifier,raw,confidence,ambiguous}], user?}` updates normalized dates and event `date_canonical`.
+- `POST /api/dq/actions/normalizeDates` — body `{items:[{entity_type,entity_id,normalized,precision,qualifier,raw,confidence,ambiguous,field?}], user?}` updates normalized dates and event `date_canonical`.
 - `POST /api/dq/actions/undo` — body `{action_id}` replays undo payload for the selected action.
 
 ## Database additions
