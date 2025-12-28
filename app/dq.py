@@ -39,7 +39,7 @@ from .models import (
 YEAR_RE = re.compile(r"(1[5-9]\d{2}|20\d{2})")
 DATE_RANGE_RE = re.compile(r"\bBET\s+(?P<start>\d{3,4})\s+AND\s+(?P<end>\d{3,4})", re.IGNORECASE)
 QUALIFIER_RE = re.compile(r"\b(ABT|ABOUT|BEF|AFT|EST|CALC|CIRCA|CA\.?)\b", re.IGNORECASE)
-PLACE_CLEAN_CONFIDENCE = 0.65  # confidence threshold for automated place normalization (keeps cleaning transparent)
+PLACE_CLEAN_CONFIDENCE = 0.65  # confidence threshold for automated place normalization; keeps automated cleaning conservative and reviewable
 
 
 def _norm_name(value: str | None) -> str:
