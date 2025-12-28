@@ -112,7 +112,7 @@ class Event(Base):
     # Relationships
     person: Mapped[Optional["Person"]] = relationship("Person", back_populates="events", foreign_keys=[person_id])
     family: Mapped[Optional["Family"]] = relationship("Family", back_populates="events", foreign_keys=[family_id])
-    place: Mapped[Optional["Place"]] = relationship("Place", back_populates="events")
+    place: Mapped[Optional["Place"]] = relationship("Place", back_populates="events", foreign_keys=[place_id])
 
     __table_args__ = (
         Index('idx_events_person', 'person_id'),
@@ -137,7 +137,7 @@ class Place(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
-    events: Mapped[List["Event"]] = relationship("Event", back_populates="place")
+    events: Mapped[List["Event"]] = relationship("Event", back_populates="place", foreign_keys="Event.place_id")
     variants: Mapped[List["PlaceVariant"]] = relationship("PlaceVariant", back_populates="place", cascade="all, delete-orphan")
 
 class PlaceVariant(Base):

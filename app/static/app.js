@@ -415,7 +415,10 @@ async function loadDetails(id){
   $("btnAddAttr").onclick = async () => {
     const key = ($("attrKey").value || "").trim();
     const value = ($("attrValue").value || "").trim();
-    if(!key || !value) return;
+    if(!key || !value){
+      alert("Key and value are required.");
+      return;
+    }
     await api(`/api/people/${id}/attributes`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ key, value }) });
     $("attrKey").value = "";
     $("attrValue").value = "";

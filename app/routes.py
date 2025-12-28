@@ -248,6 +248,10 @@ def _attribute_to_dict(attr: PersonAttribute) -> dict:
     }
 
 
+def _sorted_attrs(person: Person) -> list[PersonAttribute]:
+    return sorted(person.attributes, key=lambda a: (a.created_at or datetime.min, a.id or 0))
+
+
 def _person_to_dict(p: Person, include_profile: bool = False) -> dict:
     data = {
         "id": p.id,
@@ -261,8 +265,7 @@ def _person_to_dict(p: Person, include_profile: bool = False) -> dict:
         "death_place": p.death_place,
     }
     if include_profile:
-        attrs = sorted(p.attributes, key=lambda a: (a.created_at or datetime.min, a.id or 0))
-        data["attributes"] = [_attribute_to_dict(a) for a in attrs]
+        data["attributes"] = [_attribute_to_dict(a) for a in _sorted_attrs(p)]
     return data
 
 
@@ -462,8 +465,7 @@ def list_person_attributes(person_id: int):
     person = session.get(Person, person_id)
     if not person:
         return jsonify({"error": "Not found"}), 404
-    attrs = sorted(person.attributes, key=lambda a: (a.created_at or datetime.min, a.id or 0))
-    return jsonify([_attribute_to_dict(a) for a in attrs])
+    return jsonify([_attribute_to_dict(a) for a in _sorted_attrs(person)])
 
 
 @api_bp.post("/people/<int:person_id>/attributes")
