@@ -417,6 +417,7 @@ async function loadDetails(id){
     const value = ($("attrValue").value || "").trim();
     if(!key || !value) return;
     await api(`/api/people/${id}/attributes`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ key, value }) });
+    $("attrKey").value = "";
     $("attrValue").value = "";
     await loadDetails(id);
   };
