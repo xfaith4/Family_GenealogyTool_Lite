@@ -799,6 +799,86 @@ def _detect_integrity(session: Session) -> int:
     return count
 
 
+def _clean_date_record(raw: str | None, label: str) -> dict:
+    norm, precision, qualifier, conf, ambiguous = _parse_date(raw)
+    return {
+        "field": label,
+        "type": "date",
+        "original": raw,
+        "normalized": norm,
+        "precision": precision,
+        "qualifier": qualifier,
+        "confidence": conf,
+        "ambiguous": ambiguous,
+    }
+
+
+def _clean_place_record(raw: str | None, label: str) -> dict:
+    cleaned = _norm_place(raw) if raw else None
+    return {
+        "field": label,
+        "type": "place",
+        "original": raw,
+        "normalized": cleaned or None,
+        "confidence": 0.65 if cleaned else 0.0,
+        "ambiguous": False,
+    }
+
+
+def clean_person_fields(session: Session, person_id: int, apply: bool = False, applied_by: str | None = None) -> dict:
+    """
+    Preview or apply transparent cleaning of a person's date/place fields.
+    Returns a payload describing each field and whether changes were applied.
+    """
+    person = session.get(Person, person_id)
+    if not person:
+        raise ValueError("Person not found")
+
+    records: list[dict[str, Any]] = []
+    for label in ("birth_date", "death_date"):
+        records.append(_clean_date_record(getattr(person, label), label))
+    for label in ("birth_place", "death_place"):
+        records.append(_clean_place_record(getattr(person, label), label))
+
+    applied_any = False
+    if apply:
+        undo_payload: dict[str, Any] = {}
+        for rec in records:
+            if rec["ambiguous"] or not rec["normalized"]:
+                continue
+            current = getattr(person, rec["field"])
+            if current == rec["normalized"]:
+                continue
+            undo_payload[rec["field"]] = current
+            setattr(person, rec["field"], rec["normalized"])
+            if rec["type"] == "date":
+                dn = DateNormalization(
+                    entity_type="person",
+                    entity_id=person_id,
+                    raw_value=rec["original"] or "",
+                    normalized=rec["normalized"],
+                    precision=rec.get("precision"),
+                    qualifier=rec.get("qualifier"),
+                    confidence=rec.get("confidence"),
+                    is_ambiguous=bool(rec.get("ambiguous")),
+                )
+                session.add(dn)
+        if undo_payload:
+            person.updated_at = datetime.utcnow()
+            session.flush()
+            log_action(
+                session,
+                "person_clean",
+                payload={"person_id": person_id, "applied_fields": list(undo_payload.keys()), "preview": records},
+                undo={"person_id": person_id, "values": undo_payload},
+                applied_by=applied_by,
+            )
+            session.commit()
+            applied_any = True
+
+    return {"person_id": person_id, "fields": records, "applied": applied_any}
+
+
 def build_summary(session: Session) -> dict:
     total_dates = session.execute(select(func.count(DateNormalization.id))).scalar_one()
     normalized_dates = session.execute(

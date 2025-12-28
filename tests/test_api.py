@@ -134,7 +134,7 @@ class TestApi(unittest.TestCase):
             required_tables = [
                 'persons', 'families', 'events', 'places', 'place_variants',
                 'media_assets', 'media_links', 'notes', 'data_quality_flags',
-                'family_children', 'relationships'
+                'family_children', 'relationships', 'person_attributes'
             ]
             for table in required_tables:
                 self.assertIn(table, tables, f"Table {table} should exist")
@@ -294,6 +294,57 @@ class TestApi(unittest.TestCase):
         notes = r.get_json()["notes"]
         self.assertEqual(len(notes), 1)
         self.assertEqual(notes[0]["text"], "hello")
+
+    def test_profile_attributes(self):
+        r = self.client.post("/api/people", json={"given": "Attr", "surname": "Tester"})
+        pid = r.get_json()["id"]
+
+        r = self.client.post(f"/api/people/{pid}/attributes", json={"key": "Occupation", "value": "Carpenter"})
+        self.assertEqual(r.status_code, 201)
+        attr_id = r.get_json()["id"]
+
+        r = self.client.get(f"/api/people/{pid}")
+        self.assertEqual(r.status_code, 200)
+        attrs = r.get_json().get("attributes", [])
+        self.assertEqual(len(attrs), 1)
+        self.assertEqual(attrs[0]["key"], "Occupation")
+        self.assertEqual(attrs[0]["value"], "Carpenter")
+
+        r = self.client.delete(f"/api/people/{pid}/attributes/{attr_id}")
+        self.assertEqual(r.status_code, 200)
+        r = self.client.get(f"/api/people/{pid}/attributes")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.get_json()), 0)
+
+    def test_person_cleaning_preview_and_apply(self):
+        r = self.client.post(
+            "/api/people",
+            json={
+                "given": "Clean",
+                "surname": "Tester",
+                "birth_date": "abt 1980",
+                "birth_place": "Springfield; IL ",
+                "death_place": "usa ",
+            },
+        )
+        pid = r.get_json()["id"]
+
+        preview = self.client.get(f"/api/people/{pid}/clean")
+        self.assertEqual(preview.status_code, 200)
+        fields = preview.get_json().get("fields", [])
+        birth_field = next((f for f in fields if f["field"] == "birth_date"), None)
+        self.assertIsNotNone(birth_field)
+        self.assertEqual(birth_field["normalized"], "1980")
+
+        apply_res = self.client.post(f"/api/people/{pid}/clean", json={"apply": True})
+        self.assertEqual(apply_res.status_code, 200)
+        self.assertTrue(apply_res.get_json()["applied"])
+
+        refreshed = self.client.get(f"/api/people/{pid}")
+        data = refreshed.get_json()
+        self.assertEqual(data["birth_date"], "1980")
+        self.assertEqual(data["birth_place"], "springfield, il")
+        self.assertEqual(data["death_place"], "usa")
 
 
     def test_ui_index(self):
