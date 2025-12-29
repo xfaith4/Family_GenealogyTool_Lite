@@ -89,6 +89,16 @@ CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id);
 
+-- Person profile attributes (flexible key/value metadata)
+CREATE TABLE IF NOT EXISTS person_attributes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_person_attributes_person_key ON person_attributes(person_id, key);
+
 -- Data Quality tables
 CREATE TABLE IF NOT EXISTS dq_issues (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

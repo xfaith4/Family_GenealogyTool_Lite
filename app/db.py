@@ -22,6 +22,7 @@ def init_engine(database_url: str) -> None:
     ensure_media_links_asset_id(_engine)
     ensure_media_assets_status(_engine)
     ensure_data_quality_tables(_engine)
+    ensure_person_attributes_table(_engine)
 
 def get_engine():
     """Get the SQLAlchemy engine."""
@@ -51,6 +52,7 @@ def init_app(app) -> None:
 
     # Non-breaking migration: add optional place authority fields
     ensure_places_authority_columns(get_engine())
+    ensure_person_attributes_table(get_engine())
 
     # Register teardown
     app.teardown_appcontext(close_session)
@@ -255,3 +257,26 @@ def ensure_data_quality_tables(engine) -> None:
     for name, (table, cols) in schemas.items():
         if _needs_rebuild(name, cols):
             _recreate(table)
+
+
+def ensure_person_attributes_table(engine) -> None:
+    """Create person_attributes table for legacy databases (idempotent)."""
+    inspector = inspect(engine)
+    if "person_attributes" in inspector.get_table_names():
+        return
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE person_attributes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    created_at DATETIME NOT NULL DEFAULT (datetime('now'))
+                )
+                """
+            )
+        )
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_person_attributes_person_key ON person_attributes(person_id, key)"))

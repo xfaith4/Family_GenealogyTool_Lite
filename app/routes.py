@@ -26,6 +26,7 @@ from .models import (
     EventType,
     MediaAsset,
     MediaLink,
+    PersonAttribute,
     relationships,
     family_children,
     DataQualityIssue,
@@ -44,7 +45,7 @@ from .rmtree import (
     load_tables_from_sqlite,
     sqlite_schema_fingerprint,
 )
-from .dq import run_detection, build_summary, log_action
+from .dq import run_detection, build_summary, log_action, clean_person_fields
 
 import re
 from collections import Counter
@@ -238,8 +239,21 @@ def analytics_page():
 def service_worker():
     return send_from_directory(current_app.static_folder, "service-worker.js")
 
-def _person_to_dict(p: Person) -> dict:
+def _attribute_to_dict(attr: PersonAttribute) -> dict:
     return {
+        "id": attr.id,
+        "key": attr.key,
+        "value": attr.value,
+        "created_at": attr.created_at.isoformat() if attr.created_at else None,
+    }
+
+
+def _sorted_attrs(person: Person) -> list[PersonAttribute]:
+    return sorted(person.attributes, key=lambda a: (a.created_at or datetime.min, a.id or 0))
+
+
+def _person_to_dict(p: Person, include_profile: bool = False) -> dict:
+    data = {
         "id": p.id,
         "xref": p.xref,
         "given": p.given,
@@ -250,6 +264,9 @@ def _person_to_dict(p: Person) -> dict:
         "death_date": p.death_date,
         "death_place": p.death_place,
     }
+    if include_profile:
+        data["attributes"] = [_attribute_to_dict(a) for a in _sorted_attrs(p)]
+    return data
 
 
 def _family_to_dict(f: Family) -> dict:
@@ -345,7 +362,7 @@ def get_person(person_id: int):
     ).where(relationships.c.parent_person_id == person_id).order_by(Person.surname, Person.given)
     children = session.execute(children_stmt).scalars().all()
 
-    out = _person_to_dict(person)
+    out = _person_to_dict(person, include_profile=True)
     out["notes"] = [{"id": n.id, "text": n.note_text, "created_at": n.created_at.isoformat() if n.created_at else None} for n in person.notes]
     
     # Get media through MediaLink
@@ -388,7 +405,29 @@ def update_person(person_id: int):
     
     session.commit()
     session.refresh(person)
-    return jsonify(_person_to_dict(person))
+    return jsonify(_person_to_dict(person, include_profile=True))
+
+
+@api_bp.get("/people/<int:person_id>/clean")
+def preview_person_clean(person_id: int):
+    session = get_session()
+    try:
+        result = clean_person_fields(session, person_id, apply=False)
+    except ValueError:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(result)
+
+
+@api_bp.post("/people/<int:person_id>/clean")
+def apply_person_clean(person_id: int):
+    payload = request.get_json(force=False, silent=True) or {}
+    apply_flag = bool(payload.get("apply", True))
+    session = get_session()
+    try:
+        result = clean_person_fields(session, person_id, apply=apply_flag, applied_by="api")
+    except ValueError:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(result)
 
 @api_bp.delete("/people/<int:person_id>")
 def delete_person(person_id: int):
@@ -418,6 +457,46 @@ def add_note(person_id: int):
     session.commit()
     session.refresh(note)
     return jsonify({"id": note.id}), 201
+
+
+@api_bp.get("/people/<int:person_id>/attributes")
+def list_person_attributes(person_id: int):
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify([_attribute_to_dict(a) for a in _sorted_attrs(person)])
+
+
+@api_bp.post("/people/<int:person_id>/attributes")
+def add_person_attribute(person_id: int):
+    data = request.get_json(force=True, silent=False)
+    key = (data.get("key") or "").strip()
+    value = (data.get("value") or "").strip()
+    if not key or not value:
+        return jsonify({"error": "Key and value are required."}), 400
+
+    session = get_session()
+    person = session.get(Person, person_id)
+    if not person:
+        return jsonify({"error": "Not found"}), 404
+
+    attr = PersonAttribute(person_id=person_id, key=key, value=value)
+    session.add(attr)
+    session.commit()
+    session.refresh(attr)
+    return jsonify(_attribute_to_dict(attr)), 201
+
+
+@api_bp.delete("/people/<int:person_id>/attributes/<int:attr_id>")
+def delete_person_attribute(person_id: int, attr_id: int):
+    session = get_session()
+    attr = session.get(PersonAttribute, attr_id)
+    if not attr or attr.person_id != person_id:
+        return jsonify({"error": "Not found"}), 404
+    session.delete(attr)
+    session.commit()
+    return jsonify({"deleted": True})
 
 
 @api_bp.get("/families/<int:family_id>")

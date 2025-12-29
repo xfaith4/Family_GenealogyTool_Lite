@@ -55,6 +55,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             ensure_media_links_asset_id,
             ensure_media_assets_status,
             ensure_data_quality_tables,
+            ensure_person_attributes_table,
         )
         from .models import Base
         engine = get_engine()
@@ -62,5 +63,6 @@ def create_app(test_config: dict | None = None) -> Flask:
         ensure_media_links_asset_id(engine)
         ensure_media_assets_status(engine)
         ensure_data_quality_tables(engine)
+        ensure_person_attributes_table(engine)
 
     return app

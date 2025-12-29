@@ -81,12 +81,27 @@ function detailsForm(p){
   </div>
   <div id="notes"></div>
 
+  <div class="sectionTitle">Profile Attributes</div>
+  <div class="row">
+    <input id="attrKey" class="input" placeholder="Key (e.g., Occupation)" />
+    <input id="attrValue" class="input" placeholder="Value" />
+    <button id="btnAddAttr" class="btn btnSecondary">Add</button>
+  </div>
+  <div id="attributes"></div>
+
   <div class="sectionTitle">Media</div>
   <div class="row">
     <input id="mediaFile" type="file" />
     <button id="btnUpload" class="btn btnSecondary">Upload</button>
   </div>
   <div id="mediaList"></div>
+
+  <div class="sectionTitle">Data cleaning (dates & places)</div>
+  <div class="row">
+    <button id="btnPreviewClean" class="btn btnSecondary">Preview</button>
+    <button id="btnApplyClean" class="btn btnSecondary">Apply auto-clean</button>
+  </div>
+  <div id="cleaningPanel" class="muted" style="font-size:12px;"></div>
   `;
 }
 
@@ -103,6 +118,40 @@ function renderNotes(p){
     div.className = "note";
     div.innerHTML = `<div>${escapeHtml(n.text)}</div><div class="muted" style="font-size:11px;margin-top:6px;">${escapeHtml(n.created_at)}</div>`;
     host.appendChild(div);
+  }
+}
+
+function renderAttributes(p){
+  const host = $("attributes");
+  if(!host) return;
+  host.innerHTML = "";
+  const attrs = p.attributes || [];
+  if(attrs.length === 0){
+    host.innerHTML = `<div class="muted">No profile attributes.</div>`;
+    return;
+  }
+  for(const attr of attrs){
+    const row = document.createElement("div");
+    row.className = "note";
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.justifyContent = "space-between";
+    row.innerHTML = `
+      <div>
+        <strong>${escapeHtml(attr.key)}:</strong> ${escapeHtml(attr.value)}
+        ${attr.created_at ? `<div class="muted" style="font-size:11px;margin-top:4px;">${escapeHtml(attr.created_at)}</div>` : ""}
+      </div>
+    `;
+    const btn = document.createElement("button");
+    btn.className = "btnSmall btnDanger";
+    btn.textContent = "Remove";
+    btn.onclick = async () => {
+      if(!confirm("Remove this attribute?")) return;
+      await api(`/api/people/${p.id}/attributes/${attr.id}`, { method: "DELETE" });
+      await loadDetails(p.id);
+    };
+    row.appendChild(btn);
+    host.appendChild(row);
   }
 }
 
@@ -162,6 +211,35 @@ async function fetchAndRenderMediaV2(personId, host){
   } catch(err) {
     host.innerHTML = `<div class="muted">Error loading media.</div>`;
     console.error('Failed to load media:', err);
+  }
+}
+
+async function renderCleaning(personId){
+  const host = $("cleaningPanel");
+  if(!host) return;
+  host.innerHTML = `<div class="muted">Loading cleaning preview…</div>`;
+  try{
+    const res = await api(`/api/people/${personId}/clean`);
+    const fields = res.fields || [];
+    if(fields.length === 0){
+      host.innerHTML = `<div class="muted">No date or place data to normalize.</div>`;
+      return;
+    }
+    const parts = fields.map(f => {
+      const status = f.ambiguous ? "Needs review" : (f.normalized && f.normalized !== (f.original||"") ? "Ready to apply" : "No change");
+      const conf = typeof f.confidence === "number" ? `${Math.round(f.confidence * 100)}%` : "";
+      return `
+        <div class="note" style="margin-bottom:6px;">
+          <div><strong>${escapeHtml(f.field)}</strong>: ${escapeHtml(f.original || "(empty)")}</div>
+          <div class="muted" style="font-size:11px;">→ ${escapeHtml(f.normalized || "—")} ${conf ? " • " + conf : ""}</div>
+          <div class="muted" style="font-size:11px;">${status}</div>
+        </div>
+      `;
+    });
+    host.innerHTML = parts.join("");
+  }catch(err){
+    console.error("Failed to load cleaning preview", err);
+    host.innerHTML = `<div class="muted">Unable to load cleaning preview.</div>`;
   }
 }
 
@@ -334,6 +412,19 @@ async function loadDetails(id){
     await loadDetails(id);
   };
 
+  $("btnAddAttr").onclick = async () => {
+    const key = ($("attrKey").value || "").trim();
+    const value = ($("attrValue").value || "").trim();
+    if(!key || !value){
+      alert("Key and value are required.");
+      return;
+    }
+    await api(`/api/people/${id}/attributes`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ key, value }) });
+    $("attrKey").value = "";
+    $("attrValue").value = "";
+    await loadDetails(id);
+  };
+
   $("btnUpload").onclick = async () => {
     const input = $("mediaFile");
     if(!input.files || input.files.length === 0) return;
@@ -348,11 +439,22 @@ async function loadDetails(id){
   $("btnSave").onclick = saveSelected;
   $("btnDelete").onclick = deleteSelected;
 
+  $("btnPreviewClean").onclick = async () => {
+    await renderCleaning(id);
+  };
+
+  $("btnApplyClean").onclick = async () => {
+    await api(`/api/people/${id}/clean`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ apply: true }) });
+    await loadDetails(id);
+  };
+
   $("btnSave").disabled = true;
   $("btnDelete").disabled = false;
 
   renderNotes(p);
+  renderAttributes(p);
   renderMedia(p);
+  await renderCleaning(id);
   await renderTree(id);
 }
 

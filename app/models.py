@@ -60,6 +60,7 @@ class Person(Base):
     events: Mapped[List["Event"]] = relationship("Event", back_populates="person", cascade="all, delete-orphan", foreign_keys="Event.person_id")
     notes: Mapped[List["Note"]] = relationship("Note", back_populates="person", cascade="all, delete-orphan", foreign_keys="Note.person_id")
     media_links: Mapped[List["MediaLink"]] = relationship("MediaLink", back_populates="person", cascade="all, delete-orphan", foreign_keys="MediaLink.person_id")
+    attributes: Mapped[List["PersonAttribute"]] = relationship("PersonAttribute", back_populates="person", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('idx_persons_name', 'surname', 'given'),
@@ -111,7 +112,7 @@ class Event(Base):
     # Relationships
     person: Mapped[Optional["Person"]] = relationship("Person", back_populates="events", foreign_keys=[person_id])
     family: Mapped[Optional["Family"]] = relationship("Family", back_populates="events", foreign_keys=[family_id])
-    place: Mapped[Optional["Place"]] = relationship("Place", back_populates="events")
+    place: Mapped[Optional["Place"]] = relationship("Place", back_populates="events", foreign_keys=[place_id])
 
     __table_args__ = (
         Index('idx_events_person', 'person_id'),
@@ -135,6 +136,10 @@ class Place(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
+    # Relationships
+    events: Mapped[List["Event"]] = relationship("Event", back_populates="place", foreign_keys=[Event.place_id])
+    variants: Mapped[List["PlaceVariant"]] = relationship("PlaceVariant", back_populates="place", cascade="all, delete-orphan")
+
 class PlaceVariant(Base):
     __tablename__ = 'place_variants'
 
@@ -144,7 +149,23 @@ class PlaceVariant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
-    place: Mapped["Place"] = relationship("Place", back_populates="variants")
+    place: Mapped["Place"] = relationship("Place", back_populates="variants", foreign_keys=[place_id])
+
+
+class PersonAttribute(Base):
+    __tablename__ = "person_attributes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    person_id: Mapped[int] = mapped_column(Integer, ForeignKey("persons.id", ondelete="CASCADE"), nullable=False, index=True)
+    key: Mapped[str] = mapped_column(String(100), nullable=False)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    person: Mapped["Person"] = relationship("Person", back_populates="attributes")
+
+    __table_args__ = (
+        Index("idx_person_attributes_person_key", "person_id", "key"),
+    )
 
 class MediaAsset(Base):
     __tablename__ = 'media_assets'
