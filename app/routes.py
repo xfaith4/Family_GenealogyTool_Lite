@@ -2928,6 +2928,100 @@ def dq_normalize_dates():
     return jsonify({"updated": len(items), "action_id": action_entry.id, "revertToken": action_entry.id})
 
 
+@api_bp.post("/dq/actions/standardizeFields")
+def dq_standardize_fields():
+    data = request.get_json(force=True, silent=False)
+    items = data.get("items") or []
+    applied_by = data.get("user")
+    if not items:
+        return jsonify({"error": "items required"}), 400
+
+    session = get_session()
+    undo_payload = []
+    updates_applied = 0
+
+    try:
+        for item in items:
+            entity_type = item.get("entity_type")
+            entity_id = item.get("entity_id")
+            updates = item.get("updates") or {}
+            if entity_type != "person":
+                return jsonify({"error": f"unsupported entity_type {entity_type}"}), 400
+            if not entity_id:
+                return jsonify({"error": "entity_id required"}), 400
+            if not isinstance(updates, dict) or not updates:
+                return jsonify({"error": "updates required"}), 400
+
+            allowed_fields = {"given", "surname"}
+            sanitized = {}
+            for key, value in updates.items():
+                if key not in allowed_fields:
+                    continue
+                if isinstance(value, str):
+                    value = value.strip()
+                    if not value:
+                        value = None
+                sanitized[key] = value
+
+            if not sanitized:
+                continue
+
+            person = session.get(Person, entity_id)
+            if not person:
+                return jsonify({"error": f"person {entity_id} not found"}), 404
+
+            prev_values = {}
+            changed = False
+            for field, new_value in sanitized.items():
+                current = getattr(person, field)
+                prev_values[field] = current
+                if current != new_value:
+                    setattr(person, field, new_value)
+                    changed = True
+
+            if changed:
+                person.updated_at = datetime.utcnow()
+                undo_payload.append({
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "previous": prev_values,
+                })
+                updates_applied += 1
+
+        if not undo_payload:
+            return jsonify({"error": "no changes applied"}), 400
+
+        action_entry = log_action(
+            session,
+            "standardize_fields",
+            {"items": items},
+            {"items": undo_payload},
+            applied_by,
+        )
+
+        issues = session.execute(
+            select(DataQualityIssue).where(
+                DataQualityIssue.issue_type == "field_standardization",
+                DataQualityIssue.status == "open",
+            )
+        ).scalars().all()
+        for issue in issues:
+            try:
+                ids = json.loads(issue.entity_ids)
+            except Exception:
+                ids = []
+            if any(entry["entity_id"] in ids for entry in undo_payload):
+                issue.status = "resolved"
+                issue.resolved_at = datetime.utcnow()
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return jsonify({"updated": updates_applied, "action_id": action_entry.id, "revertToken": action_entry.id})
+
+
 @api_bp.post("/dq/actions/undo")
 def dq_undo():
     data = request.get_json(force=True, silent=False)
@@ -3189,6 +3283,15 @@ def dq_undo():
                         session.execute(
                             update(Person).where(Person.id == item.get("entity_id")).values(**{field: prev})
                         )
+        elif action.action_type == "standardize_fields":
+            for item in undo_payload.get("items", []):
+                entity_type = item.get("entity_type")
+                entity_id = item.get("entity_id")
+                previous = item.get("previous") or {}
+                if entity_type == "person":
+                    session.execute(
+                        update(Person).where(Person.id == entity_id).values(**previous)
+                    )
 
         session.delete(action)
         session.commit()

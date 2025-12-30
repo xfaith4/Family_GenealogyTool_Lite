@@ -39,12 +39,68 @@ from .models import (
 YEAR_RE = re.compile(r"(1[5-9]\d{2}|20\d{2})")
 DATE_RANGE_RE = re.compile(r"\bBET\s+(?P<start>\d{3,4})\s+AND\s+(?P<end>\d{3,4})", re.IGNORECASE)
 QUALIFIER_RE = re.compile(r"\b(ABT|ABOUT|BEF|AFT|EST|CALC|CIRCA|CA\.?)\b", re.IGNORECASE)
+AMBIGUOUS_NUMERIC_RE = re.compile(r"^(?P<first>\d{1,2})[/-](?P<second>\d{1,2})[/-](?P<year>\d{3,4})$")
 PLACE_CLEAN_CONFIDENCE = 0.65  # confidence threshold for automated place normalization; keeps automated cleaning conservative and reviewable
 
 
 def _norm_name(value: str | None) -> str:
     return " ".join((value or "").lower().strip().split())
 
+
+def _collapse_spaces(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return " ".join(value.strip().split())
+
+
+def _case_state(value: str) -> str | None:
+    letters = [c for c in value if c.isalpha()]
+    if not letters:
+        return None
+    if all(c.isupper() for c in letters):
+        return "upper"
+    if all(c.islower() for c in letters):
+        return "lower"
+    return None
+
+
+def _title_case(value: str) -> str:
+    def cap_word(word: str) -> str:
+        if not word:
+            return word
+        lower = word.lower()
+        if lower.startswith("mc") and len(lower) > 2 and lower[2].isalpha():
+            return "Mc" + lower[2].upper() + lower[3:]
+        return lower[:1].upper() + lower[1:]
+
+    def cap_token(token: str) -> str:
+        parts = token.split("-")
+        return "-".join(cap_piece(p) for p in parts)
+
+    def cap_piece(piece: str) -> str:
+        parts = piece.split("'")
+        return "'".join(cap_word(p) for p in parts)
+
+    return " ".join(cap_token(token) for token in value.split())
+
+
+def _suggest_name_standard(value: str | None) -> tuple[str | None, list[str]]:
+    if not value:
+        return value, []
+    trimmed = _collapse_spaces(value)
+    if trimmed is None:
+        return value, []
+    reasons = []
+    suggestion = trimmed
+    if trimmed != value:
+        reasons.append("trim_whitespace")
+    state = _case_state(trimmed)
+    if state in ("upper", "lower"):
+        titled = _title_case(trimmed)
+        if titled != trimmed:
+            suggestion = titled
+            reasons.append("title_case")
+    return suggestion, reasons
 
 def _norm_place(value: str | None) -> str:
     if not value:
@@ -94,6 +150,13 @@ def _parse_date(value: str | None) -> Tuple[str | None, str | None, str | None, 
     raw = value.strip()
     if not raw:
         return None, None, None, 0.0, False
+
+    amb_match = AMBIGUOUS_NUMERIC_RE.match(raw)
+    if amb_match:
+        first = int(amb_match.group("first"))
+        second = int(amb_match.group("second"))
+        if 1 <= first <= 12 and 1 <= second <= 12 and first != second:
+            return None, None, None, 0.0, True
 
     # Range
     range_m = DATE_RANGE_RE.search(raw)
@@ -187,6 +250,7 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
         session.execute(DateNormalization.__table__.delete())
 
     duplicate_count = _detect_duplicates(session)
+    standardization_count = _detect_standardization(session)
     place_cluster_count = _detect_places(session)
     family_duplicate_count = _detect_duplicate_families(session)
     media_duplicate_count = _detect_duplicate_media_links(session)
@@ -197,6 +261,7 @@ def run_detection(session: Session, incremental: bool = False) -> dict:
     session.commit()
     return {
         "duplicates": duplicate_count,
+        "standardization": standardization_count,
         "place_clusters": place_cluster_count,
         "family_duplicates": family_duplicate_count,
         "media_duplicates": media_duplicate_count,
@@ -271,6 +336,51 @@ def _detect_duplicates(session: Session) -> int:
                     explanation=explanation,
                 )
                 count += 1
+    return count
+
+
+def _detect_standardization(session: Session) -> int:
+    placeholders = {"unknown", "n/a", "na", "none"}
+    people = session.execute(select(Person.id, Person.given, Person.surname)).all()
+    count = 0
+    for pid, given, surname in people:
+        fields = []
+        for field_name, value in (("given", given), ("surname", surname)):
+            if not value:
+                continue
+            if _norm_name(value) in placeholders:
+                continue
+            suggestion, reasons = _suggest_name_standard(value)
+            if not suggestion or suggestion == value or not reasons:
+                continue
+            fields.append({
+                "field": field_name,
+                "current": value,
+                "suggested": suggestion,
+                "reasons": reasons,
+            })
+
+        if not fields:
+            continue
+
+        confidence = 0.9
+        if any("title_case" in (f.get("reasons") or []) for f in fields):
+            confidence = 0.8
+        explanation = {
+            "entity_label": " ".join([v for v in (given, surname) if v]) or f"Person {pid}",
+            "fields": fields,
+        }
+        _insert_issue(
+            session,
+            "field_standardization",
+            "info",
+            "person",
+            [int(pid)],
+            confidence=confidence,
+            impact=float(len(fields)),
+            explanation=explanation,
+        )
+        count += 1
     return count
 
 
@@ -916,8 +1026,15 @@ def build_summary(session: Session) -> dict:
                     "parent_child_death",
                     "marriage_too_early",
                     "marriage_after_death",
+                    "placeholder_name",
                 ]
             ),
+            DataQualityIssue.status == "open",
+        )
+    ).scalar_one()
+    standardization_suggestions = session.execute(
+        select(func.count(DataQualityIssue.id)).where(
+            DataQualityIssue.issue_type == "field_standardization",
             DataQualityIssue.status == "open",
         )
     ).scalar_one()
@@ -940,6 +1057,7 @@ def build_summary(session: Session) -> dict:
         "unresolved_duplicates": int(unresolved_duplicates),
         "place_clusters": int(place_clusters),
         "integrity_warnings": int(integrity_warnings),
+        "standardization_suggestions": int(standardization_suggestions),
     }
 
 

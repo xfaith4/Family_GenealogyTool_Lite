@@ -30,6 +30,7 @@
       <button data-tab="duplicates">Duplicates</button>
       <button data-tab="places">Places</button>
       <button data-tab="dates">Dates</button>
+      <button data-tab="standards">Standards</button>
       <button data-tab="integrity">Integrity</button>
       <button data-tab="changelog">Change Log</button>
     </div>
@@ -98,6 +99,16 @@
       <div id="dateList" class="list"></div>
       <div class="muted small">Dates with qualifiers like "About" are preserved until you choose a standard.</div>
       <div id="dateBulkStatus" class="muted small"></div>
+    </section>
+
+    <section id="tab-standards" class="tabContent">
+      <div class="panelHeader">
+        <h3>Standardization Suggestions</h3>
+        <button id="btnApplyStandards" class="btn btnSecondary">Apply suggested</button>
+      </div>
+      <div id="standardsList" class="list"></div>
+      <div class="muted small">Suggestions apply consistent whitespace and casing rules for names.</div>
+      <div id="standardsBulkStatus" class="muted small"></div>
     </section>
 
     <section id="tab-integrity" class="tabContent">

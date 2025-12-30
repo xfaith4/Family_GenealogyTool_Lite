@@ -110,6 +110,18 @@ class TestDataQuality(unittest.TestCase):
         data = self.client.get("/api/dq/issues?type=duplicate_person").get_json()
         self.assertGreaterEqual(len(data["items"]), 1)
 
+    def test_scan_detects_standardization_suggestions(self):
+        pid = self._person("JOHN", "DOE ")
+        r = self.client.post("/api/dq/scan")
+        self.assertEqual(r.status_code, 200)
+        data = self.client.get("/api/dq/issues?type=field_standardization").get_json()
+        target = next((i for i in data["items"] if pid in i["entity_ids"]), None)
+        self.assertIsNotNone(target)
+        fields = target["explanation"].get("fields") or []
+        suggestions = {f.get("field"): f.get("suggested") for f in fields}
+        self.assertEqual(suggestions.get("given"), "John")
+        self.assertEqual(suggestions.get("surname"), "Doe")
+
     def test_scan_detects_similar_places(self):
         pid = self._person("Mara", "Place", birth_place="Boston, Massachusett")
         self._event(pid, raw_place="Boston, Massachusetts")
@@ -356,6 +368,36 @@ class TestDataQuality(unittest.TestCase):
             self.assertIsNone(dn)
             ev = s.get(Event, ev_id)
             self.assertIsNone(ev.date_canonical)
+
+    def test_standardize_fields_action_and_undo(self):
+        pid = self._person("JANE", "DOE ")
+        resp = self.client.post(
+            "/api/dq/actions/standardizeFields",
+            json={
+                "items": [
+                    {
+                        "entity_type": "person",
+                        "entity_id": pid,
+                        "updates": {"given": "Jane", "surname": "Doe"},
+                    }
+                ],
+                "user": "tester",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        action_id = resp.get_json()["action_id"]
+
+        with self._session() as s:
+            person = s.get(Person, pid)
+            self.assertEqual(person.given, "Jane")
+            self.assertEqual(person.surname, "Doe")
+
+        undo = self.client.post("/api/dq/actions/undo", json={"action_id": action_id})
+        self.assertEqual(undo.status_code, 200)
+        with self._session() as s:
+            person = s.get(Person, pid)
+            self.assertEqual(person.given, "JANE")
+            self.assertEqual(person.surname, "DOE ")
 
 
 if __name__ == "__main__":

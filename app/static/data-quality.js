@@ -56,6 +56,7 @@
       { label: "Duplicates", icon: "👥", value: `${summary.unresolved_duplicates ?? 0} open`, target: "duplicates" },
       { label: "Places", icon: "📍", value: `${summary.place_clusters ?? 0} clusters`, target: "places" },
       { label: "Dates", icon: "📅", value: `${summary.standardized_dates_pct ?? 0}% standardized`, target: "dates" },
+      { label: "Standards", icon: "✨", value: `${summary.standardization_suggestions ?? 0} suggestions`, target: "standards" },
       { label: "Integrity", icon: "⚠️", value: `${summary.integrity_warnings ?? 0} warnings`, target: "integrity" },
     ];
     chips.forEach((chip) => {
@@ -90,6 +91,9 @@
     if ((summary.standardized_dates_pct ?? 0) < 90) {
       items.push({ icon: "📅", label: "Dates", text: `${summary.standardized_dates_pct}% standardized — apply clean dates to lift the score`, target: "dates" });
     }
+    if ((summary.standardization_suggestions ?? 0) > 0) {
+      items.push({ icon: "✨", label: "Standards", text: `${summary.standardization_suggestions} formatting suggestion(s) ready to apply`, target: "standards" });
+    }
     if (!items.length) {
       const li = document.createElement("li");
       li.className = "muted small";
@@ -114,7 +118,7 @@
 
   function updateScanHint(summary) {
     if (!scanHintEl) return;
-    scanHintEl.textContent = `Score blends duplicates (${summary.unresolved_duplicates ?? 0}), places (${summary.place_clusters ?? 0}), dates (${summary.standardized_dates_pct ?? 0}% clean), and integrity (${summary.integrity_warnings ?? 0}).`;
+    scanHintEl.textContent = `Score blends duplicates (${summary.unresolved_duplicates ?? 0}), places (${summary.place_clusters ?? 0}), dates (${summary.standardized_dates_pct ?? 0}% clean), and integrity (${summary.integrity_warnings ?? 0}). Standards suggestions: ${summary.standardization_suggestions ?? 0}.`;
   }
 
   function integrityDescription(issue) {
@@ -192,6 +196,7 @@
       coverage.innerHTML = "";
       [
         ["Standardized dates", asPercent(data.standardized_dates_pct)],
+        ["Standards suggestions", data.standardization_suggestions],
         ["Unresolved duplicates", data.unresolved_duplicates],
         ["Place clusters", data.place_clusters],
         ["Integrity warnings", data.integrity_warnings],
@@ -206,6 +211,7 @@
       [
         ["Duplicates", data.unresolved_duplicates],
         ["Places", data.place_clusters],
+        ["Standards", data.standardization_suggestions],
         ["Integrity", data.integrity_warnings],
       ].forEach(([label, value]) => {
         const li = document.createElement("li");
@@ -1155,6 +1161,121 @@ async function loadPlaces() {
     }
   }
 
+  async function loadStandards() {
+    const container = document.getElementById("standardsList");
+    const btnApplyStandards = document.getElementById("btnApplyStandards");
+    const bulkStatus = document.getElementById("standardsBulkStatus");
+    if (!container) return;
+    container.innerHTML = "<div class='muted'>Loading…</div>";
+    try {
+      const data = await fetchJson("/api/dq/issues?type=field_standardization&status=open&perPage=200");
+      const items = data.items || [];
+      if (!items.length) {
+        container.innerHTML = "<div class='muted'>No open items.</div>";
+        if (btnApplyStandards) btnApplyStandards.disabled = true;
+        if (bulkStatus) bulkStatus.textContent = "";
+        return;
+      }
+
+      const applyCandidates = [];
+      container.innerHTML = "";
+      items.forEach((item) => {
+        const explanation = item.explanation || {};
+        const fields = explanation.fields || [];
+        const entityId = item.entity_ids?.[0];
+        const updates = {};
+        fields.forEach((field) => {
+          if (field.field && field.suggested !== undefined) {
+            updates[field.field] = field.suggested;
+          }
+        });
+        const canApply = Boolean(entityId) && Object.keys(updates).length > 0;
+        if (canApply) {
+          applyCandidates.push({ entity_type: item.entity_type, entity_id: entityId, updates });
+        }
+        const div = document.createElement("div");
+        div.className = "listItem";
+        const displayName = explanation.entity_label || `${item.entity_type || "record"} ${entityId ?? ""}`.trim();
+        const fieldHtml = fields.map((field) => {
+          const reason = (field.reasons || []).join(", ");
+          const fromVal = escapeHtml(field.current || "");
+          const toVal = escapeHtml(field.suggested || "");
+          return `
+            <div class="dqField">
+              <span>${escapeHtml(field.field || "field")}</span>
+              <span>${fromVal} → ${toVal}${reason ? ` <span class="muted small">(${escapeHtml(reason)})</span>` : ""}</span>
+            </div>
+          `;
+        }).join("");
+        div.innerHTML = `
+          <div class="row">
+            <div><strong>${escapeHtml(displayName)}</strong></div>
+            <div class="dqBadge ${confidenceClass(item.confidence)}">${confidenceLabel(item.confidence)} • ${asConfidence(item.confidence)}</div>
+          </div>
+          <div class="muted small">${item.detected_at}</div>
+          ${fieldHtml || "<div class='muted small'>No suggestions.</div>"}
+          <div class="dqActions">
+            <button class="btn btnSecondary" ${canApply ? "" : "disabled"}>Apply</button>
+          </div>
+        `;
+        const button = div.querySelector("button");
+        button.addEventListener("click", async () => {
+          if (!canApply) return;
+          button.disabled = true;
+          const prev = button.textContent;
+          button.textContent = "Applying…";
+          try {
+            await fetchJson("/api/dq/actions/standardizeFields", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ items: [{ entity_type: item.entity_type, entity_id: entityId, updates }], user: "data-quality" }),
+            });
+            await runScan();
+          } catch (err) {
+            console.error("standardize fields failed", err);
+            alert("Failed to apply standardization.");
+          } finally {
+            button.disabled = false;
+            button.textContent = prev;
+          }
+        });
+        container.appendChild(div);
+      });
+
+      if (btnApplyStandards) {
+        btnApplyStandards.disabled = applyCandidates.length === 0;
+        btnApplyStandards.onclick = async () => {
+          if (!applyCandidates.length) return;
+          if (!confirm(`Apply ${applyCandidates.length} standardization suggestion(s)?`)) return;
+          btnApplyStandards.disabled = true;
+          const prev = btnApplyStandards.textContent;
+          btnApplyStandards.textContent = "Applying…";
+          if (bulkStatus) bulkStatus.textContent = `Starting 0/${applyCandidates.length}…`;
+          try {
+            await fetchJson("/api/dq/actions/standardizeFields", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ items: applyCandidates, user: "data-quality" }),
+            });
+            if (bulkStatus) bulkStatus.textContent = `Applied ${applyCandidates.length}/${applyCandidates.length}.`;
+            await runScan();
+          } catch (err) {
+            console.error("standardize fields bulk failed", err);
+            if (bulkStatus) bulkStatus.textContent = `Failed: ${errMsg(err)}`;
+            alert("Failed to apply standardization.");
+          } finally {
+            btnApplyStandards.disabled = false;
+            btnApplyStandards.textContent = prev;
+          }
+        };
+      }
+    } catch (err) {
+      container.innerHTML = `<div class='muted'>${escapeHtml(errMsg(err))}</div>`;
+      if (btnApplyStandards) btnApplyStandards.disabled = true;
+      if (bulkStatus) bulkStatus.textContent = "";
+    }
+  }
+
   async function loadIntegrity() {
     const container = document.getElementById("integrityList");
     container.innerHTML = "<div class='muted'>Loading…</div>";
@@ -1166,6 +1287,7 @@ async function loadPlaces() {
       "parent_child_death",
       "marriage_too_early",
       "marriage_after_death",
+      "placeholder_name",
     ];
     const labels = {
       impossible_timeline: "Death before birth",
@@ -1175,6 +1297,7 @@ async function loadPlaces() {
       parent_child_death: "Parent died before child birth",
       marriage_too_early: "Marriage too early",
       marriage_after_death: "Marriage after death",
+      placeholder_name: "Placeholder name",
     };
     try {
       const responses = await Promise.all(
@@ -1197,7 +1320,7 @@ async function loadPlaces() {
             <div class="dqBadge ${confidenceClass(item.confidence)}">${confidenceLabel(item.confidence)} • ${asConfidence(item.confidence)}</div>
           </div>
           <div class="muted small">${item.detected_at}</div>
-          <div class="muted small">${escapeHtml(JSON.stringify(explanation))}</div>
+          <div class="muted small">${escapeHtml(integrityDescription(item))}</div>
         `;
         container.appendChild(div);
       });
@@ -1217,6 +1340,7 @@ async function loadPlaces() {
         loadDuplicates(),
         loadPlaces(),
         loadDates(),
+        loadStandards(),
         loadIntegrity(),
         loadLog(),
       ]);

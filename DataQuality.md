@@ -6,7 +6,7 @@ This app ships a deterministic “Data Quality” workflow for finding, reviewin
 
 - **Detectors:** Implemented in `app/dq.py`. They write `dq_issues` rows plus supporting `date_normalizations` records.
 - **Actions:** Logged in `dq_action_log` with reversible payloads. Undo is available via `POST /api/dq/actions/undo`.
-- **UI:** `/data-quality` (template + `static/data-quality.js`) with tabs for overview, duplicates, places, dates, integrity, and change log.
+- **UI:** `/data-quality` (template + `static/data-quality.js`) with tabs for overview, duplicates, places, dates, standards, integrity, and change log.
 
 ## Detectors & thresholds
 
@@ -17,6 +17,9 @@ This app ships a deterministic “Data Quality” workflow for finding, reviewin
 - **Place clusters (`place_cluster`):**
   - Token-normalized variants from event `place_raw` and person birth/death places.
   - Two+ distinct variants with a shared normalized key create a cluster; top variant suggested as canonical.
+- **Field standardization (`field_standardization`):**
+  - Flags names with extra whitespace or all-uppercase/lowercase formatting.
+  - Suggests normalized casing (title case) and whitespace cleanup; does not auto-apply.
 - **Date normalization (`date_normalization`):**
   - Parses ISO `YYYY-MM-DD`, `MM/DD/YYYY`, `DD/MM/YYYY`, `YYYY/MM/DD`, `Mon YYYY`, numeric month + year, ranges `BET yyyy AND yyyy`, and qualifiers `abt/bef/aft/est`.
   - Stores normalized value, precision (day/month/year/range), qualifier, confidence, ambiguity flag.
@@ -35,6 +38,7 @@ This app ships a deterministic “Data Quality” workflow for finding, reviewin
 - `POST /api/dq/actions/mergePeople` — body `{fromId, intoId, user?}` merges people, preserves relationships/events/media, logs undo.
 - `POST /api/dq/actions/normalizePlaces` — body `{canonical, variants[], user?}` maps variants to a canonical place, updates events/people, logs undo.
 - `POST /api/dq/actions/normalizeDates` — body `{items:[{entity_type,entity_id,normalized,precision,qualifier,raw,confidence,ambiguous}], user?}` updates normalized dates and event `date_canonical`.
+- `POST /api/dq/actions/standardizeFields` — body `{items:[{entity_type,entity_id,updates}], user?}` applies deterministic field standardization suggestions.
 - `POST /api/dq/actions/undo` — body `{action_id}` replays undo payload for the selected action.
 
 ## Database additions

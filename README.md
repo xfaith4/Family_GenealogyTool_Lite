@@ -77,6 +77,7 @@ The Data Quality page (`/data-quality`) is the primary workflow for cleaning dat
 - **Duplicates:** People, families, duplicate media links, and similar media assets
 - **Places:** clusters and similar names with suggested canonical values
 - **Dates:** normalizations with confidence and qualifiers
+- **Standards:** formatting suggestions for consistent name casing/spacing
 - **Integrity:** timeline warnings and relationship checks (death before birth, parent too young, marriage too early, orphan families/events)
 
 Integrity rules (current thresholds):
@@ -95,6 +96,7 @@ Integrity rules (current thresholds):
    - **Duplicates:** Review a match, choose the record to keep, and merge. Missing fields can be filled automatically.
    - **Places:** Pick a canonical place name and standardize variants.
    - **Dates:** Apply unambiguous normalizations (qualifiers like "About/Abt" are preserved until you choose a standard).
+   - **Standards:** Apply suggested name casing/spacing improvements.
 3. Use **Change Log** to review actions and undo if needed.
 
 ### Notes
