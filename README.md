@@ -39,9 +39,9 @@ Open: <http://127.0.0.1:3001>
 If your system Python is externally managed (PEP 668), use a virtual environment:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.txt
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 python run.py
 ```
 
@@ -50,6 +50,7 @@ python run.py
 You can run this app natively on Android using Termux—no root or Docker required!
 
 **Quick setup:**
+
 ```bash
 # Install Termux from F-Droid, then:
 pkg install git -y
@@ -68,6 +69,21 @@ Open in your Android browser: <http://127.0.0.1:3001>
 Use the **Import RMTree** button in either view to load .rmtree, .sql, or .txt exports.
 The importer focuses on populated tables so it extracts individuals, media locations, and media relationships into the existing schema without trying to recreate the original database.
 
+## Media & OCR
+
+The repo includes a deterministic media ingest + OCR pipeline with a CLI entrypoint.
+
+Quick examples:
+
+```bash
+python scripts/media_cli.py scan --source data/media
+python scripts/media_cli.py ingest --source data/media_ingest
+python scripts/media_cli.py ingest --source data/media_ingest --ocr --lang eng
+python scripts/media_cli.py legacy-link --legacy-db path/to/legacy.sqlite --dry-run
+```
+
+See [docs/media_ingest.md](docs/media_ingest.md) for details and OCR dependencies.
+
 ## Data Quality workflow
 
 The Data Quality page (`/data-quality`) is the primary workflow for cleaning data safely. It detects issues, queues fixes, and provides reversible actions.
@@ -81,6 +97,7 @@ The Data Quality page (`/data-quality`) is the primary workflow for cleaning dat
 - **Integrity:** timeline warnings and relationship checks (death before birth, parent too young, marriage too early, orphan families/events)
 
 Integrity rules (current thresholds):
+
 - Death before birth (same person).
 - Parent too young: parent birth year within 12 years of child birth year.
 - Parent died before child birth.
@@ -140,7 +157,7 @@ Integrity rules (current thresholds):
 
 ### Install steps (Android Chrome)
 
-1. Start the app normally (http://127.0.0.1:3001).
+1. Start the app normally (<http://127.0.0.1:3001>).
 2. Open the browser menu → “Add to Home screen” / “Install app”.
 3. Launch from the home screen icon; it opens in standalone mode.
 4. Offline: static shell loads from cache; API calls may fail but UI still renders.

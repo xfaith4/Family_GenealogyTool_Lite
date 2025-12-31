@@ -6,7 +6,7 @@
   --muted:#9fb3c8;
   --line:#233042;
   --btn:#2c7be5;
-  --btn2:#233142;
+  --btn2:#2c3f5a;
   --danger:#d9534f;
 }
 *{box-sizing:border-box;}
@@ -38,7 +38,7 @@ body{
   min-height:44px;
 }
 .btn:disabled{opacity:0.45; cursor:not-allowed;}
-.btnSecondary{background:var(--btn2); color:var(--text); border:1px solid var(--line);}
+.btnSecondary{background:var(--btn2); color:#f5f9ff; border:1px solid #2f4560;}
 .btnDanger{background:var(--danger);}
 .grid{
   display:grid;
@@ -208,14 +208,14 @@ body{
   margin-bottom:10px;
 }
 .tabs button{
-  border:1px solid var(--line);
-  background:var(--panel2);
-  color:var(--text);
+  border:1px solid #2b3d55;
+  background:#141f2d;
+  color:#f6f9ff;
   padding:8px 12px;
   border-radius:12px;
   cursor:pointer;
 }
-.tabs button.active{border-color:var(--btn); background:rgba(44,123,229,0.15);}
+.tabs button.active{border-color:#3b6fd6; background:#1e3152;}
 .tabContent{display:none;}
 .tabContent.active{display:block;}
 .scoreCard{
@@ -316,9 +316,10 @@ body{
   margin-bottom:12px;
 }
 .dqChip{
-  border:1px solid var(--line);
+  border:1px solid #2a3a52;
   border-radius:12px;
-  background:rgba(0,0,0,0.12);
+  background:#ccd0d6;
+  color:var(--text);
   padding:10px;
   display:flex;
   gap:10px;

@@ -21,6 +21,7 @@ def init_engine(database_url: str) -> None:
     ensure_place_normalization_rules(_engine)
     ensure_media_links_asset_id(_engine)
     ensure_media_assets_status(_engine)
+    ensure_media_derivations_table(_engine)
     ensure_data_quality_tables(_engine)
     ensure_person_attributes_table(_engine)
 
@@ -130,6 +131,29 @@ def ensure_media_links_asset_id(engine) -> None:
         )
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id)"))
+
+def ensure_media_derivations_table(engine) -> None:
+    """Create media_derivations table if missing (idempotent)."""
+    inspector = inspect(engine)
+    if "media_derivations" in inspector.get_table_names():
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            """
+            CREATE TABLE media_derivations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                original_asset_id INTEGER NOT NULL,
+                derived_asset_id INTEGER NOT NULL,
+                derivation_type TEXT NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY(original_asset_id) REFERENCES media_assets(id) ON DELETE CASCADE,
+                FOREIGN KEY(derived_asset_id) REFERENCES media_assets(id) ON DELETE CASCADE
+            )
+            """
+        ))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_derivations_original ON media_derivations(original_asset_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_derivations_derived ON media_derivations(derived_asset_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_derivations_type ON media_derivations(derivation_type)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id)"))
 
     columns = {col["name"] for col in inspector.get_columns("media_links")}

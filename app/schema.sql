@@ -81,6 +81,14 @@ CREATE TABLE IF NOT EXISTS media_links (
   CHECK ((person_id IS NOT NULL AND family_id IS NULL) OR (person_id IS NULL AND family_id IS NOT NULL))
 );
 
+CREATE TABLE IF NOT EXISTS media_derivations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  original_asset_id INTEGER NOT NULL REFERENCES media_assets(id) ON DELETE CASCADE,
+  derived_asset_id INTEGER NOT NULL REFERENCES media_assets(id) ON DELETE CASCADE,
+  derivation_type TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_persons_name ON persons(surname, given);
 CREATE INDEX IF NOT EXISTS idx_rel_child ON relationships(child_person_id);
 CREATE INDEX IF NOT EXISTS idx_media_assets_sha256 ON media_assets(sha256);
@@ -88,6 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_media_assets_original_filename ON media_assets(or
 CREATE INDEX IF NOT EXISTS idx_media_links_asset ON media_links(asset_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_person ON media_links(person_id);
 CREATE INDEX IF NOT EXISTS idx_media_links_family ON media_links(family_id);
+CREATE INDEX IF NOT EXISTS idx_media_derivations_original ON media_derivations(original_asset_id);
+CREATE INDEX IF NOT EXISTS idx_media_derivations_derived ON media_derivations(derived_asset_id);
+CREATE INDEX IF NOT EXISTS idx_media_derivations_type ON media_derivations(derivation_type);
 
 -- Person profile attributes (flexible key/value metadata)
 CREATE TABLE IF NOT EXISTS person_attributes (

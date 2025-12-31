@@ -177,6 +177,12 @@
     return "dqBadgeLow";
   }
 
+  function badgeForConfidence(value) {
+    const label = confidenceLabel(value);
+    const pct = value === null || value === undefined ? "?" : `${Math.round(value * 100)}%`;
+    return { label: `${label} • ${pct}`, cls: confidenceClass(value) };
+  }
+
   function fullName(person) {
     const name = `${person?.given || ""} ${person?.surname || ""}`.trim();
     return name || "(unnamed)";

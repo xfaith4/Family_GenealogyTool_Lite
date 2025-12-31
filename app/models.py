@@ -212,6 +212,21 @@ class MediaLink(Base):
         Index('idx_media_links_family', 'family_id'),
     )
 
+class MediaDerivation(Base):
+    __tablename__ = "media_derivations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    original_asset_id: Mapped[int] = mapped_column(Integer, ForeignKey("media_assets.id", ondelete="CASCADE"), nullable=False)
+    derived_asset_id: Mapped[int] = mapped_column(Integer, ForeignKey("media_assets.id", ondelete="CASCADE"), nullable=False)
+    derivation_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_media_derivations_original", "original_asset_id"),
+        Index("idx_media_derivations_derived", "derived_asset_id"),
+        Index("idx_media_derivations_type", "derivation_type"),
+    )
+
 class Note(Base):
     __tablename__ = 'notes'
 

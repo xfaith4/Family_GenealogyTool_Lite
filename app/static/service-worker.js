@@ -1,12 +1,14 @@
-const STATIC_CACHE = "fgtl-static-v2";
+const STATIC_CACHE = "fgtl-static-v3";
 const STATIC_ASSETS = [
   "/",
   "/static/styles.css",
   "/static/app.js",
+  "/static/data-quality.js",
   "/static/unassigned.js",
   "/static/tree-v2.js",
   "/static/analytics.js",
   "/static/pwa.js",
+  "/static/help.js",
   "/static/manifest.webmanifest",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png"

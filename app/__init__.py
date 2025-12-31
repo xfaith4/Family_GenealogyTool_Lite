@@ -54,6 +54,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             get_engine,
             ensure_media_links_asset_id,
             ensure_media_assets_status,
+            ensure_media_derivations_table,
             ensure_data_quality_tables,
             ensure_person_attributes_table,
         )
@@ -62,6 +63,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         Base.metadata.create_all(engine)
         ensure_media_links_asset_id(engine)
         ensure_media_assets_status(engine)
+        ensure_media_derivations_table(engine)
         ensure_data_quality_tables(engine)
         ensure_person_attributes_table(engine)
 
